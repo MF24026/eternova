@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Ethereal Boutique | Custom Reservations</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#fde9ec",
+                        "on-primary-fixed-variant": "#6c464f",
+                        "outline-variant": "#c2adb0",
+                        "background": "#fff8f7",
+                        "on-surface": "#3d2f32",
+                        "on-tertiary-fixed": "#513e41",
+                        "inverse-surface": "#130c0e",
+                        "primary-fixed-dim": "#e9b7c1",
+                        "on-secondary": "#fef7ff",
+                        "on-primary-fixed": "#4c2a33",
+                        "surface-variant": "#f4dde0",
+                        "tertiary-fixed-dim": "#efd3d7",
+                        "tertiary": "#6f5a5d",
+                        "surface-container-low": "#fff0f2",
+                        "primary-fixed": "#f8c4cf",
+                        "error-dim": "#67040d",
+                        "secondary-fixed": "#eddcff",
+                        "error": "#a83836",
+                        "surface": "#fff8f7",
+                        "on-error-container": "#6e0a12",
+                        "tertiary-container": "#fee1e5",
+                        "surface-bright": "#fff8f7",
+                        "on-secondary-fixed-variant": "#64547b",
+                        "primary-dim": "#6f4851",
+                        "on-tertiary": "#fff7f7",
+                        "on-primary-container": "#623d46",
+                        "secondary-dim": "#5c4c72",
+                        "tertiary-fixed": "#fee1e5",
+                        "on-tertiary-container": "#645053",
+                        "secondary-container": "#eddcff",
+                        "on-tertiary-fixed-variant": "#6f5a5d",
+                        "primary-container": "#f8c4cf",
+                        "on-secondary-container": "#5a4b71",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#fff7f6",
+                        "on-surface-variant": "#6b5b5e",
+                        "secondary-fixed-dim": "#e0ccfa",
+                        "surface-dim": "#ebd5d8",
+                        "surface-tint": "#7c545d",
+                        "secondary": "#68587f",
+                        "on-secondary-fixed": "#47385d",
+                        "on-primary": "#fff7f7",
+                        "outline": "#887679",
+                        "inverse-primary": "#f8c4cf",
+                        "surface-container-highest": "#f4dde0",
+                        "error-container": "#fa746f",
+                        "surface-container-high": "#f8e3e6",
+                        "tertiary-dim": "#624e51",
+                        "inverse-on-surface": "#a69a9b",
+                        "primary": "#7c545d",
+                        "on-background": "#3d2f32"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Noto Serif"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-serif { font-family: 'Noto Serif', serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+        .glass-nav { background: rgba(255, 248, 247, 0.7); backdrop-filter: blur(24px); }
+        .signature-gradient { background: linear-gradient(135deg, #7c545d 0%, #f8c4cf 100%); }
+        input:focus, textarea:focus { outline: none; background-color: #f4dde0 !important; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 glass-nav shadow-sm flex justify-between items-center px-8 h-20 w-full">
+<div class="text-2xl font-serif italic text-[#7c545d]">The Ethereal Boutique</div>
+<div class="hidden md:flex items-center gap-8 font-serif tracking-tight font-medium">
+<a class="text-[#3d2f32] opacity-80 hover:opacity-100 hover:text-[#7c545d] transition-all" href="#">Shop</a>
+<a class="text-[#3d2f32] opacity-80 hover:opacity-100 hover:text-[#7c545d] transition-all" href="#">Subscriptions</a>
+<a class="text-[#3d2f32] opacity-80 hover:opacity-100 hover:text-[#7c545d] transition-all" href="#">Workshops</a>
+<a class="text-[#3d2f32] opacity-80 hover:opacity-100 hover:text-[#7c545d] transition-all" href="#">About</a>
+</div>
+<div class="flex items-center gap-5 text-[#7c545d]">
+<span class="material-symbols-outlined cursor-pointer hover:scale-95 duration-200" data-icon="shopping_bag">shopping_bag</span>
+<span class="material-symbols-outlined cursor-pointer hover:scale-95 duration-200" data-icon="person">person</span>
+</div>
+</nav>
+<main class="pt-32 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+<!-- Hero Section -->
+<section class="mb-20 text-center">
+<span class="text-xs font-label uppercase tracking-widest text-primary mb-4 block">Bespoke Creations</span>
+<h1 class="text-5xl md:text-7xl font-serif italic text-primary leading-tight mb-6">Custom Reservation</h1>
+<p class="max-w-2xl mx-auto text-on-surface-variant text-lg leading-relaxed">
+                Whether it is "Eternal roses with chocolates" or a unique floral narrative, 
+                our artisans are here to translate your vision into a living masterpiece.
+            </p>
+</section>
+<!-- Form & Details Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Reservation Form Column -->
+<div class="lg:col-span-7 bg-surface-container-low rounded-xl p-8 md:p-12">
+<form class="space-y-10">
+<div class="space-y-4">
+<label class="text-xs font-label uppercase tracking-widest text-primary font-semibold">Describe Your Vision</label>
+<textarea class="w-full bg-surface-container-lowest border-none rounded-xl p-6 text-on-surface placeholder:text-outline-variant transition-colors" placeholder="Example: A lush bouquet of eternal roses paired with dark artisan chocolates and a handwritten note..." rows="5"></textarea>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-4">
+<label class="text-xs font-label uppercase tracking-widest text-primary font-semibold">Delivery Date</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-on-surface transition-colors" type="date"/>
+</div>
+</div>
+<div class="space-y-4">
+<label class="text-xs font-label uppercase tracking-widest text-primary font-semibold">Occasion</label>
+<select class="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-on-surface transition-colors">
+<option>Anniversary</option>
+<option>Wedding</option>
+<option>Celebration of Life</option>
+<option>Bespoke Gift</option>
+</select>
+</div>
+</div>
+<div class="space-y-4">
+<label class="text-xs font-label uppercase tracking-widest text-primary font-semibold">Special Instructions</label>
+<input class="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-on-surface transition-colors" placeholder="Add any specific color palettes or ribbon preferences" type="text"/>
+</div>
+<button class="w-full signature-gradient text-on-primary font-label uppercase tracking-widest py-5 rounded-full text-sm font-bold shadow-lg hover:opacity-90 transition-opacity">
+                        Send Custom Inquiry
+                    </button>
+</form>
+</div>
+<!-- Informational Sidebar Column -->
+<div class="lg:col-span-5 flex flex-col gap-8">
+<!-- Deposit Info Card -->
+<div class="bg-secondary-container rounded-xl p-8 relative overflow-hidden">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-on-secondary-container mb-4 block text-4xl" data-icon="payments">payments</span>
+<h3 class="text-2xl font-serif text-on-secondary-container mb-4">Deposit &amp; Advance Payment</h3>
+<div class="space-y-4 text-on-secondary-container/80 text-sm leading-relaxed">
+<p>To ensure the freshest select blooms and artisanal pairings, we require a <strong>30% advance deposit</strong> for all custom orders.</p>
+<p>Once your inquiry is reviewed, you will receive a curated proposal. The deposit confirms your slot in our atelier's calendar.</p>
+<div class="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm" data-icon="verified">verified</span>
+                                Secure Payment Guaranteed
+                            </div>
+</div>
+</div>
+<!-- Decorative Element -->
+<div class="absolute -bottom-10 -right-10 w-40 h-40 bg-on-secondary-container/5 rounded-full blur-3xl"></div>
+</div>
+<!-- Inspiration Image Card -->
+<div class="bg-surface-container-highest rounded-xl overflow-hidden flex flex-col h-full">
+<div class="h-64 w-full bg-cover bg-center" data-alt="Close-up of premium pink roses and elegant artisanal chocolate truffles on a silk cloth background with soft lighting" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA1KLvNPv_tSfLPjeZ7jpAMbfnAFikenF3dZtqlD9IRfce4Y4tzjI8j8Uc_VtMYrOjFMR_7YuLpozjE4-YfbIVJf2yCCnqa9tNsRCKIl4DWtji_uITJOpT79HM4e9vFO3WL4B_oFRR211ZQN0sGXNSbStFRpy1VhRer_hcG5eGNaEGBNtuDhqpR-ILYi6iEB8oMWvsdgmkiQRuxZLrHXAlUWkMKPtLMmKB1t0zcLCa1DO0LZoylbhXu-JKXsmV-oLVMn2U0jKGdqD-c')"></div>
+<div class="p-8">
+<h4 class="text-lg font-serif italic text-primary mb-2">The 'Eternal' Signature</h4>
+<p class="text-sm text-on-surface-variant">Our most requested pairing features long-lasting preserved roses and hand-crafted botanical chocolates.</p>
+</div>
+</div>
+<!-- Process Steps -->
+<div class="bg-white rounded-xl p-8 shadow-sm">
+<h4 class="text-xs font-label uppercase tracking-widest text-primary mb-6">Our Process</h4>
+<ul class="space-y-6">
+<li class="flex gap-4">
+<span class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-xs font-bold text-primary">01</span>
+<div>
+<span class="block text-sm font-bold text-on-surface">Consultation</span>
+<span class="text-xs text-on-surface-variant">We review your description and check bloom seasonality.</span>
+</div>
+</li>
+<li class="flex gap-4">
+<span class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-xs font-bold text-primary">02</span>
+<div>
+<span class="block text-sm font-bold text-on-surface">Digital Proposal</span>
+<span class="text-xs text-on-surface-variant">Receive a custom quote and color palette mock-up.</span>
+</div>
+</li>
+<li class="flex gap-4">
+<span class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-xs font-bold text-primary">03</span>
+<div>
+<span class="block text-sm font-bold text-on-surface">The Bloom</span>
+<span class="text-xs text-on-surface-variant">Hand-crafting and hand-delivery to your destination.</span>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Featured Gallery Section -->
+<section class="mt-32">
+<div class="flex items-end justify-between mb-12">
+<div>
+<h2 class="text-3xl font-serif italic text-primary">Gallery of Past Wishes</h2>
+<p class="text-on-surface-variant mt-2">See what others have envisioned at our atelier.</p>
+</div>
+<button class="hidden md:block text-primary font-semibold text-sm border-b border-primary/30 hover:border-primary pb-1 transition-all">View Full Portfolio</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Gallery Item 1 -->
+<div class="group relative overflow-hidden rounded-xl h-96">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="A grand wedding bouquet with peonies and trailing silk ribbons in a sun-drenched floral studio" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuACGXOk2gaHSmp8hMzpqgJlBjBWrHxYvgX6ycE-pHWgNOTMcSOlWlQ_HcetwH24THzWwCiDfL2hvifOq6ktz11KBA3Dd6vtF_haRonrU1nzsmslagU4aVmz9nlcEvl4-XWBcy72jkBMeE8DahkT2B75sisnO6nYMtjZgfEdAra1MdkavNEtUHhSp7JTLN_lYnhwmJ_ZR8S9RNcLWx5arTD6rMLzmO3wdHjv3a5kHgzXTvxOywsp-ohv5VchK-5o8_nqWdka5dw6nbfS')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+<span class="text-white font-serif italic text-lg">Midnight Peonies</span>
+</div>
+</div>
+<!-- Gallery Item 2 -->
+<div class="group relative overflow-hidden rounded-xl h-96 md:mt-12">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Artfully arranged dried flowers and eucalyptus in a minimalist ceramic vase on a light wood table" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB4o1uMBxPSzBAJnauXuVHE4FBcq5gF_A5XgHLIMk0oAflGRJ1xrWmCu44viCcQynAg3CpkL55IvB1CkujqRK-mRIYiU_Cf9S_4aqIdzjqQAmWRfjjwk_qMH8mVI2Ck1g1vgPCGQLb8YSxywuV00y2fqcSp6wAQe86d4r6OS9L5PGJIJj2KW1PrbBMOMk4d5SxcLDbuIrvO7RFoLSXJX0UPp9OCnMLq5FCKxJoVFJBmExWMIZDb4LQKIS7AxE07yjaopfRfmtTCq1hz')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+<span class="text-white font-serif italic text-lg">Autumn Whisper</span>
+</div>
+</div>
+<!-- Gallery Item 3 -->
+<div class="group relative overflow-hidden rounded-xl h-96">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Luxury gift box featuring champagne, pastel macaroons, and a miniature arrangement of lavender and white roses" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCADCPXZkc_BKyt8UpM0S4Gzw4g_XNPyjkBMKVCUKgmG-wRNuw-EZEd1CMqtpsC_HWvmBT3SckAUmAeF_TJg4abAdu5zw7xtkHWSQFeuuANDkQvea6MVcR7oB3cU-efsa2TwuzPe632-bIk1M2Nz5AOGw6BilsudGxt1Uxq2SXW9lioDhvrk8xmhmqLK3onKhpxRooEyYDfKIHQY-GFXlbjtCq6NgVZfohY37p7CBNK8THWovY6pebpjt5sye8_f4ziJnr2IUsokP2P')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+<span class="text-white font-serif italic text-lg">The Luxe Parcel</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#fff8f7] w-full py-12 px-8 mt-20 border-t border-[#c2adb0]/15 flex flex-col items-center gap-6">
+<div class="font-serif italic text-xl text-[#7c545d]">The Ethereal Boutique</div>
+<div class="flex gap-8 text-[#3d2f32]/60 font-sans text-sm tracking-normal">
+<a class="hover:text-[#7c545d] transition-colors" href="#">Privacy</a>
+<a class="hover:text-[#7c545d] transition-colors" href="#">Terms</a>
+<a class="hover:text-[#7c545d] transition-colors" href="#">Shipping</a>
+<a class="hover:text-[#7c545d] transition-colors" href="#">Contact</a>
+</div>
+<div class="text-[#3d2f32]/60 text-sm text-center">
+            © 2024 The Ethereal Boutique. Handcrafted with love.
+        </div>
+</footer>
+</body></html>

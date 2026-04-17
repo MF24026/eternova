@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inventory Management | The Ethereal Boutique</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container": "#fde9ec",
+                "on-primary-fixed-variant": "#6c464f",
+                "outline-variant": "#c2adb0",
+                "background": "#fff8f7",
+                "on-surface": "#3d2f32",
+                "on-tertiary-fixed": "#513e41",
+                "inverse-surface": "#130c0e",
+                "primary-fixed-dim": "#e9b7c1",
+                "on-secondary": "#fef7ff",
+                "on-primary-fixed": "#4c2a33",
+                "surface-variant": "#f4dde0",
+                "tertiary-fixed-dim": "#efd3d7",
+                "tertiary": "#6f5a5d",
+                "surface-container-low": "#fff0f2",
+                "primary-fixed": "#f8c4cf",
+                "error-dim": "#67040d",
+                "secondary-fixed": "#eddcff",
+                "error": "#a83836",
+                "surface": "#fff8f7",
+                "on-error-container": "#6e0a12",
+                "tertiary-container": "#fee1e5",
+                "surface-bright": "#fff8f7",
+                "on-secondary-fixed-variant": "#64547b",
+                "primary-dim": "#6f4851",
+                "on-tertiary": "#fff7f7",
+                "on-primary-container": "#623d46",
+                "secondary-dim": "#5c4c72",
+                "tertiary-fixed": "#fee1e5",
+                "on-tertiary-container": "#645053",
+                "secondary-container": "#eddcff",
+                "on-tertiary-fixed-variant": "#6f5a5d",
+                "primary-container": "#f8c4cf",
+                "on-secondary-container": "#5a4b71",
+                "surface-container-lowest": "#ffffff",
+                "on-error": "#fff7f6",
+                "on-surface-variant": "#6b5b5e",
+                "secondary-fixed-dim": "#e0ccfa",
+                "surface-dim": "#ebd5d8",
+                "surface-tint": "#7c545d",
+                "secondary": "#68587f",
+                "on-secondary-fixed": "#47385d",
+                "on-primary": "#fff7f7",
+                "outline": "#887679",
+                "inverse-primary": "#f8c4cf",
+                "surface-container-highest": "#f4dde0",
+                "on-error-container": "#6e0a12",
+                "surface-container-high": "#f8e3e6",
+                "tertiary-dim": "#624e51",
+                "inverse-on-surface": "#a69a9b",
+                "primary": "#7c545d",
+                "on-background": "#3d2f32"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Noto Serif"],
+                "body": ["Plus Jakarta Sans"],
+                "label": ["Plus Jakarta Sans"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-serif { font-family: 'Noto Serif', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#fff0f2] dark:bg-rose-900/20 flex flex-col py-8 pl-4 z-40">
+<div class="mb-10 px-4">
+<h1 class="font-serif text-lg text-[#7c545d] font-bold">Atelier Admin</h1>
+<p class="font-sans uppercase tracking-widest text-[10px] opacity-70">Floral Management</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-[#3d2f32] dark:text-[#fff7f7] hover:bg-[#ffffff]/50 font-sans uppercase tracking-widest text-xs transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#3d2f32] dark:text-[#fff7f7] hover:bg-[#ffffff]/50 font-sans uppercase tracking-widest text-xs transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="point_of_sale">point_of_sale</span>
+<span>POS</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-[#f4dde0] dark:bg-rose-800/40 text-[#7c545d] font-bold rounded-r-full mr-4 font-sans uppercase tracking-widest text-xs transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#3d2f32] dark:text-[#fff7f7] hover:bg-[#ffffff]/50 font-sans uppercase tracking-widest text-xs transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span>Reservations</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#3d2f32] dark:text-[#fff7f7] hover:bg-[#ffffff]/50 font-sans uppercase tracking-widest text-xs transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Customers</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#3d2f32] dark:text-[#fff7f7] hover:bg-[#ffffff]/50 font-sans uppercase tracking-widest text-xs transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-4 pr-8">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary font-semibold py-3 px-4 rounded-full shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span>New Order</span>
+</button>
+<div class="mt-8 flex items-center gap-3 bg-surface-container-lowest/50 p-2 rounded-xl">
+<div class="w-10 h-10 rounded-full bg-primary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Admin profile avatar of a woman in a creative studio with soft lighting and professional attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5dpYBP-Qjrhqt_BBlCE0UXyvfLWjiBH59N6TaAXJlf8Hd6xquJZ6Hu46r--spRBTTEICiYjlHTclrhw1xnYGiLKQDJaSsxCnojqelYbSQ_zU-vGj9fqE6XTEqQg33YLXyDCeqV0o27rvgyzMjnayi2azieIKsMubctVAwOf-BUWf9v9k7OtnraeVDX384Fb6laYLKA-KZNi4rCsAnfMOkXUf6t43O5QioGm4ezkp46CCmLWE03XzIo4l3_naAYk0AsplzDGhfrM2Q"/>
+</div>
+<div>
+<p class="text-xs font-bold">Admin Profile</p>
+<p class="text-[10px] opacity-60">Manager</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="ml-64 p-10 min-h-screen">
+<header class="flex justify-between items-end mb-12">
+<div>
+<h2 class="text-4xl font-serif italic text-primary mb-2">Inventory Management</h2>
+<p class="text-on-surface-variant font-medium">Curating the finest blooms and artisan wares.</p>
+</div>
+<div class="flex gap-4">
+<button class="flex items-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full hover:bg-surface-container-highest transition-colors font-semibold">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+                    Adjust Stock
+                </button>
+<button class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full hover:opacity-90 transition-all font-semibold shadow-md">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                    Add Product
+                </button>
+</div>
+</header>
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+<div class="bg-surface-container-low p-6 rounded-xl flex items-center justify-between">
+<div>
+<p class="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-1">Total Items</p>
+<p class="text-3xl font-serif text-primary">1,284</p>
+</div>
+<div class="w-12 h-12 bg-primary-container/30 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="inventory">inventory</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl flex items-center justify-between border-l-4 border-error">
+<div>
+<p class="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-1">Low Stock Alerts</p>
+<p class="text-3xl font-serif text-error">12</p>
+</div>
+<div class="w-12 h-12 bg-error-container/20 rounded-full flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl flex items-center justify-between">
+<div>
+<p class="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-1">Monthly Movements</p>
+<p class="text-3xl font-serif text-primary">+420</p>
+</div>
+<div class="w-12 h-12 bg-secondary-container/30 rounded-full flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+<div class="xl:col-span-3">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-low rounded-xl border-none focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant" placeholder="Search by bloom or artisan product..." type="text"/>
+</div>
+<div class="flex gap-2">
+<span class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-semibold flex items-center gap-1">
+                                Category: All <span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</span>
+<span class="px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-semibold flex items-center gap-1">
+                                Status: Active <span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-left">
+<th class="px-6 py-4 font-label uppercase tracking-widest text-[10px] text-on-surface-variant">Product Details</th>
+<th class="px-6 py-4 font-label uppercase tracking-widest text-[10px] text-on-surface-variant">Category</th>
+<th class="px-6 py-4 font-label uppercase tracking-widest text-[10px] text-on-surface-variant">In Stock</th>
+<th class="px-6 py-4 font-label uppercase tracking-widest text-[10px] text-on-surface-variant">Price</th>
+<th class="px-6 py-4 font-label uppercase tracking-widest text-[10px] text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Soft pink peonies in full bloom with dew drops, macro photography, elegant and romantic vibe" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7KHAFJbC8h-u5tL2rQprKfzQkDEfItPgPRTryo0rtRTPp8GlArDM6W8bKbAv1YuBkR8gBaysDxEkV_6W2CO3EY1SS3_x5Jme3Q7IStzkX6Xmi6-I_ysKKiIVuiYu_bqNzcEaHOba62w3cCE0XBVs4BvWlDQoOt5T4g80yrs-Qr2K7C__ByS25amSO6XsMrVmDUlroQc-PtzBtRbBV8l56CS0lCgQFO1DvvFBDSGG7-Yq5Bwt8jLrKbX2So-he2LBQkGXjd6Lmkzd4"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Ethereal Peony Bouquet</p>
+<p class="text-xs text-on-surface-variant">SKU: ETH-PNY-01</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-tighter">Fresh Flowers</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-serif text-lg">42</span>
+<span class="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold">Stable</span>
+</div>
+</td>
+<td class="px-6 py-4 font-serif">$85.00</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Handcrafted ceramic vase with organic texture and minimalist design on a light wooden table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlfm_LM28Sr352Tkm7ZbES9Ejnov15AuZcm6NCsB2HQppd0g1ODuscgtIBpEoXZJqUEnFxD_afc-TGkOOtTq4GGErVJNs63PY3snlockZSrhtYVXHXgeT7VOBDzSKAYlfvfSI4g1OwHnZ8ieCLyV8By9ArE6mk5Rjnmphu62g6SnXnr4pOZd5BUFZ7rJP3uwa9JZNjDJK7uZTFP5a_ro0l4Trnw3Coao1ZDCLko0OrggUqbrHJESjhw8rFVjqhmsFI-WsxVWoOHuc3"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Artisan Ribbed Vase</p>
+<p class="text-xs text-on-surface-variant">SKU: ART-VSE-44</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold uppercase tracking-tighter">Artisan Ware</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-serif text-lg text-error">5</span>
+<span class="text-[10px] px-2 py-0.5 bg-error-container/20 text-error rounded-full font-bold">Low Stock</span>
+</div>
+</td>
+<td class="px-6 py-4 font-serif">$120.00</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Luxury botanical candle in a frosted glass jar with dried lavender stems beside it" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCA-oqEr9CvnRV50I3nus1dFFjNGLwnTsK2iCY1tG0cRNl3kZufs4fsAxEV2QeL-b28z5VatJQ2K6ToFM3Dv4XHOADk0fQ9v7D2Qa4ueCEu6BpuzIUm4bbJ8EBqzvmJyUSOHm5jikeZVF3dz2Fkz5m0xJuHVohaivNQl7b3FJADe-KgtHxh-ItAK-VeAgq4wmLbW69HFl9bfO-Z1U956KIQPhFa0R86o6sbr0oeFt4ojjWaVzWMr5U4yJz5tzt3gMsX3atciopqzHrt"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Lavender Mist Candle</p>
+<p class="text-xs text-on-surface-variant">SKU: BOT-CND-12</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-tighter">Apothecary</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="font-serif text-lg">112</span>
+<span class="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold">Bulk</span>
+</div>
+</td>
+<td class="px-6 py-4 font-serif">$38.00</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 bg-surface-container-low/50 flex justify-center">
+<nav class="flex gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant border border-outline-variant/15"><span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span></button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-on-primary font-bold text-xs">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant hover:bg-primary/10 transition-colors text-xs">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant hover:bg-primary/10 transition-colors text-xs">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant border border-outline-variant/15"><span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span></button>
+</nav>
+</div>
+</div>
+</div>
+<aside class="xl:col-span-1">
+<div class="bg-surface-container-low rounded-xl p-6 sticky top-24">
+<h3 class="font-serif text-xl text-primary mb-6">Recent Movements</h3>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="mt-1 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Restock: Dried Eucalyptus</p>
+<p class="text-xs text-on-surface-variant">+20 bundles added</p>
+<p class="text-[10px] text-outline mt-1 uppercase">Today, 10:45 AM</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="mt-1 w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 flex-shrink-0">
+<span class="material-symbols-outlined text-lg" data-icon="remove">remove</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Sale: Signature Bloom Box</p>
+<p class="text-xs text-on-surface-variant">-2 units sold (Order #4921)</p>
+<p class="text-[10px] text-outline mt-1 uppercase">Today, 09:12 AM</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="mt-1 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
+<span class="material-symbols-outlined text-lg" data-icon="sync">sync</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Adjustment: Velvet Ribbon</p>
+<p class="text-xs text-on-surface-variant">Manual count correction (-5m)</p>
+<p class="text-[10px] text-outline mt-1 uppercase">Yesterday, 04:30 PM</p>
+</div>
+</div>
+<div class="flex gap-4 opacity-75">
+<div class="mt-1 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Restock: Silk Wraps</p>
+<p class="text-xs text-on-surface-variant">+50 units from supplier</p>
+<p class="text-[10px] text-outline mt-1 uppercase">Oct 24, 11:15 AM</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 text-primary font-bold text-xs uppercase tracking-widest border-t border-outline-variant/10 hover:opacity-70 transition-opacity">
+                        View Full Logs
+                    </button>
+</div>
+</aside>
+</div>
+</main>
+<footer class="ml-64 w-auto py-12 px-8 mt-20 border-t border-[#c2adb0]/15 bg-[#fff8f7] dark:bg-rose-950 flex flex-col items-center gap-6">
+<p class="font-serif italic text-xl text-[#7c545d] dark:text-[#f8c4cf]">The Ethereal Boutique</p>
+<div class="flex gap-8">
+<a class="text-[#3d2f32]/60 dark:text-[#fff7f7]/60 font-sans text-sm hover:text-[#7c545d] transition-all" href="#">Privacy</a>
+<a class="text-[#3d2f32]/60 dark:text-[#fff7f7]/60 font-sans text-sm hover:text-[#7c545d] transition-all" href="#">Terms</a>
+<a class="text-[#3d2f32]/60 dark:text-[#fff7f7]/60 font-sans text-sm hover:text-[#7c545d] transition-all" href="#">Shipping</a>
+<a class="text-[#3d2f32]/60 dark:text-[#fff7f7]/60 font-sans text-sm hover:text-[#7c545d] transition-all" href="#">Contact</a>
+</div>
+<p class="font-sans text-sm tracking-normal text-[#3d2f32]/60 dark:text-[#fff7f7]/60">© 2024 The Ethereal Boutique. Handcrafted with love.</p>
+</footer>
+</body></html>

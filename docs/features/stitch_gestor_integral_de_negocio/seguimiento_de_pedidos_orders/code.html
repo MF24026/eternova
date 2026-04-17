@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Tracking | The Ethereal Boutique</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-low": "#fff0f2",
+                      "inverse-surface": "#130c0e",
+                      "inverse-primary": "#f8c4cf",
+                      "secondary": "#68587f",
+                      "on-primary-fixed-variant": "#6c464f",
+                      "surface-variant": "#f4dde0",
+                      "tertiary": "#6f5a5d",
+                      "secondary-container": "#eddcff",
+                      "error-dim": "#67040d",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container": "#fde9ec",
+                      "inverse-on-surface": "#a69a9b",
+                      "on-error": "#fff7f6",
+                      "primary-fixed": "#f8c4cf",
+                      "secondary-fixed": "#eddcff",
+                      "primary-dim": "#6f4851",
+                      "on-tertiary-fixed": "#513e41",
+                      "on-secondary-fixed-variant": "#64547b",
+                      "on-secondary-container": "#5a4b71",
+                      "on-secondary-fixed": "#47385d",
+                      "on-tertiary": "#fff7f7",
+                      "error-container": "#fa746f",
+                      "primary-container": "#f8c4cf",
+                      "on-background": "#3d2f32",
+                      "on-secondary": "#fef7ff",
+                      "background": "#fff8f7",
+                      "error": "#a83836",
+                      "surface-container-high": "#f8e3e6",
+                      "on-tertiary-container": "#645053",
+                      "tertiary-fixed-dim": "#efd3d7",
+                      "tertiary-fixed": "#fee1e5",
+                      "surface-dim": "#ebd5d8",
+                      "tertiary-dim": "#624e51",
+                      "surface-tint": "#7c545d",
+                      "on-primary": "#fff7f7",
+                      "on-surface": "#3d2f32",
+                      "secondary-dim": "#5c4c72",
+                      "on-primary-container": "#623d46",
+                      "surface-container-highest": "#f4dde0",
+                      "on-tertiary-fixed-variant": "#6f5a5d",
+                      "on-primary-fixed": "#4c2a33",
+                      "surface": "#fff8f7",
+                      "surface-bright": "#fff8f7",
+                      "primary": "#7c545d",
+                      "on-surface-variant": "#6b5b5e",
+                      "outline": "#887679",
+                      "tertiary-container": "#fee1e5",
+                      "secondary-fixed-dim": "#e0ccfa",
+                      "on-error-container": "#6e0a12",
+                      "primary-fixed-dim": "#e9b7c1",
+                      "outline-variant": "#c2adb0"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Noto Serif"],
+                      "body": ["Plus Jakarta Sans"],
+                      "label": ["Plus Jakarta Sans"]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-serif { font-family: 'Noto Serif', serif; }
+      </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar (Authority Source: JSON) -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r-0 bg-[#fff0f2] flex flex-col py-6 space-y-4">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img alt="Boutique Logo" data-alt="close up of a delicate hand-drawn cherry blossom flower logo on a soft pink background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfQoaDh6k80hCqe73QfsTf3SEaKsgLMcCcrdLIS35ndL3TReIhDEB3PS96lA6m8iVrMAXyhlZHP-FLCPPjflG5oxW6oklUJe-DUjnaL2cMzc-NpRf6Z7UsJzokxyeQbEaJHe_QjCK1x88TtyquL3I8cVUKbb3O09eJzyDbMzsqugHQcw9218bhkijmDy0a-v0aubbv6zus4K4gp9cBima4vEJaMDy71k72hhml7FKrYKVPir9sL0S6RvCa1ispusYbSUofu98gheuO"/>
+</div>
+<div>
+<h1 class="font-serif text-xl text-[#7c545d]">Atelier Admin</h1>
+<p class="text-[10px] tracking-widest uppercase text-on-surface-variant opacity-70">Floral Management</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard -->
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Dashboard</span>
+</a>
+<!-- Expenses -->
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Expenses</span>
+</a>
+<!-- Quotations -->
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Quotations</span>
+</a>
+<!-- Orders (ACTIVE) -->
+<a class="bg-gradient-to-r from-[#7c545d] to-[#f8c4cf] text-white rounded-full mx-2 px-4 py-3 shadow-sm flex items-center gap-3 translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="local_shipping" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Orders</span>
+</a>
+<!-- Inventory -->
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Inventory</span>
+</a>
+<!-- Customers -->
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Customers</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1 pt-6 border-t border-outline-variant/10">
+<button class="w-full bg-primary text-on-primary rounded-full py-3 mb-4 font-medium text-sm tracking-wide uppercase">New Quote</button>
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Support</span>
+</a>
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 group" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Log Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen bg-background relative overflow-hidden">
+<!-- Background Accents -->
+<div class="absolute -top-24 -right-24 w-96 h-96 bg-primary-container/20 rounded-full blur-3xl"></div>
+<div class="absolute top-1/2 -left-48 w-96 h-96 bg-secondary-container/20 rounded-full blur-3xl"></div>
+<!-- Top Header Area -->
+<header class="sticky top-0 z-40 bg-[#fff8f7]/70 backdrop-blur-3xl px-8 py-8">
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-serif text-4xl text-on-surface tracking-tight mb-2">Orders Management</h2>
+<p class="text-on-surface-variant font-medium">Overseeing the bouquet journeys across the city.</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<input class="bg-surface-container-low border-none rounded-full px-6 py-3 w-64 focus:ring-2 focus:ring-primary/20 transition-all text-sm" placeholder="Search orders..." type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" data-icon="search">search</span>
+</div>
+<button class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</button>
+</div>
+</div>
+<!-- Custom Tabs (Boutique Aesthetic) -->
+<div class="mt-10 flex gap-8 border-b border-outline-variant/10">
+<button class="pb-4 text-primary font-bold border-b-2 border-primary relative">
+                    All Orders
+                </button>
+<button class="pb-4 text-on-surface/60 hover:text-primary transition-colors">Pending</button>
+<button class="pb-4 text-on-surface/60 hover:text-primary transition-colors">In Preparation</button>
+<button class="pb-4 text-on-surface/60 hover:text-primary transition-colors">Out for Delivery</button>
+<button class="pb-4 text-on-surface/60 hover:text-primary transition-colors">Delivered</button>
+</div>
+</header>
+<!-- Kanban-Style / Editorial Layout -->
+<div class="px-8 py-10 grid grid-cols-12 gap-8">
+<!-- Left Column: Order Cards (The Gallery) -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<!-- Order Card 1: Active/Selected State -->
+<div class="bg-surface-container-lowest rounded-xl p-6 flex gap-6 items-center border border-primary/5 shadow-[0px_12px_32px_rgba(61,47,50,0.06)] ring-1 ring-primary/20">
+<div class="w-24 h-24 rounded-xl overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="luxurious bouquet of midnight blue peonies and white lilies tied with a silk ribbon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUS6nUmH3F_pwVhfORMMLUN05JTNcDg71nPnPEqtxfriIEo1-MHODFjmqsWEho6nQPqYIsAOBBwX3QpsAGyw0B-uJycWdAHDJaM4_ERAj5xg6ZtXWh3lG6p4yXWxQLLOTZO0ttpW9e78EbUfx71YxjyM_Xs7bq_6Bx229snHuee2AYU310spIoS6N_CZudJoIjXsqXmaaqxFAhPqNqJ1CVZ-DUeMakFrmz01OuxkespBeNZNHUgR55VuHDH7Fd4DuE9aIQ15rDjJOQ"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="text-[10px] tracking-[0.1em] font-bold text-primary uppercase mb-1 block">Order #EB-9402</span>
+<h3 class="font-serif text-xl text-on-surface">Midnight Peonies &amp; Lilies</h3>
+</div>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-wider">In Preparation</span>
+</div>
+<div class="flex gap-6 text-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="person">person</span>
+                                Clara Montgomery
+                            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+                                Oct 12, 2023
+                            </div>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="p-2 rounded-full bg-surface-container-high text-primary hover:bg-primary hover:text-on-primary transition-all">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Order Card 2 -->
+<div class="bg-surface-container-low/50 hover:bg-surface-container-lowest rounded-xl p-6 flex gap-6 items-center border-transparent border hover:border-primary/10 transition-all cursor-pointer">
+<div class="w-24 h-24 rounded-xl overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover grayscale opacity-80" data-alt="vibrant spring bouquet with yellow tulips and chamomile flowers in a rustic paper wrap" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmDCxX4qoMpsuOsnRZUlWBNw0buBW7RxnB5hxPGWiP-Zl2kngyZpeF_dd_Z8xX4YJB7xQzcySK8dR7uTS2MBsssgVXruGrlbKAIBUi1Qxp6B9oySiq6h7hEjrHyG7u3SCV6kRMOW1UYMxhimvFGWL8JQhb_finv5J6QPtunWr2Rm7CkANCrdsiwKy-vjBS9W2gpGXjnhL_xXKj-bXyUKWL1qshd7QyuSnHIMYcHKCaA1Ofj0sA6SjAwFSNcZX_Lhx4sX9mN_r8eK_5"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="text-[10px] tracking-[0.1em] font-bold text-on-surface-variant uppercase mb-1 block">Order #EB-9398</span>
+<h3 class="font-serif text-xl text-on-surface opacity-80">Wildflower Meadow Mix</h3>
+</div>
+<span class="px-3 py-1 bg-surface-container-highest text-on-surface-variant rounded-full text-[10px] font-bold uppercase tracking-wider">Pending</span>
+</div>
+<div class="flex gap-6 text-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="person">person</span>
+                                Julian Thorne
+                            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+                                Oct 13, 2023
+                            </div>
+</div>
+</div>
+<div class="flex flex-col gap-2 opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-primary/30" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Order Card 3 -->
+<div class="bg-surface-container-low/50 hover:bg-surface-container-lowest rounded-xl p-6 flex gap-6 items-center border-transparent border hover:border-primary/10 transition-all cursor-pointer">
+<div class="w-24 h-24 rounded-xl overflow-hidden bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="delicate peach colored roses in a ceramic vase with soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkfarFOEhtcVyMrj2zkYZp9KmSmUcBhXBt9-1eg7L-qVgtjBMacdPOYpkw3lOwucXmpSdouETz8cN9pp7L4WqcAtVbScYKSxvVNPcsUXw2OIt8yCVqyG__aB58ykEzwkS1YybL-t9XjxEvzit2KTOFHAsGKBDVjoGZDwMDNfQ7CzaL8YkfJbqMmcZPmRi1A4iceDpBhr16QnBaXfzhpsw9R5BviS_bIh03BOi8Y2WgR4MlZw-6lsNBlFrdsgpLu9oPHm3YfyJMjc_3"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="text-[10px] tracking-[0.1em] font-bold text-on-surface-variant uppercase mb-1 block">Order #EB-9395</span>
+<h3 class="font-serif text-xl text-on-surface">Peach Sorbet Roses</h3>
+</div>
+<span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-bold uppercase tracking-wider">Out for Delivery</span>
+</div>
+<div class="flex gap-6 text-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="person">person</span>
+                                Eleanor Rigby
+                            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+                                Oct 11, 2023
+                            </div>
+</div>
+</div>
+<div class="flex flex-col gap-2"></div>
+</div>
+</div>
+<!-- Right Column: Detail View (The Desk Overlay) -->
+<div class="col-span-12 lg:col-span-4">
+<div class="sticky top-40 bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/10 shadow-xl overflow-hidden">
+<!-- Glassy Header in Detail Card -->
+<div class="absolute top-0 right-0 p-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<div class="mb-8">
+<h4 class="font-serif text-2xl text-on-surface mb-2">Shipping Details</h4>
+<p class="text-sm text-primary font-semibold">Tracking ID: 2948-5502-ETH</p>
+</div>
+<div class="space-y-8">
+<!-- Address -->
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+</div>
+<div>
+<p class="text-xs uppercase tracking-widest text-on-surface-variant mb-1">Destination</p>
+<p class="text-on-surface font-medium">Clara Montgomery</p>
+<p class="text-sm text-on-surface-variant">42 Magnolia Lane, Apartment 4B<br/>East Riverstone, NY 10024</p>
+</div>
+</div>
+<!-- Status Timeline (Bespoke Florist Style) -->
+<div class="relative pl-5 space-y-8">
+<!-- Line -->
+<div class="absolute left-[7px] top-2 bottom-2 w-[2px] bg-outline-variant/30"></div>
+<!-- Timeline Point 1 -->
+<div class="relative">
+<div class="absolute -left-[18px] top-1 w-4 h-4 rounded-full bg-primary border-4 border-surface-container-lowest"></div>
+<p class="text-xs font-bold uppercase text-primary">In Preparation</p>
+<p class="text-[10px] text-on-surface-variant">Today at 9:30 AM</p>
+<p class="text-sm text-on-surface mt-1 italic">Artisans are currently hand-selecting the freshest blooms.</p>
+</div>
+<!-- Timeline Point 2 -->
+<div class="relative">
+<div class="absolute -left-[18px] top-1 w-4 h-4 rounded-full bg-outline-variant border-4 border-surface-container-lowest"></div>
+<p class="text-xs font-bold uppercase text-on-surface-variant">Assigned to Courier</p>
+<p class="text-[10px] text-on-surface-variant/60">Estimated 2:00 PM</p>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="pt-6 border-t border-outline-variant/10">
+<p class="text-xs uppercase tracking-widest text-on-surface-variant mb-4 text-center">Quick Actions</p>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 bg-primary text-on-primary rounded-full py-3 text-sm font-medium transition-all hover:shadow-lg">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span>
+                                    Mark Ready
+                                </button>
+<button class="flex items-center justify-center gap-2 bg-surface-container-highest text-on-surface rounded-full py-3 text-sm font-medium transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="mail">mail</span>
+                                    Notify Client
+                                </button>
+</div>
+<button class="w-full mt-3 text-center text-xs text-primary underline underline-offset-4 hover:opacity-80 transition-opacity">Edit Order Details</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB: Create New Order (Only for Top Level) -->
+<button class="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-br from-[#7c545d] to-[#f8c4cf] text-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform z-50">
+<span class="material-symbols-outlined text-3xl" data-icon="add" style="font-variation-settings: 'wght' 600;">add</span>
+</button>
+</body></html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Petal &amp; Gilt | Boutique Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#7b5455",
+                      "primary-container": "#f4c2c2",
+                      "tertiary-container": "#fac753",
+                      "surface-variant": "#e3e2e0",
+                      "tertiary": "#795900",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed": "#241a00",
+                      "inverse-primary": "#ecbaba",
+                      "secondary-fixed": "#ffe088",
+                      "on-tertiary-fixed-variant": "#5b4300",
+                      "surface-container-low": "#f4f3f1",
+                      "surface-container": "#efeeeb",
+                      "outline-variant": "#d4c2c2",
+                      "on-primary-fixed": "#2f1314",
+                      "secondary": "#735c00",
+                      "inverse-on-surface": "#f2f1ee",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-high": "#e9e8e5",
+                      "surface": "#faf9f6",
+                      "surface-container-highest": "#e3e2e0",
+                      "on-primary-fixed-variant": "#613d3e",
+                      "error-container": "#ffdad6",
+                      "on-surface": "#1a1c1a",
+                      "tertiary-fixed-dim": "#f1bf4c",
+                      "secondary-container": "#fed65b",
+                      "on-background": "#1a1c1a",
+                      "primary-fixed-dim": "#ecbaba",
+                      "on-tertiary-fixed": "#261a00",
+                      "outline": "#827473",
+                      "surface-dim": "#dbdad7",
+                      "secondary-fixed-dim": "#e9c349",
+                      "on-secondary-container": "#745c00",
+                      "error": "#ba1a1a",
+                      "on-primary-container": "#734e4e",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed-variant": "#574500",
+                      "background": "#faf9f6",
+                      "on-surface-variant": "#504444",
+                      "tertiary-fixed": "#ffdf9e",
+                      "primary": "#7b5455",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#faf9f6",
+                      "inverse-surface": "#2f312f",
+                      "primary-fixed": "#ffdad9",
+                      "on-tertiary-container": "#705300"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Noto Serif"],
+                      "body": ["Manrope"],
+                      "label": ["Manrope"]
+              }
+            },
+          }
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3, .font-notoSerif { font-family: 'Noto Serif', serif; }
+      </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar (Authority Source: Shared Components JSON) -->
+<aside class="h-screen w-64 fixed left-0 top-0 z-40 bg-[#f4f3f1] dark:bg-[#1a1c1a] flex flex-col py-6 pr-4 font-manrope font-medium tracking-wide">
+<!-- Sidebar Header -->
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="close up professional headshot of a boutique manager with soft warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJF9KiDvnPZFQoBmWpKsAgXWhWXq8y5ATsneqLsXQRTFr7QNGGv-VtFSVYZwyGw7p01ShD0UqQ8nu9dTTasleAhMrmejfpsdt7r6m64O_ytQM_iN0D5MFe5UKXbbycwvhdvv6Qz_GQCRvTyL2_qlcc_4GtptFOIO84iCOvKXIIqlfDfTRrQ0jd1yMIzZ-EcEdpd7y1izqBRMz7xwrPvFa1E9_lS6h7X0HHLP-mlDvcqLSQvMttjE4Jcmu_Pff-Fjw8goGzNlePoq9F"/>
+</div>
+<div>
+<h2 class="text-sm font-bold text-[#7b5455]">Boutique Manager</h2>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Editorial Control</p>
+</div>
+</div>
+<h1 class="text-lg font-notoSerif text-[#7b5455]">The Editorial Boutique</h1>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 space-y-1">
+<!-- Active Item: Dashboard (Simulated as Analytics for this view) -->
+<a class="flex items-center gap-4 py-3 px-6 text-[#1a1c1a]/70 dark:text-[#faf9f6]/70 hover:bg-[#faf9f6]/50 transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="text-sm">Inventory</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-6 text-[#1a1c1a]/70 dark:text-[#faf9f6]/70 hover:bg-[#faf9f6]/50 transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="text-sm">Sales</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-6 text-[#1a1c1a]/70 dark:text-[#faf9f6]/70 hover:bg-[#faf9f6]/50 transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="text-sm">Expenses</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-6 text-[#1a1c1a]/70 dark:text-[#faf9f6]/70 hover:bg-[#faf9f6]/50 transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+<span class="text-sm">Orders</span>
+</a>
+<!-- Using Analytics as Active for "Admin Dashboard" intent -->
+<a class="flex items-center gap-4 py-3 px-6 bg-[#ffffff] dark:bg-[#2a2c2a] text-[#7b5455] rounded-r-full shadow-sm transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="equalizer" style="font-variation-settings: 'FILL' 1;">equalizer</span>
+<span class="text-sm font-semibold">Analytics</span>
+</a>
+</nav>
+<!-- CTA -->
+<div class="px-6 mt-6 mb-8">
+<button class="w-full py-3 bg-primary text-on-primary rounded-full text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity">
+                Create New Arrangement
+            </button>
+</div>
+<!-- Footer Links -->
+<div class="mt-auto pt-6 border-t border-on-surface/5 space-y-1">
+<a class="flex items-center gap-4 py-2 px-6 text-[#1a1c1a]/70 dark:text-[#faf9f6]/70 hover:bg-[#faf9f6]/50 transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="settings">settings</span>
+<span class="text-sm">Settings</span>
+</a>
+<a class="flex items-center gap-4 py-2 px-6 text-[#1a1c1a]/70 dark:text-[#faf9f6]/70 hover:bg-[#faf9f6]/50 transition-transform duration-200 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help_outline">help_outline</span>
+<span class="text-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen p-8 lg:p-12">
+<!-- Header -->
+<header class="flex justify-between items-end mb-12">
+<div>
+<p class="text-primary font-body uppercase tracking-[0.2em] text-xs font-bold mb-2">Boutique Overview</p>
+<h2 class="text-4xl font-notoSerif italic text-on-surface">Daily Performance</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="text-right">
+<p class="text-xs text-on-surface-variant font-medium">Monday, June 10</p>
+<p class="text-sm font-bold text-on-surface">Open for Business</p>
+</div>
+<div class="w-2 h-2 bg-secondary rounded-full"></div>
+</div>
+</header>
+<!-- Stats Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+<!-- Total Sales -->
+<div class="bg-surface-container-lowest p-6 rounded-lg transition-colors hover:bg-surface-container-high group">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+<span class="text-[10px] bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full font-bold">+12%</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Total Sales</p>
+<h3 class="text-2xl font-notoSerif text-on-surface">$14,280.00</h3>
+</div>
+<!-- Pending Orders -->
+<div class="bg-surface-container-lowest p-6 rounded-lg transition-colors hover:bg-surface-container-high">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-tertiary" data-icon="local_shipping">local_shipping</span>
+<span class="text-[10px] bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded-full font-bold">8 New</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Pending Orders</p>
+<h3 class="text-2xl font-notoSerif text-on-surface">24 Arrangements</h3>
+</div>
+<!-- Low Stock Alerts -->
+<div class="bg-surface-container-lowest p-6 rounded-lg transition-colors hover:bg-surface-container-high">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+<span class="text-[10px] bg-error-container text-on-error-container px-2 py-0.5 rounded-full font-bold text-error">Critical</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Low Stock Alerts</p>
+<h3 class="text-2xl font-notoSerif text-on-surface">Peonies &amp; Gilt Ribbons</h3>
+</div>
+<!-- Monthly Expenses -->
+<div class="bg-surface-container-lowest p-6 rounded-lg transition-colors hover:bg-surface-container-high">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="receipt_long">receipt_long</span>
+<span class="text-[10px] bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded-full font-bold">Target: $5k</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Monthly Expenses</p>
+<h3 class="text-2xl font-notoSerif text-on-surface">$3,150.42</h3>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Recent Sales Visualization -->
+<div class="lg:col-span-2 bg-surface-container-low rounded-lg p-8">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-notoSerif text-on-surface">Sales Performance</h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 bg-primary rounded-full"></div>
+<span class="text-xs font-medium opacity-60">Custom Orders</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 bg-secondary rounded-full"></div>
+<span class="text-xs font-medium opacity-60">Signature Gilt</span>
+</div>
+</div>
+</div>
+<!-- Chart Mockup -->
+<div class="relative h-64 flex items-end justify-between gap-4">
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
+<div class="border-t border-on-surface w-full"></div>
+<div class="border-t border-on-surface w-full"></div>
+<div class="border-t border-on-surface w-full"></div>
+<div class="border-t border-on-surface w-full"></div>
+</div>
+<!-- Bars -->
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full flex gap-1 items-end justify-center h-full">
+<div class="w-4 bg-primary-container rounded-t-sm h-[40%] transition-all hover:opacity-80"></div>
+<div class="w-4 bg-secondary-container rounded-t-sm h-[60%] transition-all hover:opacity-80"></div>
+</div>
+<span class="mt-4 text-[10px] uppercase tracking-tighter opacity-50 font-bold">Mon</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full flex gap-1 items-end justify-center h-full">
+<div class="w-4 bg-primary-container rounded-t-sm h-[55%] transition-all hover:opacity-80"></div>
+<div class="w-4 bg-secondary-container rounded-t-sm h-[45%] transition-all hover:opacity-80"></div>
+</div>
+<span class="mt-4 text-[10px] uppercase tracking-tighter opacity-50 font-bold">Tue</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full flex gap-1 items-end justify-center h-full">
+<div class="w-4 bg-primary-container rounded-t-sm h-[80%] transition-all hover:opacity-80"></div>
+<div class="w-4 bg-secondary-container rounded-t-sm h-[95%] transition-all hover:opacity-80"></div>
+</div>
+<span class="mt-4 text-[10px] uppercase tracking-tighter opacity-50 font-bold">Wed</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full flex gap-1 items-end justify-center h-full">
+<div class="w-4 bg-primary-container rounded-t-sm h-[30%] transition-all hover:opacity-80"></div>
+<div class="w-4 bg-secondary-container rounded-t-sm h-[50%] transition-all hover:opacity-80"></div>
+</div>
+<span class="mt-4 text-[10px] uppercase tracking-tighter opacity-50 font-bold">Thu</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full flex gap-1 items-end justify-center h-full">
+<div class="w-4 bg-primary-container rounded-t-sm h-[90%] transition-all hover:opacity-80"></div>
+<div class="w-4 bg-secondary-container rounded-t-sm h-[70%] transition-all hover:opacity-80"></div>
+</div>
+<span class="mt-4 text-[10px] uppercase tracking-tighter opacity-50 font-bold">Fri</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full flex gap-1 items-end justify-center h-full">
+<div class="w-4 bg-primary-container rounded-t-sm h-[65%] transition-all hover:opacity-80"></div>
+<div class="w-4 bg-secondary-container rounded-t-sm h-[85%] transition-all hover:opacity-80"></div>
+</div>
+<span class="mt-4 text-[10px] uppercase tracking-tighter opacity-50 font-bold">Sat</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full flex gap-1 items-end justify-center h-full">
+<div class="w-4 bg-primary-container rounded-t-sm h-[40%] transition-all hover:opacity-80"></div>
+<div class="w-4 bg-secondary-container rounded-t-sm h-[30%] transition-all hover:opacity-80"></div>
+</div>
+<span class="mt-4 text-[10px] uppercase tracking-tighter opacity-50 font-bold">Sun</span>
+</div>
+</div>
+</div>
+<!-- Deliveries List -->
+<div class="bg-surface-container-low rounded-lg p-8">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-notoSerif text-on-surface">Today's Deliveries</h3>
+<span class="material-symbols-outlined text-primary text-xl" data-icon="calendar_today">calendar_today</span>
+</div>
+<div class="space-y-6">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="a minimalist luxury bouquet of white roses and eucalyptus in a ceramic vase" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8Q920IeZ_Zrzu-pT_rhhCXejNcRvxZNMdEAaNFtCGznENj5CNh7gcxMAKi7gsc3CO7SWxG3dVe28woXMjvzwtY8K9aXwHknfx0KvupNK3i0D7z_0SNguJQ92T-U5xSEKV2CIHoPAGNcPpHq5jrjV3pX4RONT0Wp0JTEQPfNNfe2_tOMx92OmQsm7egCZEw-pIIoGRzzpzgpVJqvvTBkcnMOLxYMkvrVYiEkibAedc_HBvtNsSmAzxU6GTSIcmErySUe7c32i1yT75"/>
+</div>
+<div class="flex-1 border-b border-on-surface/5 pb-4">
+<p class="text-sm font-bold text-on-surface">Helena G.</p>
+<p class="text-xs text-on-surface-variant italic">Midnight Rose Box • 14:00</p>
+<div class="mt-2 flex items-center gap-1 text-[10px] font-bold text-secondary uppercase tracking-widest">
+<span class="material-symbols-outlined text-[12px]" data-icon="near_me">near_me</span>
+                                In Transit
+                            </div>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="vibrant summer flower arrangement with sunflowers and lavender in a gilt basket" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNbxK4oOaPYv9brc1qQKFR3SBTpotTclFwayzCCrji_E6iTypeEnvraQdq-DO6HeRNZcAOoSbuA3xFxMIybvWooyGGjS5B-scWqg-gzrx8bg7nyIDdh37U1vvau-yUlAgB3dPhyAnatFNvAO0Gp1OMhy-_v85lEapL2qKakn9hPYVEPv8mQiJGJvb7Zd64Buwj577LVn9hOsnZUb8b0nAjBWoiTZORE28MYPCWgO53nsMIXbwUGBdsq5c4vkd7EkJlL4ti8es5MjXR"/>
+</div>
+<div class="flex-1 border-b border-on-surface/5 pb-4">
+<p class="text-sm font-bold text-on-surface">Julian M.</p>
+<p class="text-xs text-on-surface-variant italic">Gilt Summer Harvest • 16:30</p>
+<div class="mt-2 flex items-center gap-1 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-40">
+<span class="material-symbols-outlined text-[12px]" data-icon="schedule">schedule</span>
+                                Queued
+                            </div>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="delicate peach ranunculus and white lilies in an elegant glass vase" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3iOf8f5tjyRQrXA-BFhpvP49LUN5EOm8epGYCvduVNRCmvMQCI1lSfFJjGrvEmu4SjlEJ3TT5NRXWaZrRZfoOk6ZSzpYDJ-lqSIV6P23sU6b98LE8FnfonOIar3E1VGawDnjBIGlB1nJW8MebPcxg9u4aa3qxrXCH03A2gDZNsOJgDf7kfOGqMEVY44oHc1xRYjup0yworXCu7iUxw_BI2HLe-uPd7602aG0I3qs538fO_1LM4yWhsnkKtSONXxAOh01yE0sC2sNa"/>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Sarah P.</p>
+<p class="text-xs text-on-surface-variant italic">Pastel Dreams Bowl • 18:00</p>
+<div class="mt-2 flex items-center gap-1 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-40">
+<span class="material-symbols-outlined text-[12px]" data-icon="schedule">schedule</span>
+                                Queued
+                            </div>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 border border-outline-variant/30 rounded-lg text-xs font-bold text-on-surface-variant uppercase tracking-widest hover:bg-surface-container-high transition-colors">
+                    View Dispatch Map
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer (Authority Source: Shared Components JSON) -->
+<footer class="w-full mt-auto flex flex-col items-center gap-8 py-12 px-4 border-t border-[#1a1c1a]/5 bg-[#f4f3f1] dark:bg-[#121212] font-manrope text-sm tracking-normal text-[#7b5455]">
+<div class="flex gap-8">
+<a class="text-[#1a1c1a]/50 dark:text-[#faf9f6]/50 hover:text-[#7b5455] dark:hover:text-[#f4c2c2] transition-all" href="#">Privacy Policy</a>
+<a class="text-[#1a1c1a]/50 dark:text-[#faf9f6]/50 hover:text-[#7b5455] dark:hover:text-[#f4c2c2] transition-all" href="#">Terms of Service</a>
+<a class="text-[#1a1c1a]/50 dark:text-[#faf9f6]/50 hover:text-[#7b5455] dark:hover:text-[#f4c2c2] transition-all" href="#">Shipping &amp; Returns</a>
+<a class="text-[#1a1c1a]/50 dark:text-[#faf9f6]/50 hover:text-[#7b5455] dark:hover:text-[#f4c2c2] transition-all" href="#">Contact Us</a>
+</div>
+<p class="font-notoSer italic text-[#7b5455]">© 2024 The Editorial Boutique. Handcrafted for Thoughtful Gifting.</p>
+</footer>
+</body></html>

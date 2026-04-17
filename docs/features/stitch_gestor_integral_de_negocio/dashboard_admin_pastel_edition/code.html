@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atelier Admin | The Ethereal Boutique</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#4c2a33",
+                    "primary": "#7c545d",
+                    "primary-fixed-dim": "#e9b7c1",
+                    "on-error": "#fff7f6",
+                    "tertiary": "#6f5a5d",
+                    "on-tertiary": "#fff7f7",
+                    "surface-dim": "#ebd5d8",
+                    "on-secondary": "#fef7ff",
+                    "secondary-container": "#eddcff",
+                    "surface-container": "#fde9ec",
+                    "tertiary-fixed": "#fee1e5",
+                    "surface-container-high": "#f8e3e6",
+                    "error-dim": "#67040d",
+                    "secondary-fixed": "#eddcff",
+                    "on-secondary-fixed": "#47385d",
+                    "on-primary-fixed-variant": "#6c464f",
+                    "surface-tint": "#7c545d",
+                    "primary-container": "#f8c4cf",
+                    "outline-variant": "#c2adb0",
+                    "on-surface": "#3d2f32",
+                    "surface-container-highest": "#f4dde0",
+                    "surface-container-low": "#fff0f2",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-dim": "#5c4c72",
+                    "surface-variant": "#f4dde0",
+                    "on-primary": "#fff7f7",
+                    "error-container": "#fa746f",
+                    "tertiary-dim": "#624e51",
+                    "background": "#fff8f7",
+                    "on-background": "#3d2f32",
+                    "inverse-primary": "#f8c4cf",
+                    "tertiary-container": "#fee1e5",
+                    "outline": "#887679",
+                    "on-secondary-fixed-variant": "#64547b",
+                    "secondary": "#68587f",
+                    "on-tertiary-container": "#645053",
+                    "secondary-fixed-dim": "#e0ccfa",
+                    "tertiary-fixed-dim": "#efd3d7",
+                    "primary-fixed": "#f8c4cf",
+                    "surface": "#fff8f7",
+                    "on-error-container": "#6e0a12",
+                    "on-surface-variant": "#6b5b5e",
+                    "on-primary-container": "#623d46",
+                    "on-tertiary-fixed": "#513e41",
+                    "surface-bright": "#fff8f7",
+                    "error": "#a83836",
+                    "on-secondary-container": "#5a4b71",
+                    "primary-dim": "#6f4851",
+                    "inverse-on-surface": "#a69a9b",
+                    "on-tertiary-fixed-variant": "#6f5a5d",
+                    "inverse-surface": "#130c0e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Plus Jakarta Sans"],
+                    "label": ["Plus Jakarta Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fff8f7; }
+        .font-serif { font-family: 'Noto Serif', serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-header { backdrop-filter: blur(24px); background-color: rgba(255, 248, 247, 0.7); }
+    </style>
+</head>
+<body class="bg-background text-on-surface overflow-x-hidden">
+<div class="flex min-h-screen">
+<!-- SideNavBar (Shared Component JSON Mapping) -->
+<aside class="h-screen w-64 border-r-0 bg-[#ffffff] dark:bg-zinc-900 flex flex-col p-6 space-y-4 fixed left-0 top-0 z-40">
+<div class="mb-8 flex flex-col space-y-1">
+<span class="font-serif text-xl text-[#7c545d] font-bold">Atelier Admin</span>
+<span class="text-xs font-label uppercase tracking-widest text-outline">Managing the Bloom</span>
+</div>
+<nav class="flex-grow space-y-2">
+<!-- Inventory (Inactive) -->
+<a class="flex items-center space-x-3 px-4 py-3 text-[#3d2f32] dark:text-zinc-400 font-sans text-sm tracking-wide uppercase hover:bg-[#fff0f2] dark:hover:bg-zinc-800 transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Inventory</span>
+</a>
+<!-- Sales (Inactive) -->
+<a class="flex items-center space-x-3 px-4 py-3 text-[#3d2f32] dark:text-zinc-400 font-sans text-sm tracking-wide uppercase hover:bg-[#fff0f2] dark:hover:bg-zinc-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span>Sales</span>
+</a>
+<!-- Expenses (Inactive) -->
+<a class="flex items-center space-x-3 px-4 py-3 text-[#3d2f32] dark:text-zinc-400 font-sans text-sm tracking-wide uppercase hover:bg-[#fff0f2] dark:hover:bg-zinc-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span>Expenses</span>
+</a>
+<!-- Orders (Inactive) -->
+<a class="flex items-center space-x-3 px-4 py-3 text-[#3d2f32] dark:text-zinc-400 font-sans text-sm tracking-wide uppercase hover:bg-[#fff0f2] dark:hover:bg-zinc-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+<span>Orders</span>
+</a>
+<!-- Analytics (Active) -->
+<a class="flex items-center space-x-3 px-4 py-3 bg-[#f4dde0] dark:bg-rose-900/30 text-[#7c545d] rounded-xl font-semibold font-sans text-sm tracking-wide uppercase transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard" style="font-variation-settings: 'FILL' 1;">leaderboard</span>
+<span>Analytics</span>
+</a>
+</nav>
+<div class="pt-6 border-t-0 bg-[#fff0f2] dark:bg-zinc-800/50 p-4 rounded-2xl">
+<div class="flex items-center space-x-3 mb-4">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a sophisticated female administrator in a professional yet soft atelier setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiIVP9rSsPn86SRzHnrzhVAZLmC0gKZEQA9XhFauFDpuGn_VdTc8moOYr8ev3sJrrVwKkz0h2WB2KkYVCStO2kF1Z95AOiNSTT1C0s8mKj_urjuCBx-3-UhvndPNyQhekln1LQ4ARRXHkQA67UI6pAarAGqlSbdcJPSGDBQzHPxUDA7Z8F2kMK_ClXnYXybpvwshIuUa43GWPTaUtY4PDx_t89gkTVBz11dUzStw_0k2BNec8ug-jiqNG4JAPblvkaOWGvG7SPbRay"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-primary">Admin Profile</span>
+<span class="text-[10px] uppercase text-outline">Rose Atelier Manager</span>
+</div>
+</div>
+<button class="w-full py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-full font-label text-xs uppercase tracking-widest shadow-sm hover:opacity-90 transition-all">
+                    New Arrangement
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-grow ml-64 p-10 bg-background min-h-screen">
+<!-- Top Header Action Area -->
+<header class="flex justify-between items-center mb-12">
+<div>
+<h1 class="font-serif text-4xl font-bold text-on-surface tracking-tight">Atelier Overview</h1>
+<p class="text-on-surface-variant mt-2 font-body italic">Crafting the digital garden for today's curated selections.</p>
+</div>
+<div class="flex items-center space-x-4">
+<div class="p-3 bg-surface-container-low rounded-full">
+<span class="material-symbols-outlined text-primary" data-icon="search">search</span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-full relative">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</div>
+</div>
+</header>
+<!-- Metrics Summary: Bento Grid Layout -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+<!-- Total Sales -->
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-[0px_12px_32px_rgba(61,47,50,0.06)] relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<span class="text-xs font-label uppercase tracking-widest text-outline">Total Sales</span>
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="payments">payments</span>
+</div>
+<div class="z-10">
+<h3 class="text-3xl font-serif font-bold text-on-surface">$12,480.00</h3>
+<p class="text-[10px] text-primary flex items-center mt-1">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="trending_up">trending_up</span>
+                            +14% FROM LAST MONTH
+                        </p>
+</div>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
+</div>
+<!-- Active Orders -->
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-[0px_12px_32px_rgba(61,47,50,0.06)] relative overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-xs font-label uppercase tracking-widest text-outline">Active Orders</span>
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="local_shipping">local_shipping</span>
+</div>
+<div>
+<h3 class="text-3xl font-serif font-bold text-on-surface">32</h3>
+<p class="text-[10px] text-secondary flex items-center mt-1">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="schedule">schedule</span>
+                            8 EXPEDITED DELIVERY
+                        </p>
+</div>
+</div>
+<!-- Low Stock Alerts -->
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-[0px_12px_32px_rgba(61,47,50,0.06)] border border-error/5">
+<div class="flex justify-between items-start">
+<span class="text-xs font-label uppercase tracking-widest text-outline">Low Stock Alerts</span>
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+</div>
+<div>
+<h3 class="text-3xl font-serif font-bold text-error">04</h3>
+<p class="text-[10px] text-error flex items-center mt-1 uppercase">
+                            Silk Ribbon, Peonies...
+                        </p>
+</div>
+</div>
+<!-- Monthly Expenses -->
+<div class="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<span class="text-xs font-label uppercase tracking-widest text-on-surface-variant">Monthly Expenses</span>
+<span class="material-symbols-outlined text-outline" data-icon="receipt_long">receipt_long</span>
+</div>
+<div>
+<h3 class="text-3xl font-serif font-bold text-on-surface">$4,210.30</h3>
+<p class="text-[10px] text-outline flex items-center mt-1 uppercase">
+                            Projected $5k Limit
+                        </p>
+</div>
+</div>
+</section>
+<!-- Main Content Area: Charts & Lists -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+<!-- Sales Performance Chart (Visual Simulation) -->
+<div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-2xl shadow-[0px_12px_32px_rgba(61,47,50,0.06)]">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h2 class="font-serif text-xl font-bold text-on-surface">Sales Performance</h2>
+<p class="text-xs text-outline uppercase tracking-widest">Revenue Flow Analysis</p>
+</div>
+<div class="flex items-center space-x-2 text-xs font-label">
+<span class="flex items-center"><span class="w-3 h-3 rounded-full bg-primary mr-2"></span>This Week</span>
+<span class="flex items-center ml-4"><span class="w-3 h-3 rounded-full bg-primary-container mr-2"></span>Last Week</span>
+</div>
+</div>
+<!-- Simplified Visual Representation of a Chart -->
+<div class="h-64 w-full flex items-end justify-between px-2 pt-10">
+<div class="w-12 bg-surface-container-high rounded-t-xl h-[40%] relative group">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl h-[60%] transition-all group-hover:h-[65%]"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline font-label uppercase">Mon</span>
+</div>
+<div class="w-12 bg-surface-container-high rounded-t-xl h-[60%] relative group">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl h-[70%] transition-all group-hover:h-[75%]"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline font-label uppercase">Tue</span>
+</div>
+<div class="w-12 bg-surface-container-high rounded-t-xl h-[50%] relative group">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl h-[85%] transition-all group-hover:h-[90%]"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline font-label uppercase">Wed</span>
+</div>
+<div class="w-12 bg-surface-container-high rounded-t-xl h-[80%] relative group">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-xl h-[45%] transition-all group-hover:h-[50%]"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline font-label uppercase">Thu</span>
+</div>
+<div class="w-12 bg-surface-container-high rounded-t-xl h-[70%] relative group">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-xl h-[90%] transition-all group-hover:h-[95%]"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline font-label uppercase">Fri</span>
+</div>
+<div class="w-12 bg-surface-container-high rounded-t-xl h-[90%] relative group">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-xl h-[75%] transition-all group-hover:h-[80%]"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline font-label uppercase">Sat</span>
+</div>
+<div class="w-12 bg-surface-container-high rounded-t-xl h-[40%] relative group">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-xl h-[30%] transition-all group-hover:h-[35%]"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline font-label uppercase">Sun</span>
+</div>
+</div>
+</div>
+<!-- Today's Deliveries -->
+<div class="bg-surface-container-low p-8 rounded-2xl flex flex-col">
+<h2 class="font-serif text-xl font-bold text-on-surface mb-6">Today's Deliveries</h2>
+<div class="space-y-4 flex-grow overflow-y-auto">
+<!-- Delivery Item 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between group hover:scale-[1.02] transition-all">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container text-sm" data-icon="local_florist">local_florist</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">Clara Vance</p>
+<p class="text-[10px] text-outline">Midnight Orchid</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-primary/10 text-primary text-[10px] rounded-full font-label uppercase tracking-tighter">In Transit</span>
+</div>
+<!-- Delivery Item 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between group hover:scale-[1.02] transition-all">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-container text-sm" data-icon="card_giftcard">card_giftcard</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">Henry Wu</p>
+<p class="text-[10px] text-outline">Custom Artisan Box</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-secondary-container text-secondary text-[10px] rounded-full font-label uppercase tracking-tighter">Preparing</span>
+</div>
+<!-- Delivery Item 3 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between group hover:scale-[1.02] transition-all">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="history_edu">history_edu</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">Eliza Bennet</p>
+<p class="text-[10px] text-outline">Journal &amp; Petals</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-surface-dim text-on-surface-variant text-[10px] rounded-full font-label uppercase tracking-tighter">Queued</span>
+</div>
+</div>
+<button class="mt-6 text-primary text-xs font-label uppercase tracking-widest flex items-center justify-center space-x-2 group">
+<span>View All Logistics</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Artisan Journal / Inventory Quick Look -->
+<section class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-[0px_12px_32px_rgba(61,47,50,0.06)] group">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Overhead view of florist's workstation with fresh roses, silk ribbons, and vintage stationery" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5PH6mWH2fPJe99CgKZtJgjBjMBkSep1KFZaT9vpmdEc5oDqFueyb6vz8EcFly3-bndzttj1h32pHTXW_ijZbNE2th-0kdzXw6b0dUTjwPYxnJ4XqNJcdqf3JSTdpo900wKMAMWg50jOBvygh3mF8jFkuWJ14aMRn1dxdp_rhVd_zGruVhprLsMxyYPt3iQnw8hLwOFbWEmUuFNxNi-CKFLdZO8njsix2tp3HkZmPpb6CGxxS85Djjf0bJ2NeMwl50X7PJoZF9AjqR"/>
+<div class="absolute inset-0 bg-primary/20 mix-blend-multiply"></div>
+<div class="absolute bottom-4 left-6">
+<h4 class="text-on-primary font-serif text-2xl font-bold">Featured Artisan</h4>
+</div>
+</div>
+<div class="p-6">
+<p class="text-on-surface text-sm leading-relaxed mb-4">
+                            "The Bloom of the Week" features rare Black Baccara roses sourced from our boutique growers in France. Stock levels are currently high, but demand is projected to spike.
+                        </p>
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-label uppercase bg-secondary-container px-3 py-1 rounded-full text-on-secondary-container">Restocked 2h ago</span>
+<a class="text-primary text-xs font-semibold underline decoration-2 underline-offset-4" href="#">Manage Batch</a>
+</div>
+</div>
+</div>
+<div class="flex flex-col justify-between">
+<div class="bg-primary/5 p-8 rounded-2xl border border-primary/10">
+<h3 class="font-serif text-xl font-bold text-primary mb-2 italic">Atelier Note</h3>
+<p class="text-on-surface-variant text-sm italic">
+                            "Remember to update the 'Care Guide' for the new Silk Ribbon arrivals. High moisture environments may affect the fiber integrity during long-distance shipping."
+                        </p>
+</div>
+<!-- Quick Actions Footer -->
+<div class="grid grid-cols-2 gap-4 mt-6">
+<button class="flex items-center justify-center space-x-2 py-4 bg-surface-container-highest rounded-xl text-primary font-label text-[10px] uppercase tracking-widest hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="file_upload">file_upload</span>
+<span>Export Data</span>
+</button>
+<button class="flex items-center justify-center space-x-2 py-4 bg-surface-container-highest rounded-xl text-primary font-label text-[10px] uppercase tracking-widest hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="settings">settings</span>
+<span>Atelier Settings</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Footer (Shared Component JSON Mapping) -->
+<footer class="w-full py-12 border-t-0 bg-[#fff0f2] dark:bg-rose-950/10 flex flex-col items-center justify-center space-y-6">
+<div class="flex space-x-8">
+<a class="text-[#3d2f32]/60 dark:text-rose-100/40 font-sans text-xs uppercase tracking-widest hover:text-[#7c545d] transition-colors opacity-80 hover:opacity-100" href="#">Privacy</a>
+<a class="text-[#3d2f32]/60 dark:text-rose-100/40 font-sans text-xs uppercase tracking-widest hover:text-[#7c545d] transition-colors opacity-80 hover:opacity-100" href="#">Terms</a>
+<a class="text-[#3d2f32]/60 dark:text-rose-100/40 font-sans text-xs uppercase tracking-widest hover:text-[#7c545d] transition-colors opacity-80 hover:opacity-100" href="#">Care Guide</a>
+</div>
+<p class="text-[#7c545d] dark:text-rose-300 font-sans text-xs uppercase tracking-widest">© 2024 The Digital Florist’s Atelier</p>
+</footer>
+</body></html>

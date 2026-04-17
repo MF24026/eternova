@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atelier Admin | Expense Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#fff0f2",
+                    "inverse-surface": "#130c0e",
+                    "inverse-primary": "#f8c4cf",
+                    "secondary": "#68587f",
+                    "on-primary-fixed-variant": "#6c464f",
+                    "surface-variant": "#f4dde0",
+                    "tertiary": "#6f5a5d",
+                    "secondary-container": "#eddcff",
+                    "error-dim": "#67040d",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#fde9ec",
+                    "inverse-on-surface": "#a69a9b",
+                    "on-error": "#fff7f6",
+                    "primary-fixed": "#f8c4cf",
+                    "secondary-fixed": "#eddcff",
+                    "primary-dim": "#6f4851",
+                    "on-tertiary-fixed": "#513e41",
+                    "on-secondary-fixed-variant": "#64547b",
+                    "on-secondary-container": "#5a4b71",
+                    "on-secondary-fixed": "#47385d",
+                    "on-tertiary": "#fff7f7",
+                    "error-container": "#fa746f",
+                    "primary-container": "#f8c4cf",
+                    "on-background": "#3d2f32",
+                    "on-secondary": "#fef7ff",
+                    "background": "#fff8f7",
+                    "error": "#a83836",
+                    "surface-container-high": "#f8e3e6",
+                    "on-tertiary-container": "#645053",
+                    "tertiary-fixed-dim": "#efd3d7",
+                    "tertiary-fixed": "#fee1e5",
+                    "surface-dim": "#ebd5d8",
+                    "tertiary-dim": "#624e51",
+                    "surface-tint": "#7c545d",
+                    "on-primary": "#fff7f7",
+                    "on-surface": "#3d2f32",
+                    "secondary-dim": "#5c4c72",
+                    "on-primary-container": "#623d46",
+                    "surface-container-highest": "#f4dde0",
+                    "on-tertiary-fixed-variant": "#6f5a5d",
+                    "on-primary-fixed": "#4c2a33",
+                    "surface": "#fff8f7",
+                    "surface-bright": "#fff8f7",
+                    "primary": "#7c545d",
+                    "on-surface-variant": "#6b5b5e",
+                    "outline": "#887679",
+                    "tertiary-container": "#fee1e5",
+                    "secondary-fixed-dim": "#e0ccfa",
+                    "on-error-container": "#6e0a12",
+                    "primary-fixed-dim": "#e9b7c1",
+                    "outline-variant": "#c2adb0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Plus Jakarta Sans"],
+                    "label": ["Plus Jakarta Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-serif { font-family: 'Noto Serif', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        /* Custom scrollbar for boutique feel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #fff8f7; }
+        ::-webkit-scrollbar-thumb { background: #f4dde0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container">
+<!-- SideNavBar Anchor -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r-0 bg-[#fff0f2] dark:bg-[#32282a] flex flex-col h-full py-6 space-y-4 z-40">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">local_florist</span>
+</div>
+<div>
+<h1 class="font-serif text-xl text-[#7c545d]">Atelier Admin</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-medium">Floral Management</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 px-2">
+<!-- Active Tab: Expenses -->
+<a class="flex items-center gap-3 text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 bg-gradient-to-r from-[#7c545d] to-[#f8c4cf] text-white rounded-full mx-2 px-4 py-3 shadow-sm translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Expenses</span>
+</a>
+<a class="flex items-center gap-3 text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Quotations</span>
+</a>
+<a class="flex items-center gap-3 text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined">local_shipping</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Orders</span>
+</a>
+<a class="flex items-center gap-3 text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Inventory</span>
+</a>
+<a class="flex items-center gap-3 text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Customers</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-full font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">add</span>
+<span class="text-xs uppercase tracking-wider">New Quote</span>
+</button>
+</div>
+<div class="pt-4 border-t border-outline-variant/10 px-2">
+<a class="flex items-center gap-3 text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Support</span>
+</a>
+<a class="flex items-center gap-3 text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-sans text-sm tracking-wide uppercase font-medium">Log Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen pb-20">
+<!-- TopAppBar Anchor -->
+<header class="sticky top-0 z-30 bg-[#fff8f7]/70 backdrop-blur-3xl px-8 py-4 flex justify-between items-center w-full">
+<div class="flex flex-col">
+<span class="text-2xl font-serif italic text-[#7c545d]">The Ethereal Boutique</span>
+<span class="text-[10px] text-on-surface-variant font-medium tracking-tighter">EXPENSE MANAGEMENT BUREAU</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center bg-surface-container-low px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-outline text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 placeholder:text-outline/50" placeholder="Search transactions..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-[#7c545d]">
+<button class="p-2 hover:bg-[#f4dde0]/50 rounded-full transition-colors duration-300">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 hover:bg-[#f4dde0]/50 rounded-full transition-colors duration-300">
+<span class="material-symbols-outlined">receipt_long</span>
+</button>
+<button class="p-2 hover:bg-[#f4dde0]/50 rounded-full transition-colors duration-300">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20">
+<img alt="Administrator Profile" data-alt="Close-up professional portrait of a woman with soft lighting and natural makeup against a neutral beige background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdRH1ferSDUGXmQ_cSos14YxitkcIFDolUJ10YgJtFIgN3NBPuFvBkL4tAsgrLleUxKAdUQ2SjQ5GaRBribSS3kVHxHh7-dJOItmQRL4qBwBVnjvr6MXxO2-YeMr1gnD66SStcWLhQRibQs1FLErj1DsvFc_zicYIiRyCGFckeqVxK3I03ec0oyKKCEHLEzSUdkofk0H_2I-oqzZLP7iBymjU-04egwrzbZ7Uv76CaVqakFUAx4dIvLaCvE7kn9aPBLvRUkMDbyo0G"/>
+</div>
+</div>
+</div>
+</header>
+<div class="px-8 mt-8 space-y-8">
+<!-- Hero Header Section -->
+<section class="flex justify-between items-end">
+<div class="max-w-xl">
+<h2 class="text-4xl font-serif text-on-surface leading-tight">Financial Bloom <span class="italic text-primary">&amp; Ledger</span></h2>
+<p class="text-on-surface-variant mt-2 max-w-md">Oversee your atelier's vital statistics. Manage operational costs with refined digital precision.</p>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-dim text-on-primary px-8 py-3 rounded-full flex items-center gap-2 shadow-sm hover:translate-y-[-1px] transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-medium">Add Expense</span>
+</button>
+</section>
+<!-- Bento Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-low rounded-[2rem] p-8 border border-outline-variant/10 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-2xl bg-surface-container-lowest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</div>
+<span class="text-xs font-bold text-primary px-3 py-1 bg-primary-container/30 rounded-full">+12%</span>
+</div>
+<div class="mt-8">
+<p class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Total Expenses</p>
+<h3 class="text-3xl font-serif text-on-surface mt-1">$42,850.00</h3>
+<p class="text-[10px] text-on-surface-variant/70 mt-2 italic">Reflects billing for current fiscal month</p>
+</div>
+</div>
+<div class="bg-surface-container-highest rounded-[2rem] p-8 border border-outline-variant/10 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-2xl bg-surface-container-lowest flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">diversity_3</span>
+</div>
+<span class="text-xs font-bold text-secondary px-3 py-1 bg-secondary-container/30 rounded-full">Stable</span>
+</div>
+<div class="mt-8">
+<p class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Payroll</p>
+<h3 class="text-3xl font-serif text-on-surface mt-1">$18,400.00</h3>
+<p class="text-[10px] text-on-surface-variant/70 mt-2 italic">12 Full-time artisans, 4 seasonal florists</p>
+</div>
+</div>
+<div class="bg-tertiary-container/30 rounded-[2rem] p-8 border border-outline-variant/10 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-2xl bg-surface-container-lowest flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">location_city</span>
+</div>
+<span class="text-xs font-bold text-tertiary px-3 py-1 bg-tertiary-container/30 rounded-full">Fixed</span>
+</div>
+<div class="mt-8">
+<p class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Rent &amp; Utilities</p>
+<h3 class="text-3xl font-serif text-on-surface mt-1">$6,200.00</h3>
+<p class="text-[10px] text-on-surface-variant/70 mt-2 italic">Main Atelier &amp; Greenhouse facility</p>
+</div>
+</div>
+</div>
+<!-- OCR Section & Table Wrapper -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- OCR Scanning Section -->
+<div class="lg:col-span-4 space-y-6">
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 border border-outline-variant/15 shadow-sm overflow-hidden relative group">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-pulse"></div>
+<h4 class="font-serif text-xl mb-6">Digital Transcription</h4>
+<div class="relative rounded-2xl overflow-hidden aspect-[4/5] bg-surface-container-low border border-dashed border-outline-variant">
+<!-- OCR Image Processing Visualization -->
+<img alt="Floral Invoice Scan" class="w-full h-full object-cover opacity-60 grayscale" data-alt="Close up of a stylized elegant paper invoice with handwritten notes and floral sketches, softly blurred and dreamlike lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQ8_qdEVC4xkMBmpy5a4FquWT23167Tv99f5NGaGUjm3MFkSObZ3r9oy7-JeZWyVRyuN95db2K3jjc7zKgOz9G5NSzpNJZgTTyEQz2uiVxxTQfPmT9LZZck0D7zIi3pMHdJlsUBmpfw-uAiMk7oeYYlim00aipuk_w0LFIXGOJJ8nOloTCSJhfA06v1fFussTB256hh6A4Mv5w3860-9DeOU7uGs84HfDgiNdwwA4Z2wC24JEihs0VQHaNe-BH59QB_BUDmmJ7wI1G"/>
+<!-- OCR Scanning Bar -->
+<div class="absolute top-1/4 left-0 w-full h-0.5 bg-primary/80 shadow-[0_0_15px_rgba(124,84,93,0.5)] z-10 animate-bounce"></div>
+<!-- Data Point Callouts -->
+<div class="absolute top-20 left-10 p-1 bg-primary text-[8px] text-on-primary rounded uppercase tracking-tighter animate-pulse">Vendor Detected</div>
+<div class="absolute bottom-32 right-12 p-1 bg-secondary text-[8px] text-on-primary rounded uppercase tracking-tighter animate-pulse">Total Extracted</div>
+<div class="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-lowest/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-4xl text-primary">upload_file</span>
+<p class="text-sm font-medium text-primary mt-2">Upload Invoice</p>
+<p class="text-[10px] text-on-surface-variant">PDF, JPG or PNG</p>
+</div>
+</div>
+<div class="mt-6 space-y-3">
+<div class="flex items-center gap-3 p-3 bg-surface-container-high rounded-xl">
+<span class="material-symbols-outlined text-primary text-sm">hourglass_empty</span>
+<div class="flex-1">
+<div class="h-1 w-full bg-outline-variant/30 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[75%]"></div>
+</div>
+<p class="text-[10px] mt-1 text-on-surface-variant">Extracting Line Items... 75%</p>
+</div>
+</div>
+<button class="w-full text-sm font-medium py-3 text-on-surface hover:text-primary border-b border-transparent hover:border-primary transition-all text-center">
+                                Processing history
+                            </button>
+</div>
+</div>
+</div>
+<!-- Expense Table Section -->
+<div class="lg:col-span-8">
+<div class="bg-surface rounded-[2rem] space-y-6">
+<!-- Filters -->
+<div class="flex flex-wrap items-center justify-between gap-4 bg-surface-container-low/50 p-4 rounded-3xl">
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-surface-container-lowest px-4 py-2 rounded-full border border-outline-variant/10">
+<span class="material-symbols-outlined text-xs text-on-surface-variant mr-2">calendar_today</span>
+<select class="bg-transparent border-none focus:ring-0 text-xs font-medium text-on-surface-variant appearance-none pr-8 cursor-pointer">
+<option>Last 30 Days</option>
+<option>Last Quarter</option>
+<option>Fiscal Year 2024</option>
+</select>
+</div>
+<div class="flex items-center bg-surface-container-lowest px-4 py-2 rounded-full border border-outline-variant/10">
+<span class="material-symbols-outlined text-xs text-on-surface-variant mr-2">filter_list</span>
+<select class="bg-transparent border-none focus:ring-0 text-xs font-medium text-on-surface-variant appearance-none pr-8 cursor-pointer">
+<option>All Categories</option>
+<option>Operating</option>
+<option>Product</option>
+<option>Payroll</option>
+<option>Rent</option>
+</select>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Showing 24 Transactions</span>
+</div>
+<!-- Table -->
+<div class="overflow-hidden bg-surface-container-lowest rounded-[2rem] border border-outline-variant/10">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/30">
+<th class="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Date</th>
+<th class="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Category</th>
+<th class="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Description</th>
+<th class="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Amount</th>
+<th class="px-6 py-4 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Receipt</th>
+<th class="px-6 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/5">
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5 text-sm font-medium text-on-surface">Oct 12, 2023</td>
+<td class="px-6 py-5">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter">Product</span>
+</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant italic">Silk Ribbon Bulk - Mauve &amp; Gold</td>
+<td class="px-6 py-5 text-sm font-bold text-on-surface">$1,240.00</td>
+<td class="px-6 py-5">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5 text-sm font-medium text-on-surface">Oct 10, 2023</td>
+<td class="px-6 py-5">
+<span class="bg-surface-container-highest text-on-primary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter">Operating</span>
+</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant italic">Climate Control Maintenance</td>
+<td class="px-6 py-5 text-sm font-bold text-on-surface">$450.00</td>
+<td class="px-6 py-5">
+<span class="material-symbols-outlined text-outline/30">pending</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5 text-sm font-medium text-on-surface">Oct 05, 2023</td>
+<td class="px-6 py-5">
+<span class="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter">Payroll</span>
+</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant italic">Bi-weekly Staff Salaries</td>
+<td class="px-6 py-5 text-sm font-bold text-on-surface">$9,200.00</td>
+<td class="px-6 py-5">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5 text-sm font-medium text-on-surface">Oct 01, 2023</td>
+<td class="px-6 py-5">
+<span class="bg-[#fde9ec] text-[#7c545d] text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter">Rent</span>
+</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant italic">Atelier Monthly Lease</td>
+<td class="px-6 py-5 text-sm font-bold text-on-surface">$5,500.00</td>
+<td class="px-6 py-5">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5 text-sm font-medium text-on-surface">Sep 28, 2023</td>
+<td class="px-6 py-5">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter">Product</span>
+</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant italic">Imported Peonies (NL Vendor)</td>
+<td class="px-6 py-5 text-sm font-bold text-on-surface">$2,800.00</td>
+<td class="px-6 py-5">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="flex items-center justify-between px-6 py-2">
+<button class="text-xs uppercase tracking-widest text-on-surface-variant font-bold hover:text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">arrow_back</span> Previous
+                            </button>
+<div class="flex items-center gap-2">
+<span class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-bold shadow-sm">1</span>
+<span class="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center text-xs font-medium cursor-pointer">2</span>
+<span class="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center text-xs font-medium cursor-pointer">3</span>
+</div>
+<button class="text-xs uppercase tracking-widest text-on-surface-variant font-bold hover:text-primary flex items-center gap-2">
+                                Next <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB Action (Suppressed on this administrative page as per instructions, but placeholder logic if needed) -->
+</body></html>

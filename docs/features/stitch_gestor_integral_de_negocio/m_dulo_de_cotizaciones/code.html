@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quotations | The Ethereal Boutique</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#fff0f2",
+                    "inverse-surface": "#130c0e",
+                    "inverse-primary": "#f8c4cf",
+                    "secondary": "#68587f",
+                    "on-primary-fixed-variant": "#6c464f",
+                    "surface-variant": "#f4dde0",
+                    "tertiary": "#6f5a5d",
+                    "secondary-container": "#eddcff",
+                    "error-dim": "#67040d",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#fde9ec",
+                    "inverse-on-surface": "#a69a9b",
+                    "on-error": "#fff7f6",
+                    "primary-fixed": "#f8c4cf",
+                    "secondary-fixed": "#eddcff",
+                    "primary-dim": "#6f4851",
+                    "on-tertiary-fixed": "#513e41",
+                    "on-secondary-fixed-variant": "#64547b",
+                    "on-secondary-container": "#5a4b71",
+                    "on-secondary-fixed": "#47385d",
+                    "on-tertiary": "#fff7f7",
+                    "error-container": "#fa746f",
+                    "primary-container": "#f8c4cf",
+                    "on-background": "#3d2f32",
+                    "on-secondary": "#fef7ff",
+                    "background": "#fff8f7",
+                    "error": "#a83836",
+                    "surface-container-high": "#f8e3e6",
+                    "on-tertiary-container": "#645053",
+                    "tertiary-fixed-dim": "#efd3d7",
+                    "tertiary-fixed": "#fee1e5",
+                    "surface-dim": "#ebd5d8",
+                    "tertiary-dim": "#624e51",
+                    "surface-tint": "#7c545d",
+                    "on-primary": "#fff7f7",
+                    "on-surface": "#3d2f32",
+                    "secondary-dim": "#5c4c72",
+                    "on-primary-container": "#623d46",
+                    "surface-container-highest": "#f4dde0",
+                    "on-tertiary-fixed-variant": "#6f5a5d",
+                    "on-primary-fixed": "#4c2a33",
+                    "surface": "#fff8f7",
+                    "surface-bright": "#fff8f7",
+                    "primary": "#7c545d",
+                    "on-surface-variant": "#6b5b5e",
+                    "outline": "#887679",
+                    "tertiary-container": "#fee1e5",
+                    "secondary-fixed-dim": "#e0ccfa",
+                    "on-error-container": "#6e0a12",
+                    "primary-fixed-dim": "#e9b7c1",
+                    "outline-variant": "#c2adb0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Plus Jakarta Sans"],
+                    "label": ["Plus Jakarta Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-serif { font-family: 'Noto Serif', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #f4dde0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Sidebar Navigation -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#fff0f2] dark:bg-[#32282a] flex flex-col py-6 space-y-4 z-50">
+<div class="px-8 mb-8">
+<h1 class="font-serif text-xl text-[#7c545d]">Atelier Admin</h1>
+<p class="font-sans text-[10px] tracking-widest uppercase font-medium text-[#3d2f32]/60">Floral Management</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 font-sans text-sm tracking-wide uppercase font-medium group" href="#">
+<span class="material-symbols-outlined text-[#7c545d]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 font-sans text-sm tracking-wide uppercase font-medium group" href="#">
+<span class="material-symbols-outlined text-[#7c545d]">payments</span>
+<span>Expenses</span>
+</a>
+<a class="bg-gradient-to-r from-[#7c545d] to-[#f8c4cf] text-white rounded-full mx-2 px-4 py-3 shadow-sm flex items-center gap-3 font-sans text-sm tracking-wide uppercase font-medium translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+<span>Quotations</span>
+</a>
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 font-sans text-sm tracking-wide uppercase font-medium group" href="#">
+<span class="material-symbols-outlined text-[#7c545d]">local_shipping</span>
+<span>Orders</span>
+</a>
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 font-sans text-sm tracking-wide uppercase font-medium group" href="#">
+<span class="material-symbols-outlined text-[#7c545d]">inventory_2</span>
+<span>Inventory</span>
+</a>
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-3 rounded-full transition-all flex items-center gap-3 font-sans text-sm tracking-wide uppercase font-medium group" href="#">
+<span class="material-symbols-outlined text-[#7c545d]">group</span>
+<span>Customers</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-gradient-to-br from-primary to-primary-dim text-on-primary py-3 rounded-full font-medium shadow-lg shadow-primary/20 flex items-center justify-center gap-2 mb-6">
+<span class="material-symbols-outlined">add</span>
+                New Quote
+            </button>
+<div class="space-y-1 border-t border-outline-variant/10 pt-4">
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-2 rounded-full transition-all flex items-center gap-3 font-sans text-xs tracking-wide uppercase font-medium" href="#">
+<span class="material-symbols-outlined text-sm">help_outline</span>
+<span>Support</span>
+</a>
+<a class="text-[#3d2f32] hover:bg-[#f4dde0] mx-2 px-4 py-2 rounded-full transition-all flex items-center gap-3 font-sans text-xs tracking-wide uppercase font-medium" href="#">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span>Log Out</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen p-8">
+<!-- Header -->
+<header class="flex justify-between items-center mb-10">
+<div>
+<h2 class="font-serif text-3xl text-on-surface tracking-tight">Create Quotation</h2>
+<p class="text-on-surface-variant font-medium">Drafting a new floral arrangement proposal</p>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-3 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Administrator Profile" class="h-full w-full object-cover" data-alt="professional portrait of a creative director woman with soft warm studio lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJuNvxRP7uyIa4zHK4fXjm3xqjvVyY6B4EOaOLJVE_0IPm8E4-_ipQ_v_P79MFlLsB8jel-7ovHcuyOXYvGlOao_QnNqvajd_fpHSUO0kCYec5q5rba_lcAsUz3WFe_9eGFw8SxFMOJb8--fhtoJhB732qbDVZDx4QPh7Mt7vx5DXiPjsDH_Vd8S4OiMzXzn-Mg1nvNVx-ABUUoW1s-gsTICDjrD4vBRjraQJLiD9EihNnmUbE7ELqG8zAT30i1Kb-C8yzFmwrlS4F"/>
+</div>
+</div>
+</header>
+<div class="grid grid-cols-12 gap-8">
+<!-- Left Column: Quote Builder -->
+<section class="col-span-12 xl:col-span-7 space-y-8">
+<!-- Customer Selection Bento -->
+<div class="bg-surface-container-low rounded-[2rem] p-8">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-serif text-xl">Customer Details</h3>
+<span class="bg-secondary-container text-on-secondary-container px-4 py-1 rounded-full text-xs font-bold tracking-widest uppercase">Select Client</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-primary ml-2">Search Customer</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant" placeholder="Start typing name..." type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-3 text-outline-variant">search</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-primary ml-2">Quote Date</label>
+<input class="w-full bg-surface-container-lowest border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 text-on-surface" type="date" value="2023-11-24"/>
+</div>
+</div>
+</div>
+<!-- Product Search & Inventory -->
+<div class="bg-surface-container-low rounded-[2rem] p-8">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-serif text-xl">Add to Arrangement</h3>
+<div class="flex gap-2">
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Fresh Blooms</div>
+<div class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Silk Ribbons</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<!-- Product Item Card -->
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 group hover:bg-primary-container/20 transition-all cursor-pointer">
+<div class="h-16 w-16 rounded-xl overflow-hidden bg-surface-container">
+<img alt="Ranunculus" class="h-full w-full object-cover" data-alt="macro close-up of a delicate pink ranunculus flower with many layers of thin petals in soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBorzrGa6UbJ-qsXNk5LL9vxlRsgk5wUZCZfuvx2ZTWaTEhPgnt0pidfnEYhSMk5LOMo0t-2omAB6bY8irEMjWexVALqdK9XJpkGYZUx9On9fI0LMBzrVCN4Q5Ae6KhOYXcqzLzOQhKK42T6wyRDNRWkOibgO-fkhLmZywV0yr3vPx9DpDE-kkcjIyH_WL_bvbMUNlMoht2V8eFmUxqrbsgwoFdNh-QIfo3baJRDrjrQjWLfKpia37A0oYCc5L2R4noiMog1NeE9Ell"/>
+</div>
+<div class="flex-1">
+<p class="font-serif text-sm">Persian Ranunculus</p>
+<p class="text-xs text-on-surface-variant">$4.50 / stem</p>
+</div>
+<button class="bg-surface-container-high p-2 rounded-full text-primary hover:bg-primary hover:text-on-primary transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<!-- Product Item Card -->
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 group hover:bg-primary-container/20 transition-all cursor-pointer">
+<div class="h-16 w-16 rounded-xl overflow-hidden bg-surface-container">
+<img alt="Peony" class="h-full w-full object-cover" data-alt="close-up of a large pale blush peony bloom in full flower with soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1DJZPML6K1cjkNLWPjVSxGQBxupc_Nu9XmWxZMFrc5pRYI_JXwkcgWL9gqt95AgwcvRFAa-QiUx1xBByCBjzl2qzW-taCUyQ_olFrfPS7Q7Zt8tGhsvWDRYbxQbRHD-GR4pmU4ALazvFr483l-WmInmftHfJT2i0zEOMvvpEwX5pFMQCbpogWrSNliGawH-zr-Avt_nCHmCUkdBkugC6QtMlbIHa8UZzIgQ6ECNoVW9KL_96uxDIcO_7ATTXL7meuEe58-vtc-XM6"/>
+</div>
+<div class="flex-1">
+<p class="font-serif text-sm">Sarah Bernhardt Peony</p>
+<p class="text-xs text-on-surface-variant">$12.00 / stem</p>
+</div>
+<button class="bg-surface-container-high p-2 rounded-full text-primary hover:bg-primary hover:text-on-primary transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Selected Items Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-[10px] font-bold uppercase tracking-[0.2em] text-outline border-b border-outline-variant/20">
+<th class="pb-4 pl-2">Item Description</th>
+<th class="pb-4">Qty</th>
+<th class="pb-4">Price</th>
+<th class="pb-4 text-right pr-2">Total</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-b border-outline-variant/10">
+<td class="py-4 pl-2">
+<p class="font-serif">Champagne Rose Cluster</p>
+<p class="text-[10px] text-on-surface-variant">Imported Ecuador Roses</p>
+</td>
+<td class="py-4">
+<div class="flex items-center gap-3">
+<button class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-xs">remove</span></button>
+<span class="font-medium">12</span>
+<button class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-xs">add</span></button>
+</div>
+</td>
+<td class="py-4 font-medium">$3.50</td>
+<td class="py-4 text-right font-bold pr-2">$42.00</td>
+</tr>
+<tr>
+<td class="py-4 pl-2">
+<p class="font-serif">Silk Velvet Ribbon</p>
+<p class="text-[10px] text-on-surface-variant">3m Dusty Rose</p>
+</td>
+<td class="py-4">
+<div class="flex items-center gap-3">
+<button class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-xs">remove</span></button>
+<span class="font-medium">1</span>
+<button class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-xs">add</span></button>
+</div>
+</td>
+<td class="py-4 font-medium">$15.00</td>
+<td class="py-4 text-right font-bold pr-2">$15.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Recent Quotations List -->
+<div class="bg-surface-container-lowest border border-outline-variant/10 rounded-[2rem] p-8">
+<h3 class="font-serif text-xl mb-6">Recent Quotations</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 hover:bg-surface-container-low rounded-2xl transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<div>
+<p class="font-serif font-bold text-sm">#QT-4829 — Evelyn Sinclair</p>
+<p class="text-xs text-on-surface-variant italic">Wedding Floral Package</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<p class="text-sm font-bold">$1,240.00</p>
+<p class="text-[10px] uppercase font-bold text-secondary">Accepted</p>
+</div>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-primary-container">
+<span class="material-symbols-outlined text-primary">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 hover:bg-surface-container-low rounded-2xl transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">drafts</span>
+</div>
+<div>
+<p class="font-serif font-bold text-sm">#QT-4830 — Julian Thorne</p>
+<p class="text-xs text-on-surface-variant italic">Anniversary Centerpiece</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<p class="text-sm font-bold">$215.00</p>
+<p class="text-[10px] uppercase font-bold text-outline">Draft</p>
+</div>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full hover:bg-primary-container">
+<span class="material-symbols-outlined text-primary">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Column: Live PDF Preview -->
+<aside class="col-span-12 xl:col-span-5">
+<div class="sticky top-8 space-y-6">
+<div class="bg-surface-container-lowest shadow-[0px_12px_32px_rgba(61,47,50,0.06)] rounded-[2.5rem] overflow-hidden">
+<!-- PDF Layout Preview Header -->
+<div class="bg-surface-container-high px-8 py-4 flex justify-between items-center border-b border-outline-variant/10">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Live PDF Preview</span>
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full bg-error/20"></div>
+<div class="w-3 h-3 rounded-full bg-primary/20"></div>
+<div class="w-3 h-3 rounded-full bg-secondary/20"></div>
+</div>
+</div>
+<!-- PDF Body -->
+<div class="p-12 aspect-[1/1.41] flex flex-col text-[#3d2f32]">
+<div class="flex justify-between items-start mb-12">
+<div>
+<h4 class="font-serif italic text-2xl text-primary mb-1">The Ethereal Boutique</h4>
+<p class="text-[10px] tracking-widest uppercase opacity-60">Fine Florals &amp; Curated Gifts</p>
+</div>
+<div class="text-right">
+<p class="font-serif text-lg">Quotation</p>
+<p class="text-[10px] opacity-60">#QT-4831</p>
+<p class="text-[10px] opacity-60">Nov 24, 2023</p>
+</div>
+</div>
+<div class="mb-10 text-xs">
+<p class="font-bold uppercase tracking-widest text-primary mb-2 opacity-50">Prepared For</p>
+<p class="font-serif text-lg">Lady Seraphina Wright</p>
+<p class="opacity-70">12 Primrose Lane, London</p>
+<p class="opacity-70">seraphina@thewrights.com</p>
+</div>
+<div class="flex-1">
+<table class="w-full text-xs">
+<thead>
+<tr class="border-b border-primary/10">
+<th class="py-2 text-left font-bold uppercase tracking-widest opacity-40">Detail</th>
+<th class="py-2 text-center font-bold uppercase tracking-widest opacity-40">Qty</th>
+<th class="py-2 text-right font-bold uppercase tracking-widest opacity-40">Total</th>
+</tr>
+</thead>
+<tbody class="font-serif">
+<tr class="border-b border-primary/5">
+<td class="py-4">Champagne Rose Cluster (Ecuador)</td>
+<td class="py-4 text-center">12</td>
+<td class="py-4 text-right">$42.00</td>
+</tr>
+<tr class="border-b border-primary/5">
+<td class="py-4">Silk Velvet Ribbon (3m)</td>
+<td class="py-4 text-center">1</td>
+<td class="py-4 text-right">$15.00</td>
+</tr>
+<tr>
+<td class="py-4 italic">Bespoke Arrangement Fee</td>
+<td class="py-4 text-center">—</td>
+<td class="py-4 text-right">$35.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-auto border-t border-primary/20 pt-8">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[10px] font-bold uppercase tracking-widest opacity-50">Subtotal</span>
+<span class="font-medium text-sm">$92.00</span>
+</div>
+<div class="flex justify-between items-center mb-4">
+<span class="text-[10px] font-bold uppercase tracking-widest opacity-50">Tax (8%)</span>
+<span class="font-medium text-sm">$7.36</span>
+</div>
+<div class="flex justify-between items-center bg-surface-container-low px-4 py-3 rounded-xl">
+<span class="font-bold uppercase tracking-[0.2em] text-primary">Grand Total</span>
+<span class="font-serif text-2xl text-primary">$99.36</span>
+</div>
+<div class="mt-8 text-[9px] text-center italic opacity-40 leading-relaxed">
+                                    This quotation is valid for 7 days. Prices are subject to floral seasonal availability. 
+                                    <br/>Thank you for choosing The Ethereal Boutique.
+                                </div>
+</div>
+</div>
+</div>
+<!-- PDF Action Buttons -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-3 bg-surface-container-highest text-on-surface py-4 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary">picture_as_pdf</span>
+                            Export PDF
+                        </button>
+<button class="flex items-center justify-center gap-3 bg-primary text-on-primary py-4 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:bg-primary-dim transition-all">
+<span class="material-symbols-outlined">send</span>
+                            Send via Email
+                        </button>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Floating Mobile Nav Overlay (Hidden on Desktop) -->
+<nav class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-surface/70 backdrop-blur-3xl rounded-full px-6 py-4 flex items-center gap-8 shadow-2xl z-50">
+<a class="text-primary" href="#"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span></a>
+<a class="text-on-surface-variant" href="#"><span class="material-symbols-outlined">payments</span></a>
+<a class="text-on-surface-variant" href="#"><span class="material-symbols-outlined">description</span></a>
+<a class="text-on-surface-variant" href="#"><span class="material-symbols-outlined">group</span></a>
+</nav>
+</body></html>
