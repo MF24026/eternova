@@ -12,7 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
+        // Register alias — apply to tenant-scoped routes when ready
+        $middleware->alias([
+            'tenant' => \App\Modules\Tenancy\Http\Middleware\EnsureTenant::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
