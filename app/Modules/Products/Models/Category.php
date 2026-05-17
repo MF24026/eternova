@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Products\Models;
 
+use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,9 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
+    use BelongsToTenant;
     use HasFactory;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'slug',
         'description',

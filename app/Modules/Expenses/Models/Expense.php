@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Expenses\Models;
 
 use App\Models\User;
+use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Expense extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
+        'tenant_id',
         'expense_category_id',
         'description',
         'amount',

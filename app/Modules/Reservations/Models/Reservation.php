@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Reservations\Models;
 
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Reservation extends Model
 {
+    use BelongsToTenant;
     use HasFactory;
 
     protected $fillable = [
+        'tenant_id',
         'customer_id',
         'description',
         'occasion',

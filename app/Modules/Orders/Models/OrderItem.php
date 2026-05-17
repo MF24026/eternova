@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Orders\Models;
 
 use App\Modules\Products\Models\Product;
+use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
+        'tenant_id',
         'order_id',
         'product_id',
         'product_name',

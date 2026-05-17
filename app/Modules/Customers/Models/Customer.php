@@ -6,15 +6,18 @@ namespace App\Modules\Customers\Models;
 
 use App\Modules\Orders\Models\Order;
 use App\Modules\Reservations\Models\Reservation;
+use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Customer extends Model
 {
+    use BelongsToTenant;
     use HasFactory;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'phone',
