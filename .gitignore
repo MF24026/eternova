@@ -18,3 +18,18 @@ yarn-error.log
 /.idea
 /.vscode
 /.claude/settings.local.json
+/.claude/*
+CLAUDE.md
+
+# Playwright
+/test-results
+/tests/e2e-report
+/playwright-report
+/playwright/.cache
+/.playwright-mcp/
+
+# QA screenshots (kept locally only; QA reports attach them to PRs)
+/qa-*.png
+/login-*.png
+/admin-*.png
+/storefront-*.png
