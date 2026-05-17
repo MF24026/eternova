@@ -6,7 +6,7 @@ import { useSwipeClose } from '@/Composables/useSwipeClose';
 const props = defineProps({
     open: Boolean,
     title: String,
-    side: { type: String, default: 'right' },
+    subtitle: String,
 });
 
 const emit = defineEmits(['close']);
@@ -15,7 +15,7 @@ const panelRef = ref(null);
 
 const { translateX } = useSwipeClose(panelRef, {
     onClose: () => emit('close'),
-    direction: props.side === 'right' ? 'right' : 'left',
+    direction: 'right',
     threshold: 150,
 });
 
@@ -26,61 +26,27 @@ watch(() => props.open, (isOpen) => {
 
 <template>
     <Teleport to="body">
-        <Transition
-            enter-active-class="transition-opacity duration-300"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition-opacity duration-300"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
+        <div :class="['slideover-scrim', { open }]" @click="$emit('close')"/>
+        <aside
+            ref="panelRef"
+            :class="['slideover', { open }]"
+            :style="translateX ? { transform: `translateX(${translateX}px)` } : null"
         >
-            <div
-                v-if="open"
-                class="fixed inset-0 z-50 bg-on-surface/20"
-                @click="$emit('close')"
-            />
-        </Transition>
-
-        <Transition
-            :enter-active-class="'transition-transform duration-300 ease-out'"
-            :enter-from-class="side === 'right' ? 'translate-x-full' : '-translate-x-full'"
-            enter-to-class="translate-x-0"
-            :leave-active-class="'transition-transform duration-300 ease-in'"
-            leave-from-class="translate-x-0"
-            :leave-to-class="side === 'right' ? 'translate-x-full' : '-translate-x-full'"
-        >
-            <div
-                v-if="open"
-                ref="panelRef"
-                :class="[
-                    'fixed inset-y-0 z-50 w-full max-w-md bg-surface-container-lowest shadow-ambient flex flex-col',
-                    side === 'right' ? 'right-0' : 'left-0',
-                ]"
-                :style="{ transform: translateX ? `translateX(${translateX}px)` : undefined }"
-            >
-                <!-- Header -->
-                <div class="flex items-center justify-between px-6 py-4">
-                    <h2 v-if="title" class="headline-serif text-lg font-semibold text-on-surface">
-                        {{ title }}
-                    </h2>
-                    <button
-                        class="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-surface-container-high transition-colors"
-                        @click="$emit('close')"
-                    >
-                        <X class="h-5 w-5 text-on-surface-variant" />
-                    </button>
+            <header class="row" style="padding: 24px 24px 16px; align-items: flex-start; gap: 12px;">
+                <div class="grow">
+                    <div v-if="subtitle" class="label-gilt" style="margin-bottom: 6px">{{ subtitle }}</div>
+                    <h2 v-if="title" class="serif" style="margin: 0; font-size: 28px; line-height: 1.1">{{ title }}</h2>
                 </div>
-
-                <!-- Content -->
-                <div class="flex-1 overflow-y-auto px-6 pb-6">
-                    <slot />
-                </div>
-
-                <!-- Footer -->
-                <div v-if="$slots.footer" class="px-6 py-4 bg-surface-container-low">
-                    <slot name="footer" />
-                </div>
+                <button class="btn-icon" aria-label="Cerrar" @click="$emit('close')">
+                    <X :size="20"/>
+                </button>
+            </header>
+            <div class="scroll grow" style="padding: 0 24px 24px">
+                <slot/>
             </div>
-        </Transition>
+            <footer v-if="$slots.footer" style="padding: 16px 24px 24px; background: var(--surface-low)">
+                <slot name="footer"/>
+            </footer>
+        </aside>
     </Teleport>
 </template>

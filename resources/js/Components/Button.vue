@@ -5,59 +5,58 @@ const props = defineProps({
     variant: {
         type: String,
         default: 'primary',
-        validator: (v) => ['primary', 'secondary', 'tertiary', 'danger'].includes(v),
+        validator: (v) => ['primary', 'tertiary', 'secondary', 'ghost', 'icon'].includes(v),
     },
-    size: {
+    type: {
         type: String,
-        default: 'md',
-        validator: (v) => ['sm', 'md', 'lg'].includes(v),
+        default: 'button',
     },
+    href: String,
     disabled: Boolean,
     loading: Boolean,
+    fullWidth: Boolean,
 });
 
 defineEmits(['click']);
 
 const classes = computed(() => {
-    const base = 'inline-flex items-center justify-center font-medium transition-all duration-200 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
-
-    const variants = {
-        primary: 'gradient-signature text-on-primary hover:opacity-90 active:scale-[0.98]',
-        secondary: 'bg-transparent text-primary underline underline-offset-4 decoration-primary/30 hover:decoration-primary',
-        tertiary: 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest active:scale-[0.98]',
-        danger: 'bg-error text-on-primary hover:opacity-90 active:scale-[0.98]',
+    const map = {
+        primary: 'btn btn-primary',
+        tertiary: 'btn btn-tertiary',
+        secondary: 'btn-secondary',
+        ghost: 'btn btn-ghost',
+        icon: 'btn-icon',
     };
-
-    const sizes = {
-        sm: 'px-4 py-1.5 text-xs',
-        md: 'px-6 py-2.5 text-sm',
-        lg: 'px-8 py-3 text-base',
-    };
-
     return [
-        base,
-        variants[props.variant],
-        sizes[props.size],
-        (props.disabled || props.loading) && 'opacity-50 pointer-events-none',
+        map[props.variant],
+        props.fullWidth ? 'w-full justify-center' : '',
+        (props.disabled || props.loading) ? 'opacity-50 pointer-events-none' : '',
     ].filter(Boolean).join(' ');
 });
+
+const tag = computed(() => (props.href ? 'a' : 'button'));
 </script>
 
 <template>
-    <button
+    <component
+        :is="tag"
+        :type="tag === 'button' ? type : undefined"
+        :href="href"
         :class="classes"
         :disabled="disabled || loading"
         @click="$emit('click', $event)"
     >
         <svg
             v-if="loading"
-            class="mr-2 h-4 w-4 animate-spin"
-            fill="none"
+            class="animate-spin"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
+            fill="none"
         >
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25"/>
+            <path d="M4 12a8 8 0 0 1 8-8" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
         </svg>
-        <slot />
-    </button>
+        <slot/>
+    </component>
 </template>

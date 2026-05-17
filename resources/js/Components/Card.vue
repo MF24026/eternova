@@ -1,23 +1,20 @@
 <script setup>
-defineProps({
-    padding: { type: String, default: 'md' },
-    hoverable: Boolean,
+const props = defineProps({
+    hover: Boolean,
+    interactive: Boolean,
+    padded: { type: Boolean, default: true },
 });
 </script>
 
 <template>
     <div
-        :class="[
-            'rounded-xl bg-surface-container-lowest transition-all duration-200',
-            hoverable && 'hover:shadow-ambient cursor-pointer',
-            {
-                'p-4': padding === 'sm',
-                'p-6': padding === 'md',
-                'p-8': padding === 'lg',
-                'p-0': padding === 'none',
-            },
-        ]"
+        class="card"
+        :class="{
+            'card-hover': hover,
+            'card-interactive': interactive,
+        }"
+        :style="padded ? null : { padding: 0 }"
     >
-        <slot />
+        <slot/>
     </div>
 </template>
