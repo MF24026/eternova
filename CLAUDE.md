@@ -125,7 +125,7 @@ resources/
 - Componentes CSS base: `.btn`, `.btn-primary`, `.btn-tertiary`, `.btn-secondary`, `.btn-icon`, `.card`, `.field`, `.bloom`, `.serif`, `.label-gilt`, `.slideover`, `.tabs`
 
 ### Git
-- **Repositorio:** https://github.com/MF24026/carol-creaciones.git
+- **Repositorio:** https://github.com/MF24026/eternova.git
 - **Trabajo en equipo:** dos devs minimo (Carolina + Erick). Git es el unico canal de sincronizacion.
 - **Pull diario (no negociable):** al iniciar la jornada, ANTES de tocar codigo: `git fetch --all && git checkout develop && git pull origin develop`
 - Commits en ingles, formato convencional: feat|fix|refactor|docs(scope): message
