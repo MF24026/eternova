@@ -131,14 +131,20 @@ resources/
 - Commits en ingles, formato convencional: feat|fix|refactor|docs(scope): message
 - **PROHIBIDO** incluir Co-Authored-By de Claude o cualquier IA en los commits
 - **Branching strategy:** Git Flow simplificado
-  - `main` - produccion, solo merge via PR
+  - `main` - produccion, solo merge via PR desde develop
   - `develop` - rama de integracion, base para features
   - `feature/{module-name}` - nuevas funcionalidades (ej: feature/tenancy, feature/billing-wompi)
   - `fix/{issue-description}` - correccion de bugs
-  - `hotfix/{description}` - fixes urgentes directo a main
+  - `hotfix/{description}` - fixes urgentes directo a main + cherry-pick a develop
 - Crear rama desde `develop` antes de trabajar en cualquier feature
 - No hacer push sin confirmar con el usuario
 - No hacer merge a main sin PR revisado
+- **Direccion de PRs (regla estricta):**
+  - `feature/X` → PR contra **`develop`** SIEMPRE. Nunca contra main.
+  - `fix/X` → PR contra **`develop`**.
+  - `develop` → PR contra **`main`** SOLO cuando develop este estable y listo para release.
+  - `hotfix/X` → PR contra **`main`** (unica excepcion) + cherry-pick a develop despues del merge.
+- **Comando estandar para crear PR:** `gh pr create --base develop --fill` desde la feature branch.
 
 ### Docker
 - Todo se ejecuta via Laravel Sail (requiere sudo en este entorno, password: developer)
