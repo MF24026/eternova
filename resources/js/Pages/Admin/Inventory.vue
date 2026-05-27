@@ -5,7 +5,6 @@ import Surrogate from '@/Components/Surrogate.vue'
 import Slideover from '@/Components/Slideover.vue'
 import { Search, Filter, Minus, Plus } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 interface InventoryItem {
     id: string

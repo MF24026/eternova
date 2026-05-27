@@ -4,7 +4,6 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Slideover from '@/Components/Slideover.vue'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 interface ReservationEvent {
     c: string

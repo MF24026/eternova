@@ -637,6 +637,23 @@ select {
     background: var(--surface-mid);
 }
 
+/* Sales chart (raw SVG) */
+.chart-area {
+    stroke: var(--primary);
+    fill: none;
+    stroke-width: 2;
+}
+
+.chart-fill {
+    fill: url(#chart-fill);
+}
+
+.chart-grid {
+    stroke: var(--outline-soft);
+    stroke-dasharray: 2 4;
+    stroke-width: 1;
+}
+
 /* Calendar */
 .cal-grid {
     display: grid;

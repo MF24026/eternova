@@ -6,7 +6,6 @@ import {
     Calendar, Bell, Camera, Pencil
 } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 type TabId = 'marca' | 'contacto' | 'local' | 'impuestos' | 'pedidos' | 'cotizaciones' | 'reservas' | 'notif'
 

@@ -4,7 +4,6 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Surrogate from '@/Components/Surrogate.vue'
 import { Search, User, Minus, Plus, Wallet, CreditCard, MessageCircle } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 interface Product {
     id: string

@@ -5,7 +5,6 @@ import Surrogate from '@/Components/Surrogate.vue'
 import Slideover from '@/Components/Slideover.vue'
 import { Plus, FileText, ArrowRight } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 interface Quote {
     id: string

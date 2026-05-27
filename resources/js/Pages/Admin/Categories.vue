@@ -4,7 +4,6 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Surrogate from '@/Components/Surrogate.vue'
 import { Plus, ChevronDown, Pencil } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 interface SubCategory {
     id: string

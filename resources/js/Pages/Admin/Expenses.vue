@@ -4,7 +4,6 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Slideover from '@/Components/Slideover.vue'
 import { Plus, Receipt, Upload, Sparkles } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 interface Expense {
     id: number

@@ -5,7 +5,6 @@ import Surrogate from '@/Components/Surrogate.vue'
 import Slideover from '@/Components/Slideover.vue'
 import { Search, Layout, ClipboardList, Plus, Camera, Trash } from 'lucide-vue-next'
 
-defineOptions({ layout: AdminLayout })
 
 interface Product {
     id: string
