@@ -1,161 +1,190 @@
-# Roadmap - Carol Creaciones
+# Roadmap — Eternova
 
-## Metodologia
-Desarrollo agil con sprints de 1 semana. Cada sprint entrega funcionalidad completa y testeable. Los agentes trabajan en paralelo por dominio, sincronizandose en los contratos de datos (migraciones y modelos).
-
----
-
-## Sprint 0 - Fundacion (Prerequisito)
-**Objetivo:** Proyecto funcional con Docker, auth, layouts base y design system.
-
-- [x] Crear proyecto Laravel 12 con Sail
-- [ ] Configurar Docker (MySQL, Redis, PHP 8.4)
-- [ ] Instalar Vue 3 + Inertia.js + Tailwind CSS 4
-- [ ] Configurar Vite con HMR
-- [ ] Instalar Lucide Icons para Vue
-- [ ] Implementar design system "Ethereal Boutique" (tokens Tailwind)
-- [ ] Crear AdminLayout (sidebar, topbar, responsive)
-- [ ] Crear StorefrontLayout (navbar, footer, responsive)
-- [ ] Auth: login, registro, roles (admin/staff/customer)
-- [ ] Dark mode toggle (class-based strategy)
-- [ ] Componentes base: Button, Input, Card, Slideover, Table, Badge, Modal
-- [ ] Migraciones base: users, categories, products, customers
-
-**Entregable:** App corriendo en Docker con login funcional y layouts navegables.
+> **Estado:** producto en construcción. Sprint 0 en curso. MVP objetivo: Sprint 8.
+>
+> Esta es la vista de **producto** del roadmap. Para el plan de ingeniería detallado (épicas, tickets, owners, skills) ver `docs/engineering/engineering-process.md`.
 
 ---
 
-## Sprint 1 - Productos e Inventario
-**Objetivo:** CRUD completo de productos con gestion de stock.
+## Visión
 
-- [ ] CRUD Categorias (con subcategorias, drag-sort)
-- [ ] CRUD Productos (nombre, SKU, precio, costo, imagen, galeria)
-- [ ] Upload de imagenes con preview y crop
-- [ ] Listado de inventario con busqueda y filtros
-- [ ] Movimientos de stock: entradas, salidas, ajustes
-- [ ] Alertas de stock bajo
-- [ ] Panel lateral de movimientos recientes
-- [ ] Seeders con datos de ejemplo
+Eternova es una plataforma SaaS multi-tenant para negocios físicos pequeños de Latinoamérica: florerías, regalerías, boutiques de regalos, peluches y accesorios. Cada negocio (tenant) recibe en una sola aplicación web:
 
-**Entregable:** Gestion completa de productos e inventario desde el admin.
+- Catálogo público con checkout vía WhatsApp
+- Punto de venta interno (POS)
+- Inventario por sucursal en tiempo real
+- Gestión de pedidos y despachos
+- Reservas personalizadas con adelantos
+- Gastos con reconocimiento de facturas (OCR)
+- Cotizaciones con generación PDF
+- Dashboard con KPIs en vivo
+- Configuración de marca, moneda y país propios
 
----
-
-## Sprint 2 - Catalogo Digital y Carrito
-**Objetivo:** Storefront publico con carrito y checkout WhatsApp.
-
-- [ ] Landing/Hero del catalogo con colecciones destacadas
-- [ ] Grid de productos con filtros por categoria
-- [ ] Vista detalle de producto
-- [ ] Carrito de compras (Pinia + localStorage)
-- [ ] Resumen de pedido con Order ID
-- [ ] Boton "Enviar por WhatsApp" con mensaje formateado
-- [ ] Responsive mobile-first
-- [ ] Bloom Chips para categorias
-
-**Entregable:** Catalogo navegable donde clientes pueden armar pedidos y enviarlos por WhatsApp.
+La plataforma se monetiza con tres planes (Básico / Pro / Enterprise) cobrados vía Wompi (El Salvador + Colombia) con 30 días de prueba sin tarjeta.
 
 ---
 
-## Sprint 3 - POS (Punto de Venta)
-**Objetivo:** Terminal de venta interna para el negocio.
+## Metodología
 
-- [ ] Interfaz POS con grid de productos y carrito lateral
-- [ ] Busqueda rapida por nombre/SKU
-- [ ] Filtros por categoria (tabs)
-- [ ] Selector de cliente (walk-in o registrado)
-- [ ] Metodos de pago: efectivo, tarjeta
-- [ ] Completar checkout -> crear order + descontar stock
-- [ ] Registro de adelantos de reservas desde POS
-- [ ] Receipt/ticket basico
-
-**Entregable:** POS funcional para ventas presenciales.
+- Sprints de **2 semanas** (Scrumban Lite).
+- Cada sprint entrega funcionalidad **testeable end-to-end** (PHPUnit + Playwright).
+- Los agentes de Claude Code trabajan en paralelo por dominio, sincronizándose en los contratos de datos (migraciones y modelos).
+- Ver `docs/engineering/engineering-process.md` para el detalle del proceso, agentes y skills disponibles.
 
 ---
 
-## Sprint 4 - Pedidos y Despachos
-**Objetivo:** Gestion completa del ciclo de vida de pedidos.
+## Sprint 0 — Foundation multi-tenant
 
-- [ ] Listado de pedidos con tabs de estado
-- [ ] Vista detalle de pedido con timeline
-- [ ] Cambio de estados: pending -> preparing -> ready -> dispatched -> delivered
-- [ ] Panel lateral de despacho (direccion, tracking)
-- [ ] Notificacion al cliente (placeholder para WhatsApp API)
-- [ ] Filtros y busqueda de pedidos
-- [ ] Acciones rapidas: Mark Ready, Notify Client
+**Objetivo:** plataforma con multi-tenancy operativa, auth, layouts y schema base de Plans/Billing.
 
-**Entregable:** Seguimiento completo de pedidos desde creacion hasta entrega.
-
----
-
-## Sprint 5 - Reservas Personalizadas
-**Objetivo:** Sistema de reservas con adelantos y seguimiento.
-
-- [ ] Formulario de reserva (cliente): descripcion, fecha, ocasion
-- [ ] Listado de reservas (admin)
-- [ ] Registro de adelantos/pagos parciales
-- [ ] Estados: inquiry -> confirmed -> in_progress -> ready -> delivered
-- [ ] Integracion desde catalogo ("Reservar Pieza")
-- [ ] Integracion desde POS ("Reservation" tab)
-- [ ] Historial de pagos por reserva
-
-**Entregable:** Clientes pueden solicitar arreglos personalizados y el admin gestiona los adelantos.
+Resultado esperado:
+- Resolución de tenant por subdomain (`*.eternova.localhost`) + custom domain + fallback path-based
+- Schema completo de Tenants, Branches, Plans, Subscriptions, Invoices
+- Roles dentro del tenant: owner, admin, staff, customer
+- Layouts: AdminLayout, StorefrontLayout, MarketingLayout, OnboardingLayout, SuperAdminLayout
+- Onboarding signup → elegir plan → crear tenant → redirect al subdomain
+- 2 tenants demo seedados ("Rosa Eterna", "Tatiana") con sus owners y staff
 
 ---
 
-## Sprint 6 - Gastos y Finanzas
-**Objetivo:** Control de gastos con OCR e ingreso manual.
+## Sprint 1 — Catalog & Inventory
 
-- [ ] CRUD de gastos con categorias (operativos, productos, nomina, arriendo)
-- [ ] Upload de recibos/facturas
-- [ ] OCR con Tesseract: extraccion de vendor, monto, fecha
-- [ ] Vista de transcripcion digital con estado de procesamiento
-- [ ] KPI cards: total gastos, nomina, arriendo
-- [ ] Tabla de transacciones con filtros
-- [ ] Ingreso manual cuando no hay factura
-- [ ] Paginacion y busqueda
+**Objetivo:** módulo de catálogo completo con variants tipo Shopify, e inventario por sucursal.
 
-**Entregable:** Control financiero de todos los gastos del negocio.
+Resultado esperado:
+- CRUD Categorías (con subcategorías, drag-sort)
+- CRUD Productos con product_variants, product_options, M2M a categories, tags
+- Upload de imágenes (single + galería) con resize automático
+- Inventario por sucursal: ajustes, transferencias, movimientos
+- Alertas de stock bajo (event + email)
+- 20 productos seedados en cada tenant demo
 
 ---
 
-## Sprint 7 - Cotizaciones y PDF
-**Objetivo:** Generar cotizaciones profesionales con preview y exportacion PDF.
+## Sprint 2 — Storefront público + Carrito + Checkout WhatsApp
 
-- [ ] Crear cotizacion: seleccionar cliente, fecha, productos
-- [ ] Agregar items con cantidad y precio
-- [ ] Vista previa en vivo del PDF (panel lateral)
-- [ ] Exportar a PDF (DomPDF)
-- [ ] Enviar por email
-- [ ] Listado de cotizaciones con estados
-- [ ] Cotizaciones recientes
+**Objetivo:** catálogo público navegable con carrito persistente y checkout vía WhatsApp.
 
-**Entregable:** Cotizaciones profesionales con PDF branded de Carol Creaciones.
-
----
-
-## Sprint 8 - Dashboard y Analytics
-**Objetivo:** Panel principal con KPIs y metricas del negocio.
-
-- [ ] KPI Cards: ventas totales, pedidos activos, alertas stock, gastos
-- [ ] Grafico de ventas semanales (Chart.js o similar)
-- [ ] Entregas del dia con estados
-- [ ] Notas rapidas
-- [ ] Resumen de rendimiento vs metas
-- [ ] Export de datos
-
-**Entregable:** Vista ejecutiva del estado del negocio.
+Resultado esperado:
+- Storefront público en `/`, `/products`, `/products/{slug}`
+- Carrito persistente (Pinia + localStorage)
+- Checkout arma mensaje WhatsApp formateado y abre `wa.me`
+- Filtros por categoría con Bloom Chips
+- Responsive mobile-first
+- SEO básico: meta tags, sitemap por tenant
 
 ---
 
-## Sprint 9 - Polish y Produccion
-**Objetivo:** Pulir UX, testing, y preparar para produccion.
+## Sprint 3 — POS interno
 
-- [ ] Tests de integracion para flujos criticos
-- [ ] Optimizacion de queries (N+1, indexes)
-- [ ] PWA manifest para mobile
-- [ ] SEO basico en catalogo
-- [ ] Error handling global
-- [ ] Loading states y skeleton screens
-- [ ] Validacion final de responsive en mobile
-- [ ] Documentacion de deploy
+**Objetivo:** terminal de venta presencial para staff del negocio.
+
+Resultado esperado:
+- Grid de productos + carrito lateral
+- Búsqueda rápida nombre/SKU/barcode
+- Selector de cliente (walk-in o registrado)
+- Métodos de pago: efectivo, tarjeta (manual)
+- Checkout descuenta inventario automáticamente
+- Receipt HTML imprimible
+
+---
+
+## Sprint 4 — Orders y Despachos
+
+**Objetivo:** ciclo de vida completo de pedidos del tenant.
+
+Resultado esperado:
+- Listado con tabs por estado
+- Workflow: pending → preparing → ready → dispatched → delivered
+- Vista detalle con timeline de cambios
+- Tracking público read-only para clientes (link compartible)
+- Asignación de pedidos a staff
+
+---
+
+## Sprint 5 — Reservations
+
+**Objetivo:** reservas personalizadas para eventos (arreglos custom, bodas, etc).
+
+Resultado esperado:
+- Captura de reserva: descripción, fecha de entrega, ocasión, monto
+- Adelantos parciales (30% default, configurable en Settings del tenant)
+- Estados: inquiry → confirmed → in_progress → ready → delivered
+- Conversión a Order al entregar
+
+---
+
+## Sprint 6 — Expenses con OCR
+
+**Objetivo:** registro de gastos con reconocimiento automático de facturas.
+
+Resultado esperado:
+- CRUD gastos por categoría (operating, products, payroll, rent, other)
+- Upload de foto o PDF de factura
+- OCR vía Tesseract (queued job) extrae vendor, monto, fecha, ítems
+- UI de verificación: usuario corrige antes de guardar
+- Reporte mensual por categoría
+
+---
+
+## Sprint 7 — Quotations PDF
+
+**Objetivo:** cotizaciones profesionales con PDF descargable.
+
+Resultado esperado:
+- CRUD cotizaciones (draft → sent → accepted/rejected/expired)
+- Editor con items, ajustes de precio
+- Preview en vivo del PDF (DomPDF / Browsershot)
+- Envío por email/WhatsApp con link de aceptación
+- Conversión de cotización aceptada → Order
+
+---
+
+## Sprint 8 — Dashboard + Polish + Plan Gating
+
+**Objetivo:** MVP listo para mostrar a tenants reales.
+
+Resultado esperado:
+- Dashboard con KPI cards reales (ventas, pedidos, stock bajo, gastos del mes)
+- Gráficos Chart.js: ventas últimos 14/30 días, top productos
+- Feature gating por plan: features de Pro/Enterprise visibles pero bloqueadas con CTA en plan Básico
+- Onboarding tour para nuevos tenants
+- Pulido visual, accesibilidad básica WCAG AA, performance budget
+
+**Fin del MVP.** A partir de acá, el producto está listo para tenants reales (con billing manual mientras Sprint 9 cierra Wompi).
+
+---
+
+## Sprint 9+ — Post-MVP
+
+| Sprint | Tema |
+|---|---|
+| 9 | Billing real con Wompi: webhooks, dunning, downgrade/upgrade, prorrateo |
+| 10 | Custom domains end-to-end: verificación CNAME/TXT, SSL automático con Let's Encrypt DNS-01 |
+| 11 | Multi-idioma (es/en) + i18n LatAm completo (RUT/NIT/RFC, validación teléfono por país) |
+| 12 | Reportes avanzados: P&L mensual, ABC de productos, churn, cohorts |
+| 13 | Integraciones: email marketing (Mailchimp/Brevo), contabilidad (Alegra/Siigo) |
+| 14 | PWA del storefront para clientes finales |
+| 15+ | App móvil nativa para owners/staff (Flutter o React Native) |
+
+Estas prioridades pueden moverse según feedback de los primeros tenants reales.
+
+---
+
+## Riesgos del roadmap
+
+| Riesgo | Mitigación |
+|---|---|
+| Tenants reales encuentran fricciones que no anticipamos en MVP | Sprint 8 con beta cerrada de 3-5 tenants antes de open signup |
+| Wompi no aprueba la cuenta a tiempo | Plan B: facturación manual + Stripe como gateway secundario |
+| Multi-tenancy genera bugs de leak entre tenants en producción | Tests de aislamiento obligatorios en cada PR + auditoría externa antes de Sprint 9 |
+| Performance de queries con global scope crece linealmente con tenants | Benchmark al final de Sprint 1 + plan de sharding documentado si supera umbral |
+
+---
+
+## Histórico
+
+| Fecha | Evento |
+|---|---|
+| 2026-05-15 | Pivote de "Carol Creaciones" (single-tenant) a "Eternova" (SaaS multi-tenant) |
+| 2026-06-04 | Roadmap reescrito para reflejar el modelo SaaS y los sprints multi-tenant |
