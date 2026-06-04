@@ -5,6 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "type-check": "vue-tsc --noEmit",
+        "lint": "eslint resources/js --ext .ts,.vue",
         "test:e2e": "playwright test",
         "test:e2e:ui": "playwright test --ui",
         "test:e2e:headed": "playwright test --headed",
@@ -20,8 +22,10 @@
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
         "tailwindcss": "^4.2.2",
+        "typescript": "^5.9.3",
         "vite": "^7.0.7",
-        "vue": "^3.4.0"
+        "vue": "^3.4.0",
+        "vue-tsc": "^2.2.12"
     },
     "dependencies": {
         "@inertiajs/vue3": "^3.0.3",
