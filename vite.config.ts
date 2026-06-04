@@ -1,19 +1,26 @@
 import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
 
-// NOTE: The laravel-vite-plugin is intentionally NOT used here.
-// Inertia is dormant (issue #12 owns the full page migration from Inertia to Vue Router).
+// laravel-vite-plugin IS required for the Laravel <-> Vite handshake:
+//   - writes public/hot with the active dev server URL (blade @vite directive reads it)
+//   - generates the asset manifest in the format @vite() expects at runtime
+//   - refreshes blade views on file changes
+// It is independent of Inertia. Inertia removal is owned by issue #12 (page migration).
 // The SPA uses a single entry point + Vue Router lazy loading.
-// Multi-entry (admin.ts / storefront.ts / super-admin.ts) is a deferred optimization:
-//   it requires code-splitting per tenant-app-area and belongs to the frontend bootstrap
-//   sprint (issue #11, S0-E7). For now, single entry keeps the build simple and correct.
+// Multi-entry (admin.ts / storefront.ts / super-admin.ts) is a deferred optimization
+//   owned by issue #11 (S0-E7 frontend bootstrap).
 
 const vitePort = parseInt(process.env.VITE_PORT ?? '5174', 10);
 
 export default defineConfig({
     plugins: [
+        laravel({
+            input: ['resources/js/app.js'],
+            refresh: true,
+        }),
         vue({
             template: {
                 transformAssetUrls: {
@@ -29,19 +36,6 @@ export default defineConfig({
         alias: {
             '@': resolve(__dirname, 'resources/js'),
         },
-    },
-
-    // Single entry point for the Vue 3 SPA.
-    // TODO(#11): When S0-E7 (frontend bootstrap) lands, evaluate splitting into
-    //   admin / storefront / super-admin entries to reduce initial bundle size.
-    build: {
-        rollupOptions: {
-            input: {
-                app: resolve(__dirname, 'resources/js/app.js'),
-            },
-        },
-        manifest: true,
-        outDir: 'public/build',
     },
 
     server: {

@@ -11,7 +11,11 @@
         "noUnusedParameters": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "exactOptionalPropertyTypes": true,
+
+        // exactOptionalPropertyTypes: intentionally OFF.
+        // Breaks third-party Vue 3 component prop types (e.g. Pinia, vue-router, lucide-vue-next).
+        // verbatimModuleSyntax: intentionally OFF.
+        // Forces `import type` everywhere which conflicts with normal Vue SFC patterns.
 
         "jsx": "preserve",
         "jsxImportSource": "vue",
@@ -22,7 +26,6 @@
         "baseUrl": ".",
 
         "isolatedModules": true,
-        "verbatimModuleSyntax": true,
         "skipLibCheck": true,
 
         "useDefineForClassFields": true,
