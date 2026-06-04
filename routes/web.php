@@ -12,7 +12,7 @@ use Inertia\Inertia;
 */
 Route::get('/', fn () => Inertia::render('Storefront/Home'))->name('home');
 
-Route::get('/catalog/{slug?}', function (string $slug = null) {
+Route::get('/catalog/{slug?}', function (?string $slug = null) {
     return Inertia::render('Storefront/Catalog', ['slug' => $slug]);
 })->name('storefront.catalog');
 

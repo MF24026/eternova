@@ -29,11 +29,11 @@ class Subscription extends Model
     ];
 
     protected $casts = [
-        'trial_ends_at'        => 'datetime',
+        'trial_ends_at' => 'datetime',
         'current_period_start' => 'datetime',
-        'current_period_end'   => 'datetime',
-        'cancelled_at'         => 'datetime',
-        'status'               => 'string',
+        'current_period_end' => 'datetime',
+        'cancelled_at' => 'datetime',
+        'status' => 'string',
     ];
 
     public function tenant(): BelongsTo
