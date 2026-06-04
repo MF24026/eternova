@@ -872,7 +872,213 @@ Como SPA y API están en el **mismo subdomain por tenant**, no necesitamos CORS 
 
 ---
 
-## 11. ADRs pendientes (decisiones diferidas)
+## 11. Testing strategy
+
+Eternova sigue la **doctrina dual-layer no negociable**: toda mutación del sistema requiere DOS capas de test. Sin excepciones. Esta regla evita que tests mockeados nos digan "OK" mientras producción se rompe.
+
+### 11.1 Las dos capas
+
+| Capa | Herramienta | Cuándo aplica |
+|---|---|---|
+| Feature / integration | PHPUnit con `RefreshDatabase` + factories | Lógica de dominio, autorización, scopes multi-tenant, validación de Form Requests, transformación de Resources, flows backend completos |
+| End-to-end | Playwright contra browser real + DB real | Cualquier cambio que toque UI: forms, slideovers, modales, gates de autorización, flujos multi-paso, interacciones multi-tab/multi-rol |
+
+**PHPUnit solo** (sin Playwright) cuando:
+- Lógica de dominio pura (value objects, money calculations, validators puros)
+- Repositories sin UI
+- Comandos Artisan internos
+- Jobs queued sin interfaz humana
+
+**Playwright obligatorio** cuando:
+- Endpoint con form
+- Cambio en UI/slideover/modal
+- Gates de autorización (validar que role X NO pueda hacer Y desde la UI)
+- Flujos multi-paso (wizards, checkouts)
+- Interacciones multi-tab (logueado en 2 tenants distintos)
+- Cualquier cosa que vaya a producción tocando humanos
+
+### 11.2 Estructura de carpetas
+
+```
+tests/
+  Unit/                          # value objects, pure functions
+    Catalog/
+      MoneyTest.php
+      SlugGeneratorTest.php
+  Feature/                       # PHPUnit con RefreshDatabase
+    Auth/
+      LoginApiTest.php
+      RegisterApiTest.php
+      TokenApiTest.php
+    Catalog/
+      CategoryApiTest.php
+      ProductApiTest.php
+      ProductVariantApiTest.php
+    Inventory/
+      StockMovementTest.php
+      LowStockAlertTest.php
+    Tenancy/
+      TenantIsolationTest.php    # OBLIGATORIO por módulo
+    Billing/
+      SubscriptionTest.php
+      WebhookHandlingTest.php
+  e2e/                           # Playwright TypeScript specs
+    auth/
+      login.spec.ts
+      signup.spec.ts
+      onboarding.spec.ts
+    admin/
+      catalog/
+        categories.spec.ts
+        products.spec.ts
+      inventory/
+        stock.spec.ts
+    storefront/
+      cart.spec.ts
+      checkout-whatsapp.spec.ts
+    super-admin/
+      tenants-management.spec.ts
+  Fixtures/                      # JSON fixtures, archivos de prueba (PDFs, imágenes)
+    products-seed.json
+    sample-invoice.pdf
+```
+
+### 11.3 Convenciones obligatorias
+
+**Backend (PHPUnit):**
+- `declare(strict_types=1);` en todo test
+- Class `final` por defecto
+- Usar `RefreshDatabase` trait — **nunca** mockear DB
+- **Nunca** mockear boundaries HTTP en feature tests
+- Factory-driven: `Product::factory()->forTenant($tenantA)->count(5)->create()`
+- Naming descriptivo: `test_user_in_tenant_a_cannot_access_resources_of_tenant_b()` (no `testIndex`)
+- Arrange / Act / Assert con líneas en blanco entre bloques
+
+**Frontend (Playwright):**
+- TypeScript strict mode
+- Locators semánticos: `page.getByRole('button', { name: 'Crear producto' })` (no `page.locator('.btn-primary')`)
+- Cada spec arranca con su tenant seedeado vía API call de setup
+- Cleanup automático con `test.afterEach`
+- Screenshots automáticos en fallos (configurado en `playwright.config.ts`)
+- Tres viewports obligatorios para flujos críticos: `mobile` (375), `tablet` (768), `desktop` (1280)
+
+### 11.4 Test de aislamiento multi-tenant (regla dura)
+
+**Cada módulo debe tener al menos un test** que verifique que un usuario del tenant A **no puede** acceder/modificar/borrar recursos del tenant B vía API. Si no está ese test, el módulo no está "done".
+
+Patrón de referencia:
+
+```php
+final class ProductTenantIsolationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_user_of_tenant_a_receives_404_when_accessing_product_of_tenant_b(): void
+    {
+        $tenantA  = Tenant::factory()->create();
+        $tenantB  = Tenant::factory()->create();
+        $userA    = User::factory()->forTenant($tenantA, role: 'owner')->create();
+        $productB = Product::factory()->forTenant($tenantB)->create();
+
+        $this->actingAs($userA)
+            ->withHeader('X-Tenant-Id', $tenantA->id)
+            ->getJson("/api/v1/products/{$productB->id}")
+            ->assertStatus(404);
+    }
+}
+```
+
+### 11.5 Cobertura objetivo
+
+**No perseguir 100%.** Tener cobertura significa que el código se ejecuta, no que está bien.
+
+**Must-have (no negociable):**
+- 100% de endpoints REST con happy path + 1 error path mínimo
+- 100% de Policies con assert role correcto y assert role incorrecto
+- 100% de reglas de negocio en Services
+- 100% de migraciones reversibles (`migrate:fresh` y `migrate:rollback` deben funcionar)
+- Cada Event/Listener crítico (StockLowDetected, SubscriptionCanceled, etc.)
+- 1 test de aislamiento multi-tenant por módulo
+
+**Nice-to-have:**
+- Value objects edge cases
+- Validators con todos los formatos por país
+- Composables frontend (con Vitest si se justifica)
+
+### 11.6 Tests específicos del modelo REST
+
+- **Response envelope:** toda response exitosa tiene `data` + `meta`. Toda response paginada tiene `data` + `links` + `meta`.
+- **Error format:** validation errors devuelven 422 con `errors` map. Authorization errors devuelven 403 con `error_code`. Plan gates devuelven 402 con `feature`, `current_plan`, `required_plan`.
+- **Headers:** `Accept: application/json` siempre, `X-Request-Id` presente en todas las responses.
+- **Pagination:** test que `?page=2&per_page=20` devuelve los siguientes 20 items. Test que `?cursor=...` funciona en endpoints con cursor.
+- **Filtros y búsqueda:** test que `?search=rosa` filtra correctamente. Test que `?status[]=pending&status[]=preparing` aplica OR.
+
+### 11.7 Sanctum auth tests obligatorios
+
+- Login con email/password → cookie sesión + CSRF cookie set
+- `GET /api/v1/me` con cookie válida → 200 con UserResource
+- `GET /api/v1/me` sin auth → 401
+- Token endpoint devuelve Bearer válido, que funciona en `Authorization` header
+- Token revocado vía `logout` ya no funciona
+- CSRF mismatch devuelve 419
+
+### 11.8 CI integration
+
+GitHub Actions workflow:
+
+| Trigger | Qué corre | Bloquea merge |
+|---|---|---|
+| PR contra develop | `pint --test`, `npm run lint`, `vue-tsc --noEmit`, `php artisan test` | Sí |
+| PR contra develop | `npm run build` (asegura que el bundle compila) | Sí |
+| Push a develop | Lo anterior + Playwright completo + `scribe:generate` | Sí (revert automático si falla) |
+| Push a main | Idem develop + smoke tests post-deploy | Sí |
+| Manual `workflow_dispatch` | Suite completa de regresión visual | No (informativo) |
+
+Playwright en cada PR es caro (~5-15 min). Por eso corre sólo en develop y main, no en cada PR. La doctrina dual-layer se mantiene: el dev corre Playwright localmente antes del PR y el `qa-engineer` agent valida visualmente antes del merge.
+
+### 11.9 Comandos frecuentes
+
+```bash
+# Suite completa PHPUnit
+./vendor/bin/sail artisan test
+
+# Solo un módulo
+./vendor/bin/sail artisan test --filter=Catalog
+
+# Con coverage HTML
+./vendor/bin/sail artisan test --coverage-html=coverage
+
+# Playwright headless (CI mode)
+./vendor/bin/sail npm run test:e2e
+
+# Playwright con browser visible (debug local)
+./vendor/bin/sail npm run test:e2e:headed
+
+# Playwright UI interactivo
+./vendor/bin/sail npm run test:e2e:ui
+
+# Lint backend
+./vendor/bin/sail composer pint
+
+# Lint frontend
+./vendor/bin/sail npm run lint
+
+# Type check frontend
+./vendor/bin/sail npm run type-check
+```
+
+### 11.10 Skill de referencia
+
+Ver `.claude/skills/saas-testing-dual-layer/SKILL.md` para:
+- Boilerplate completo de feature tests multi-tenant
+- Patrones Playwright para slideovers, multi-tab, multi-rol
+- Setup de fixtures y factories
+- Trucos para tests de webhooks (Wompi)
+- Testing de queued jobs con `Queue::fake()` selectivo
+
+---
+
+## 12. ADRs pendientes (decisiones diferidas)
 
 | # | Tema | Cuándo decidir | Opciones |
 |---|---|---|---|
@@ -884,7 +1090,7 @@ Como SPA y API están en el **mismo subdomain por tenant**, no necesitamos CORS 
 
 ---
 
-## 12. Diagrama de bloques
+## 13. Diagrama de bloques
 
 ```
                         ┌────────────────────────────┐
@@ -946,7 +1152,7 @@ Como SPA y API están en el **mismo subdomain por tenant**, no necesitamos CORS 
 
 ---
 
-## 13. Referencias
+## 14. Referencias
 
 - `docs/engineering/engineering-process.md` — sprints, ceremonias, DoR/DoD
 - `docs/roadmap.md` — vista de producto del roadmap
