@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Modules\Tenancy\Models\Tenant;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory;
+
     use Notifiable;
 
     /**
@@ -58,6 +60,6 @@ class User extends Authenticatable
 
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Tenancy\Models\Tenant::class);
+        return $this->belongsTo(Tenant::class);
     }
 }

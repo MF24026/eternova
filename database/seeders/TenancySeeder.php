@@ -22,13 +22,13 @@ class TenancySeeder extends Seeder
     {
         $plans = [
             [
-                'name'           => 'Free',
-                'slug'           => 'free',
-                'price_cents'    => 0,
+                'name' => 'Free',
+                'slug' => 'free',
+                'price_cents' => 0,
                 'billing_period' => 'monthly',
-                'is_active'      => true,
-                'sort_order'     => 1,
-                'features'       => [
+                'is_active' => true,
+                'sort_order' => 1,
+                'features' => [
                     'Catalogo publico con hasta 20 productos',
                     'Carrito WhatsApp',
                     'POS basico',
@@ -36,22 +36,22 @@ class TenancySeeder extends Seeder
                     'Soporte por email',
                 ],
                 'limits' => [
-                    'max_products'           => 20,
-                    'max_orders_per_month'   => 50,
-                    'max_users'              => 1,
-                    'max_customers'          => 100,
+                    'max_products' => 20,
+                    'max_orders_per_month' => 50,
+                    'max_users' => 1,
+                    'max_customers' => 100,
                     'ocr_receipts_per_month' => 0,
-                    'pdf_quotations'         => false,
+                    'pdf_quotations' => false,
                 ],
             ],
             [
-                'name'           => 'Pro',
-                'slug'           => 'pro',
-                'price_cents'    => 2900,
+                'name' => 'Pro',
+                'slug' => 'pro',
+                'price_cents' => 2900,
                 'billing_period' => 'monthly',
-                'is_active'      => true,
-                'sort_order'     => 2,
-                'features'       => [
+                'is_active' => true,
+                'sort_order' => 2,
+                'features' => [
                     'Catalogo publico ilimitado',
                     'Carrito WhatsApp + reservas',
                     'POS completo con inventario',
@@ -63,22 +63,22 @@ class TenancySeeder extends Seeder
                     'Soporte prioritario',
                 ],
                 'limits' => [
-                    'max_products'           => 500,
-                    'max_orders_per_month'   => 1000,
-                    'max_users'              => 5,
-                    'max_customers'          => 2000,
+                    'max_products' => 500,
+                    'max_orders_per_month' => 1000,
+                    'max_users' => 5,
+                    'max_customers' => 2000,
                     'ocr_receipts_per_month' => 50,
-                    'pdf_quotations'         => true,
+                    'pdf_quotations' => true,
                 ],
             ],
             [
-                'name'           => 'Enterprise',
-                'slug'           => 'enterprise',
-                'price_cents'    => 9900,
+                'name' => 'Enterprise',
+                'slug' => 'enterprise',
+                'price_cents' => 9900,
                 'billing_period' => 'monthly',
-                'is_active'      => true,
-                'sort_order'     => 3,
-                'features'       => [
+                'is_active' => true,
+                'sort_order' => 3,
+                'features' => [
                     'Todo lo de Pro, sin limites',
                     'Usuarios ilimitados',
                     'OCR ilimitado',
@@ -89,12 +89,12 @@ class TenancySeeder extends Seeder
                     'SLA 99.9%',
                 ],
                 'limits' => [
-                    'max_products'           => null,
-                    'max_orders_per_month'   => null,
-                    'max_users'              => null,
-                    'max_customers'          => null,
+                    'max_products' => null,
+                    'max_orders_per_month' => null,
+                    'max_users' => null,
+                    'max_customers' => null,
                     'ocr_receipts_per_month' => null,
-                    'pdf_quotations'         => true,
+                    'pdf_quotations' => true,
                 ],
             ],
         ];
@@ -111,26 +111,24 @@ class TenancySeeder extends Seeder
 
     private function seedDemoTenant(): void
     {
+        // Column names updated for issue #6 (S0-E2): hybrid schema replaces JSON blobs.
         $tenant = Tenant::withoutGlobalScopes()->firstOrCreate(
             ['slug' => 'demo'],
             [
-                'id'           => (string) Str::ulid(),
-                'name'         => 'Atelier Demo',
-                'email'        => 'demo@eternova.app',
-                'status'       => 'active',
-                'brand_config' => [
-                    'logo'            => null,
-                    'primary_color'   => '#7c545d',
-                    'secondary_color' => '#5a4b71',
-                    'business_name'   => 'Atelier Demo',
-                ],
-                'locale_config' => [
-                    'country'         => 'SV',
-                    'currency'        => 'USD',
+                'id' => (string) Str::ulid(),
+                'name' => 'Atelier Demo',
+                'business_name' => 'Atelier Demo',
+                'email' => 'demo@eternova.app',
+                'status' => 'active',
+                'primary_color' => '#7c545d',
+                'secondary_color' => '#5a4b71',
+                'currency' => 'USD',
+                'country_code' => 'SV',
+                'timezone' => 'America/El_Salvador',
+                'locale_extra' => [
                     'currency_symbol' => '$',
-                    'timezone'        => 'America/El_Salvador',
-                    'phone_format'    => '#### ####',
-                    'date_format'     => 'DD/MM/YYYY',
+                    'phone_format' => '#### ####',
+                    'date_format' => 'DD/MM/YYYY',
                 ],
                 'trial_ends_at' => now()->addDays(30),
             ]
@@ -143,11 +141,11 @@ class TenancySeeder extends Seeder
             Subscription::withoutGlobalScopes()->firstOrCreate(
                 ['tenant_id' => $tenant->id, 'plan_id' => $proPlan->id],
                 [
-                    'id'                   => (string) Str::ulid(),
-                    'status'               => 'trialing',
-                    'trial_ends_at'        => now()->addDays(30),
+                    'id' => (string) Str::ulid(),
+                    'status' => 'trialing',
+                    'trial_ends_at' => now()->addDays(30),
                     'current_period_start' => now(),
-                    'current_period_end'   => now()->addDays(30),
+                    'current_period_end' => now()->addDays(30),
                 ]
             );
         }

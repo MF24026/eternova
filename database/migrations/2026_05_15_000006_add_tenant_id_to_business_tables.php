@@ -46,24 +46,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Step 1 — guarantee the demo tenant exists before we reference it
+        // Step 1 — guarantee the demo tenant exists before we reference it.
+        // Column names updated for issue #6 (S0-E2): brand_config / locale_config blobs
+        // replaced with hybrid explicit columns + brand_extra / locale_extra JSON.
         $demoTenant = Tenant::withoutGlobalScopes()->firstOrCreate(
             ['slug' => 'demo'],
             [
-                'id'           => (string) Str::ulid(),
-                'name'         => 'Atelier Demo',
-                'email'        => 'demo@eternova.app',
-                'status'       => 'active',
-                'brand_config' => [
-                    'logo'          => null,
-                    'primary_color' => '#7c545d',
-                ],
-                'locale_config' => [
-                    'country'  => 'SV',
-                    'currency' => 'USD',
-                    'timezone' => 'America/El_Salvador',
-                    'phone_format' => '#### ####',
-                ],
+                'id' => (string) Str::ulid(),
+                'name' => 'Atelier Demo',
+                'business_name' => 'Atelier Demo',
+                'email' => 'demo@eternova.app',
+                'status' => 'active',
+                'primary_color' => '#7c545d',
+                'currency' => 'USD',
+                'country_code' => 'SV',
+                'timezone' => 'America/El_Salvador',
             ]
         );
 
@@ -71,7 +68,7 @@ return new class extends Migration
 
         foreach ($this->businessTables as $table) {
             // Step 2 — add nullable column + FK
-            Schema::table($table, function (Blueprint $blueprint) use ($table): void {
+            Schema::table($table, function (Blueprint $blueprint): void {
                 $blueprint->string('tenant_id', 26)
                     ->nullable()
                     ->after('id');
@@ -88,7 +85,7 @@ return new class extends Migration
             DB::table($table)->whereNull('tenant_id')->update(['tenant_id' => $demoTenantId]);
 
             // Step 4 — make NOT NULL
-            Schema::table($table, function (Blueprint $blueprint) use ($table): void {
+            Schema::table($table, function (Blueprint $blueprint): void {
                 $blueprint->string('tenant_id', 26)->nullable(false)->change();
             });
         }

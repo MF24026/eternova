@@ -28,9 +28,9 @@ class Invoice extends Model
 
     protected $casts = [
         'amount_cents' => 'integer',
-        'paid_at'      => 'datetime',
-        'due_date'     => 'date',
-        'status'       => 'string',
+        'paid_at' => 'datetime',
+        'due_date' => 'date',
+        'status' => 'string',
     ];
 
     public function subscription(): BelongsTo

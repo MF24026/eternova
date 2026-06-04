@@ -23,7 +23,7 @@ class TenantScope implements Scope
         $currentTenant = app()->bound('currentTenant') ? app('currentTenant') : null;
 
         if ($currentTenant !== null) {
-            $builder->where($model->getTable() . '.tenant_id', $currentTenant->id);
+            $builder->where($model->getTable().'.tenant_id', $currentTenant->id);
         }
     }
 }

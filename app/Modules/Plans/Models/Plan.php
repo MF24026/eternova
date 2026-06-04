@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Plans\Models;
 
+use App\Modules\Billing\Models\Subscription;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,11 +25,11 @@ class Plan extends Model
     ];
 
     protected $casts = [
-        'price_cents'    => 'integer',
-        'features'       => 'array',
-        'limits'         => 'array',
-        'is_active'      => 'boolean',
-        'sort_order'     => 'integer',
+        'price_cents' => 'integer',
+        'features' => 'array',
+        'limits' => 'array',
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
         'billing_period' => 'string',
     ];
 
@@ -48,7 +49,7 @@ class Plan extends Model
 
     public function subscriptions(): HasMany
     {
-        return $this->hasMany(\App\Modules\Billing\Models\Subscription::class);
+        return $this->hasMany(Subscription::class);
     }
 
     /**

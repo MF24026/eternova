@@ -35,22 +35,22 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => fn () => $request->user() ? [
-                    'id'     => $request->user()->id,
-                    'name'   => $request->user()->name,
-                    'email'  => $request->user()->email,
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
                     'avatar' => $request->user()->avatar,
-                    'role'   => $request->user()->role ?? null,
+                    'role' => $request->user()->role ?? null,
                 ] : null,
             ],
             'tenant' => fn () => app()->bound('currentTenant') && app('currentTenant') ? [
-                'id'           => app('currentTenant')->id,
-                'slug'         => app('currentTenant')->slug,
-                'name'         => app('currentTenant')->name,
+                'id' => app('currentTenant')->id,
+                'slug' => app('currentTenant')->slug,
+                'name' => app('currentTenant')->name,
                 'brand_config' => app('currentTenant')->brand_config,
             ] : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'),
+                'error' => fn () => $request->session()->get('error'),
             ],
         ];
     }

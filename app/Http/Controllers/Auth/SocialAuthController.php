@@ -10,7 +10,6 @@ use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class SocialAuthController extends Controller
@@ -50,7 +49,7 @@ class SocialAuthController extends Controller
             ]);
 
             return redirect()->route('login')->withErrors([
-                'email' => 'No se pudo autenticar con ' . ucfirst($provider) . '. Intenta de nuevo.',
+                'email' => 'No se pudo autenticar con '.ucfirst($provider).'. Intenta de nuevo.',
             ]);
         }
 
@@ -59,33 +58,33 @@ class SocialAuthController extends Controller
 
         if ($user !== null) {
             $user->update([
-                'provider'    => $provider,
+                'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
-                'avatar'      => $user->avatar ?? $socialUser->getAvatar(),
+                'avatar' => $user->avatar ?? $socialUser->getAvatar(),
             ]);
 
             Log::info('Social auth: existing user logged in', [
-                'user_id'  => $user->id,
+                'user_id' => $user->id,
                 'provider' => $provider,
             ]);
         } else {
             $demoTenant = Tenant::findBySlug('demo');
 
             $user = User::create([
-                'tenant_id'   => $demoTenant?->id,
-                'name'        => $socialUser->getName() ?? $socialUser->getNickname() ?? 'Usuario',
-                'email'       => $socialUser->getEmail(),
-                'password'    => null,
-                'avatar'      => $socialUser->getAvatar(),
-                'provider'    => $provider,
+                'tenant_id' => $demoTenant?->id,
+                'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'Usuario',
+                'email' => $socialUser->getEmail(),
+                'password' => null,
+                'avatar' => $socialUser->getAvatar(),
+                'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
-                'role'        => 'customer',
+                'role' => 'customer',
             ]);
 
             Log::info('Social auth: new user created', [
-                'user_id'    => $user->id,
-                'provider'   => $provider,
-                'tenant_id'  => $user->tenant_id,
+                'user_id' => $user->id,
+                'provider' => $provider,
+                'tenant_id' => $user->tenant_id,
             ]);
         }
 

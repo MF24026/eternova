@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
 
         // Default super-admin user (no tenant_id — super-admins are platform-level)
         User::factory()->create([
-            'name'  => 'Test User',
+            'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
     }
