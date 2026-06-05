@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Auth\Services;
 
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\NewAccessToken;
@@ -19,10 +18,9 @@ use Laravel\Sanctum\NewAccessToken;
 final readonly class AuthService
 {
     /**
-     * Create a new global user account and fire the Registered event.
+     * Create a new global user account.
      *
-     * Fires the Registered event so Laravel's default email verification
-     * notification is dispatched automatically.
+     * Email verification dispatch is deferred to the verification-routes implementation in Sprint 8.
      */
     public function register(string $name, string $email, string $password): User
     {
@@ -34,8 +32,6 @@ final readonly class AuthService
         ]);
 
         Log::info('User registered', ['user_id' => $user->id, 'email' => $user->email]);
-
-        event(new Registered($user));
 
         return $user;
     }
