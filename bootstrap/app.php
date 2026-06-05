@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Exceptions\PlanGateException;
-use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InjectRequestId;
 use App\Modules\Tenancy\Http\Middleware\EnsureTenant;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -38,7 +37,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             AddLinkHeadersForPreloadedAssets::class,
-            HandleInertiaRequests::class,
         ]);
 
         // Register alias — apply to tenant-scoped routes when ready
