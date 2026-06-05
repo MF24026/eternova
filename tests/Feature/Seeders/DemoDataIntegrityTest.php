@@ -57,9 +57,8 @@ final class DemoDataIntegrityTest extends TestCase
         $this->seed(PlansSeeder::class);
         $this->seed(DemoTenantsSeeder::class);
 
-        // The migration 2026_05_15_000006 unconditionally creates a "demo" tenant for
-        // data-backfill purposes, so the total count is 3 (demo + rosa-eterna + tatiana).
-        $this->assertSame(2, Tenant::whereIn('slug', ['rosa-eterna', 'tatiana'])->count());
+        // Residual "demo" tenant removed in #28; total is now exactly 2.
+        $this->assertSame(2, Tenant::count());
 
         $rosaEterna = Tenant::findBySlug('rosa-eterna');
         $this->assertNotNull($rosaEterna);
@@ -173,8 +172,8 @@ final class DemoDataIntegrityTest extends TestCase
         $this->seed(SuperAdminUserSeeder::class);
         $this->seed(DemoTenantsSeeder::class);
 
-        // demo tenant (from migration) + rosa-eterna + tatiana = 3 total
-        $this->assertSame(2, Tenant::whereIn('slug', ['rosa-eterna', 'tatiana'])->count());
+        // Residual "demo" tenant removed in #28; total is now exactly 2.
+        $this->assertSame(2, Tenant::count());
         $this->assertDatabaseCount('subscriptions', 2);
         $this->assertDatabaseCount('branches', 2);
 
@@ -200,8 +199,8 @@ final class DemoDataIntegrityTest extends TestCase
         // SuperAdminUserSeeder (1) + 2 owners + 5 staff = 8 users
         $this->assertDatabaseCount('users', 8);
 
-        // DemoTenantsSeeder: 2 demo tenants (plus the "demo" tenant from migration backfill = 3 total)
-        $this->assertSame(2, Tenant::whereIn('slug', ['rosa-eterna', 'tatiana'])->count());
+        // DemoTenantsSeeder: exactly 2 tenants — residual "demo" removed in #28.
+        $this->assertSame(2, Tenant::count());
 
         // 2 subscriptions (one per tenant)
         $this->assertDatabaseCount('subscriptions', 2);
