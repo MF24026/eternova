@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Modules\Billing\Models\Subscription;
+use App\Modules\Billing\Services\SubscriptionService;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Database\Seeder;
@@ -20,12 +20,16 @@ class TenancySeeder extends Seeder
 
     private function seedPlans(): void
     {
+        // Column names match the Plan model: price_monthly_cents, price_yearly_cents, currency.
+        // Legacy columns (price_cents, billing_period) were removed in the Plan model schema.
         $plans = [
             [
-                'name' => 'Free',
-                'slug' => 'free',
-                'price_cents' => 0,
-                'billing_period' => 'monthly',
+                'name' => 'Basico',
+                'slug' => 'basico',
+                'description' => 'Para negocios pequenos que estan empezando.',
+                'price_monthly_cents' => 0,
+                'price_yearly_cents' => 0,
+                'currency' => 'USD',
                 'is_active' => true,
                 'sort_order' => 1,
                 'features' => [
@@ -47,8 +51,10 @@ class TenancySeeder extends Seeder
             [
                 'name' => 'Pro',
                 'slug' => 'pro',
-                'price_cents' => 2900,
-                'billing_period' => 'monthly',
+                'description' => 'Para negocios en crecimiento.',
+                'price_monthly_cents' => 2900,
+                'price_yearly_cents' => 29000,
+                'currency' => 'USD',
                 'is_active' => true,
                 'sort_order' => 2,
                 'features' => [
@@ -74,8 +80,10 @@ class TenancySeeder extends Seeder
             [
                 'name' => 'Enterprise',
                 'slug' => 'enterprise',
-                'price_cents' => 9900,
-                'billing_period' => 'monthly',
+                'description' => 'Sin limites para grandes operaciones.',
+                'price_monthly_cents' => 9900,
+                'price_yearly_cents' => 99000,
+                'currency' => 'USD',
                 'is_active' => true,
                 'sort_order' => 3,
                 'features' => [
@@ -134,20 +142,13 @@ class TenancySeeder extends Seeder
             ]
         );
 
-        // Attach demo tenant to the Pro plan with a trialing subscription
-        $proPlan = Plan::where('slug', 'pro')->first();
+        // Attach demo tenant to the Pro plan with a trialing subscription (idempotent)
+        $proPlan = Plan::where('slug', 'pro')->where('is_active', true)->first();
 
-        if ($proPlan !== null) {
-            Subscription::withoutGlobalScopes()->firstOrCreate(
-                ['tenant_id' => $tenant->id, 'plan_id' => $proPlan->id],
-                [
-                    'id' => (string) Str::ulid(),
-                    'status' => 'trialing',
-                    'trial_ends_at' => now()->addDays(30),
-                    'current_period_start' => now(),
-                    'current_period_end' => now()->addDays(30),
-                ]
-            );
+        if ($proPlan !== null && ! $tenant->subscriptions()->exists()) {
+            /** @var SubscriptionService $subscriptionService */
+            $subscriptionService = app(SubscriptionService::class);
+            $subscriptionService->create($tenant, $proPlan);
         }
 
         $this->command->info("Demo tenant seeded: {$tenant->id} (slug: demo)");

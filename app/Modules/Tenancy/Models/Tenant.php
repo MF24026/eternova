@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenancy\Models;
 
+use App\Models\User;
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\Subscription;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -88,6 +90,20 @@ class Tenant extends Model
     public function isOnTrial(): bool
     {
         return $this->trial_ends_at !== null && $this->trial_ends_at->isFuture();
+    }
+
+    /**
+     * Users who are members of this tenant, with their per-tenant role.
+     *
+     * @return BelongsToMany<User>
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'tenant_users')
+            ->using(TenantUser::class)
+            ->withPivot(['role', 'joined_at'])
+            ->withTimestamps()
+            ->orderByPivot('joined_at');
     }
 
     public function branches(): HasMany
