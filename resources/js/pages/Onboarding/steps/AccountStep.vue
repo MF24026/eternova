@@ -16,9 +16,6 @@ const submitting = ref(false)
 const generalError = ref('')
 const fieldErrors = ref<Record<string, string>>({})
 
-// In-memory bearer token — not persisted to localStorage per spec.
-// It is stored in the onboarding store's errors map with the key '__token'
-// so that the TenantStep can attach it to the provisioning request.
 const canSubmit = computed(() =>
     name.value.length >= 2 &&
     email.value.includes('@') &&
@@ -44,10 +41,8 @@ async function handleNext(): Promise<void> {
             password: password.value,
         })
 
-        // plain_text_token is at the envelope root, not inside data.
-        // Store it in-memory so TenantStep can authenticate its provisioning request.
-        // Using the errors map with a sentinel key avoids adding state to the store.
-        store.errors['__token'] = [response.data.plain_text_token]
+        // Stash the bearer token in the store so TenantStep can attach it on /api/v1/tenants.
+        store.tempBearerToken = response.data.plain_text_token
 
         store.account = {
             name: name.value,

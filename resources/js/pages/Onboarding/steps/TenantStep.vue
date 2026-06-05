@@ -110,12 +110,12 @@ async function handleSubmit(): Promise<void> {
     const country = countries.find(c => c.code === selectedCountry.value)
 
     try {
-        // Attach the Bearer token issued during registration.
-        // The token is stashed in the errors sentinel key by AccountStep.
-        const token = store.errors['__token']?.[0] ?? ''
+        const token = store.tempBearerToken ?? ''
+        if (!token) {
+            throw new Error('Onboarding state lost: missing bearer token. Return to step 1.')
+        }
         const { default: api } = await import('@/services/api')
 
-        // Temporarily attach the Authorization header for this single request.
         const response = await api.post<{
             data: { slug: string; id: string }
             meta: { request_id: string }

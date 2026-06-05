@@ -42,6 +42,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     })
 
     const createdTenantSlug = ref<string | null>(null)
+    const tempBearerToken = ref<string | null>(null)
     const isSubmitting = ref(false)
     const errors = ref<Record<string, string[]>>({})
 
@@ -65,6 +66,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
             timezone: 'America/El_Salvador',
         }
         createdTenantSlug.value = null
+        tempBearerToken.value = null
         isSubmitting.value = false
         errors.value = {}
     }
@@ -79,6 +81,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
         planChoice,
         tenantData,
         createdTenantSlug,
+        tempBearerToken,
         isSubmitting,
         errors,
         canGoNextFromAccount,
