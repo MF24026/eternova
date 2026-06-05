@@ -5,42 +5,60 @@ declare(strict_types=1);
 namespace App\Modules\Billing\Models;
 
 use App\Modules\Tenancy\Models\Tenant;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Database\Factories\InvoiceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Invoice extends Model
+final class Invoice extends Model
 {
+    /** @use HasFactory<InvoiceFactory> */
     use HasFactory;
-    use HasUlids;
 
+    /** @var list<string> */
     protected $fillable = [
-        'subscription_id',
         'tenant_id',
-        'invoice_number',
-        'amount_cents',
+        'subscription_id',
+        'number',
         'status',
+        'subtotal_cents',
+        'tax_cents',
+        'total_cents',
+        'currency',
+        'due_at',
         'paid_at',
-        'wompi_payment_id',
-        'due_date',
+        'wompi_transaction_id',
+        'pdf_url',
     ];
 
+    /** @var array<string, string> */
     protected $casts = [
-        'amount_cents' => 'integer',
+        'subtotal_cents' => 'integer',
+        'tax_cents' => 'integer',
+        'total_cents' => 'integer',
+        'due_at' => 'datetime',
         'paid_at' => 'datetime',
-        'due_date' => 'date',
-        'status' => 'string',
     ];
+
+    protected static function newFactory(): InvoiceFactory
+    {
+        return InvoiceFactory::new();
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
     }
 
-    public function tenant(): BelongsTo
+    public function payments(): HasMany
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->hasMany(Payment::class);
     }
 
     public function isPaid(): bool
@@ -49,11 +67,21 @@ class Invoice extends Model
     }
 
     /**
-     * Amount formatted in major currency units for display.
-     * Internal computation always uses amount_cents.
+     * Whether the invoice is past its due date and still not paid.
      */
-    public function getFormattedAmountAttribute(): string
+    public function isOverdue(): bool
     {
-        return number_format($this->amount_cents / 100, 2);
+        return ! $this->isPaid()
+            && $this->due_at !== null
+            && $this->due_at->isPast();
+    }
+
+    /**
+     * Verify that total_cents equals subtotal_cents + tax_cents.
+     * Used in service-layer assertions before persisting.
+     */
+    public function hasTotalsConsistency(): bool
+    {
+        return $this->total_cents === ($this->subtotal_cents + $this->tax_cents);
     }
 }
