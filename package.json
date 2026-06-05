@@ -26,7 +26,6 @@
         "vue-tsc": "^2.2.12"
     },
     "dependencies": {
-        "@inertiajs/vue3": "^3.0.3",
         "@vueuse/core": "^10.11.1",
         "lucide-vue-next": "^1.0.0",
         "pinia": "^3.0.4",
