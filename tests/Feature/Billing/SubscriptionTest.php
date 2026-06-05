@@ -6,6 +6,7 @@ namespace Tests\Feature\Billing;
 
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\Subscription;
+use App\Modules\Billing\Services\SubscriptionService;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,55 +15,103 @@ use Tests\TestCase;
 /**
  * Tests for the Subscription lifecycle and invariants.
  *
- * These tests verify domain rules enforced at the service / model layer, not via HTTP.
  * All assertions run against a real database (RefreshDatabase) — no mocks.
+ * The one-active-per-tenant invariant is covered twice:
+ *   - via SubscriptionObserver (direct model create/update path)
+ *   - via SubscriptionService (orchestration path)
  */
 final class SubscriptionTest extends TestCase
 {
     use RefreshDatabase;
+
+    // ──────────────────────────────────────────────────────────────────
+    // Observer invariant: one active-or-trialing per tenant
+    // ──────────────────────────────────────────────────────────────────
+
+    public function test_observer_blocks_direct_subscription_create_when_another_is_active(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->basico()->create();
+
+        // First active subscription — allowed.
+        Subscription::factory()->forTenant($tenant)->withPlan($plan)->active()->create();
+
+        // Second active subscription via direct model create — Observer must block it.
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessageMatches('/active or trialing subscription/i');
+
+        Subscription::factory()->forTenant($tenant)->withPlan($plan)->active()->create();
+    }
+
+    public function test_observer_blocks_update_to_active_when_another_is_active(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->basico()->create();
+
+        Subscription::factory()->forTenant($tenant)->withPlan($plan)->active()->create();
+
+        // A second subscription in canceled state — allowed at create time.
+        $canceled = Subscription::factory()->forTenant($tenant)->withPlan($plan)->canceled()->create();
+
+        // Attempting to flip the canceled sub to active must throw.
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessageMatches('/active or trialing subscription/i');
+
+        $canceled->update(['status' => 'active']);
+    }
+
+    public function test_observer_allows_canceled_to_remain_after_new_active(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $oldPlan = Plan::factory()->basico()->create();
+        $newPlan = Plan::factory()->pro()->create();
+
+        // Old subscription, fully canceled.
+        $canceled = Subscription::factory()->forTenant($tenant)->withPlan($oldPlan)->canceled()->create();
+
+        // New active subscription on a different plan — must succeed.
+        $active = Subscription::factory()->forTenant($tenant)->withPlan($newPlan)->active()->create();
+
+        $this->assertSame('canceled', $canceled->status);
+        $this->assertSame('active', $active->status);
+        $this->assertDatabaseCount('subscriptions', 2);
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Existing lifecycle tests (original suite — unchanged behaviour)
+    // ──────────────────────────────────────────────────────────────────
 
     public function test_tenant_can_only_have_one_active_subscription_at_a_time(): void
     {
         $tenant = Tenant::factory()->create();
         $plan = Plan::factory()->basico()->create();
 
-        // First subscription — active, allowed
-        $periodStart = now()->startOfMonth();
-        $periodEnd = now()->endOfMonth();
+        Subscription::factory()->forTenant($tenant)->withPlan($plan)->active()->create();
 
-        Subscription::factory()
-            ->forTenant($tenant)
-            ->withPlan($plan)
-            ->active()
-            ->create();
-
-        // Service-layer rule: if a tenant already has an active subscription,
-        // attempting to create a second must throw a DomainException.
         $this->expectException(\DomainException::class);
-        $this->expectExceptionMessageMatches('/active subscription/i');
+        $this->expectExceptionMessageMatches('/active or trialing subscription/i');
 
-        $this->createSubscriptionForTenant($tenant, $plan, 'active');
+        /** @var SubscriptionService $service */
+        $service = app(SubscriptionService::class);
+        $service->create($tenant, $plan, ['status' => 'active']);
     }
 
     public function test_trialing_counts_as_non_active_for_the_one_active_rule(): void
     {
-        // A tenant can have one 'trialing' subscription — that is the expected initial state
         $tenant = Tenant::factory()->create();
         $plan = Plan::factory()->pro()->create();
 
-        $sub = Subscription::factory()
-            ->forTenant($tenant)
-            ->withPlan($plan)
-            ->trialing()
-            ->create();
+        $sub = Subscription::factory()->forTenant($tenant)->withPlan($plan)->trialing()->create();
 
         $this->assertSame('trialing', $sub->status);
         $this->assertTrue($sub->isTrialing());
 
-        // Trialing subscription exists — now trying to create a second active one should fail
+        // Trialing subscription exists — creating a second active one must throw.
         $this->expectException(\DomainException::class);
 
-        $this->createSubscriptionForTenant($tenant, $plan, 'active');
+        /** @var SubscriptionService $service */
+        $service = app(SubscriptionService::class);
+        $service->create($tenant, $plan, ['status' => 'active']);
     }
 
     public function test_subscription_transitions_from_trialing_to_active_when_first_payment_succeeds(): void
@@ -79,7 +128,7 @@ final class SubscriptionTest extends TestCase
         $this->assertSame('trialing', $subscription->status);
         $this->assertTrue($subscription->isTrialing());
 
-        // Simulate payment success: update status to active, set billing period
+        // Simulate payment success: update status to active, set billing period.
         $subscription->update([
             'status' => 'active',
             'trial_ends_at' => null,
@@ -108,7 +157,7 @@ final class SubscriptionTest extends TestCase
 
         $this->assertSame('active', $subscription->status);
 
-        // Simulate charge failure: transition to past_due
+        // Simulate charge failure: transition to past_due.
         $subscription->update(['status' => 'past_due']);
 
         $subscription->refresh();
@@ -123,7 +172,6 @@ final class SubscriptionTest extends TestCase
         $tenant = Tenant::factory()->create();
         $plan = Plan::factory()->pro()->create();
 
-        // Subscription canceled but period ends in the future — tenant still has access
         $subscription = Subscription::factory()
             ->forTenant($tenant)
             ->withPlan($plan)
@@ -137,7 +185,6 @@ final class SubscriptionTest extends TestCase
 
         $this->assertTrue($subscription->isCanceled());
         $this->assertTrue($subscription->isOnGracePeriod());
-        // Period end is still in the future — access should be retained
         $this->assertTrue($subscription->current_period_end->isFuture());
     }
 
@@ -256,33 +303,93 @@ final class SubscriptionTest extends TestCase
         $this->assertSame(0, $subscription->daysUntilTrialEnds());
     }
 
-    /**
-     * Service-layer enforcement: one active-or-trialing subscription per tenant.
-     *
-     * MySQL does not support partial unique indexes natively, so this rule is enforced
-     * here. Real service code calls this check before persisting.
-     *
-     * @throws \DomainException when a conflicting subscription already exists
-     */
-    private function createSubscriptionForTenant(
-        Tenant $tenant,
-        Plan $plan,
-        string $status,
-    ): Subscription {
-        $hasConflict = Subscription::where('tenant_id', $tenant->id)
-            ->whereIn('status', ['active', 'trialing'])
-            ->exists();
+    // ──────────────────────────────────────────────────────────────────
+    // SubscriptionService tests
+    // ──────────────────────────────────────────────────────────────────
 
-        if ($hasConflict) {
-            throw new \DomainException(
-                "Tenant [{$tenant->id}] already has an active subscription. ".
-                'Cancel or expire it before creating a new one.'
-            );
-        }
+    public function test_subscription_service_create_uses_trialing_defaults(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->basico()->create();
 
-        return Subscription::factory()
-            ->forTenant($tenant)
-            ->withPlan($plan)
-            ->create(['status' => $status]);
+        /** @var SubscriptionService $service */
+        $service = app(SubscriptionService::class);
+        $sub = $service->create($tenant, $plan);
+
+        $this->assertSame('trialing', $sub->status);
+        $this->assertNotNull($sub->trial_ends_at);
+        // trial_ends_at should be approximately 30 days from now (allow ±1 min clock drift).
+        $this->assertEqualsWithDelta(
+            now()->addDays(30)->timestamp,
+            $sub->trial_ends_at->timestamp,
+            60
+        );
+    }
+
+    public function test_subscription_service_activate_transitions_correctly(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->pro()->create();
+
+        /** @var SubscriptionService $service */
+        $service = app(SubscriptionService::class);
+        $sub = $service->create($tenant, $plan);
+
+        $this->assertSame('trialing', $sub->status);
+
+        $service->activate($sub);
+        $sub->refresh();
+
+        $this->assertSame('active', $sub->status);
+        $this->assertNull($sub->trial_ends_at);
+    }
+
+    public function test_subscription_service_activate_throws_when_status_is_not_trialing_or_past_due(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->basico()->create();
+
+        $sub = Subscription::factory()->forTenant($tenant)->withPlan($plan)->active()->create();
+
+        /** @var SubscriptionService $service */
+        $service = app(SubscriptionService::class);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessageMatches('/cannot activate/i');
+
+        $service->activate($sub);
+    }
+
+    public function test_subscription_service_cancel_at_period_end_keeps_status_active_but_flags(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->pro()->create();
+
+        $sub = Subscription::factory()->forTenant($tenant)->withPlan($plan)->active()->create();
+
+        /** @var SubscriptionService $service */
+        $service = app(SubscriptionService::class);
+        $service->cancel($sub, atPeriodEnd: true);
+        $sub->refresh();
+
+        $this->assertSame('active', $sub->status);
+        $this->assertTrue($sub->cancel_at_period_end);
+        $this->assertNull($sub->canceled_at);
+    }
+
+    public function test_subscription_service_cancel_immediate_changes_status_and_sets_canceled_at(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->basico()->create();
+
+        $sub = Subscription::factory()->forTenant($tenant)->withPlan($plan)->active()->create();
+
+        /** @var SubscriptionService $service */
+        $service = app(SubscriptionService::class);
+        $service->cancel($sub, atPeriodEnd: false);
+        $sub->refresh();
+
+        $this->assertSame('canceled', $sub->status);
+        $this->assertNotNull($sub->canceled_at);
     }
 }

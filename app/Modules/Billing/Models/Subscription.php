@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Models;
 
+use App\Modules\Billing\Observers\SubscriptionObserver;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
 use Database\Factories\SubscriptionFactory;
@@ -37,6 +38,11 @@ final class Subscription extends Model
         'cancel_at_period_end' => 'boolean',
         'canceled_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        self::observe(SubscriptionObserver::class);
+    }
 
     protected static function newFactory(): SubscriptionFactory
     {
