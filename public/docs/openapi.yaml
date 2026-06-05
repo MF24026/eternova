@@ -1,0 +1,51 @@
+openapi: 3.0.3
+info:
+  title: 'Eternova API v1'
+  description: 'REST API for Eternova multi-tenant SaaS.'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://localhost:8080'
+tags:
+  -
+    name: Endpoints
+    description: ''
+paths:
+  /api/v1/health:
+    get:
+      summary: ''
+      operationId: getApiV1Health
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  data:
+                    status: ok
+                    version: v1
+                  meta:
+                    request_id: 20c1b63f-cf86-42c5-b00c-9d7905017e26
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+                      version:
+                        type: string
+                        example: v1
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: 20c1b63f-cf86-42c5-b00c-9d7905017e26
+      tags:
+        - Endpoints
+      security: []
