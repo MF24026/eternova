@@ -18,7 +18,7 @@ const vitePort = parseInt(process.env.VITE_PORT ?? '5174', 10);
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/js/app.js'],
+            input: ['resources/js/main.ts'],
             refresh: true,
         }),
         vue({
