@@ -4,23 +4,26 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
+final class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     *
+     * Order matters:
+     *   1. ReservedSubdomainsSeeder — platform slug blocklist (no deps)
+     *   2. PlansSeeder              — subscription plans (needed by provisioner)
+     *   3. SuperAdminUserSeeder     — platform super-admin user (no tenant deps)
+     *   4. DemoTenantsSeeder        — demo tenants, branches, subscriptions and staff
      */
     public function run(): void
     {
-        // SaaS platform data: plans and demo tenant must come first
-        $this->call(TenancySeeder::class);
-
-        // Default super-admin user (no tenant_id — super-admins are platform-level)
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            ReservedSubdomainsSeeder::class,
+            PlansSeeder::class,
+            SuperAdminUserSeeder::class,
+            DemoTenantsSeeder::class,
         ]);
     }
 }
