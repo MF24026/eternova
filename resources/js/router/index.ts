@@ -19,7 +19,7 @@ const router = createRouter({
         {
             path: '/signup',
             name: 'signup',
-            component: () => import('@/pages/Auth/SignupPage.vue'),
+            component: () => import('@/pages/Onboarding/SignupWizardPage.vue'),
             meta: { guestOnly: true, layout: 'onboarding' },
         },
 
