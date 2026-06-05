@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Models;
 
+use App\Modules\Billing\Observers\SubscriptionObserver;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Subscription extends Model
+final class Subscription extends Model
 {
+    /** @use HasFactory<SubscriptionFactory> */
     use HasFactory;
-    use HasUlids;
 
+    /** @var list<string> */
     protected $fillable = [
         'tenant_id',
         'plan_id',
@@ -24,17 +26,28 @@ class Subscription extends Model
         'trial_ends_at',
         'current_period_start',
         'current_period_end',
-        'cancelled_at',
-        'wompi_subscription_id',
+        'cancel_at_period_end',
+        'canceled_at',
     ];
 
+    /** @var array<string, string> */
     protected $casts = [
         'trial_ends_at' => 'datetime',
         'current_period_start' => 'datetime',
         'current_period_end' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'status' => 'string',
+        'cancel_at_period_end' => 'boolean',
+        'canceled_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        self::observe(SubscriptionObserver::class);
+    }
+
+    protected static function newFactory(): SubscriptionFactory
+    {
+        return SubscriptionFactory::new();
+    }
 
     public function tenant(): BelongsTo
     {
@@ -51,13 +64,52 @@ class Subscription extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    /**
+     * Whether the subscription grants access to the platform.
+     * Both active and trialing subscriptions are considered "in access".
+     */
     public function isActive(): bool
     {
-        return in_array($this->status, ['active', 'trialing'], true);
+        return $this->status === 'active';
     }
 
     public function isTrialing(): bool
     {
         return $this->status === 'trialing';
+    }
+
+    public function isPastDue(): bool
+    {
+        return $this->status === 'past_due';
+    }
+
+    public function isCanceled(): bool
+    {
+        return $this->status === 'canceled';
+    }
+
+    /**
+     * Whether the subscription was canceled but is still within its paid period.
+     * Tenant retains access until current_period_end.
+     */
+    public function isOnGracePeriod(): bool
+    {
+        return $this->isCanceled()
+            && $this->current_period_end !== null
+            && $this->current_period_end->isFuture();
+    }
+
+    /**
+     * Days remaining until the trial ends. Returns 0 if trial has already ended.
+     */
+    public function daysUntilTrialEnds(): int
+    {
+        if ($this->trial_ends_at === null) {
+            return 0;
+        }
+
+        $diff = (int) now()->diffInDays($this->trial_ends_at, absolute: false);
+
+        return max(0, $diff);
     }
 }
