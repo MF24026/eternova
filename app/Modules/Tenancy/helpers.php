@@ -20,3 +20,18 @@ if (! function_exists('current_tenant')) {
         return $tenant instanceof Tenant ? $tenant : null;
     }
 }
+
+if (! function_exists('current_tenant_role')) {
+    /**
+     * Return the authenticated user's role in the current tenant context, or null.
+     *
+     * Returns null when:
+     *  - No user is authenticated on this request
+     *  - No tenant is active (CLI, super-admin, platform-level routes)
+     *  - The user has no membership in the current tenant
+     */
+    function current_tenant_role(): ?string
+    {
+        return request()->user()?->currentRole();
+    }
+}
