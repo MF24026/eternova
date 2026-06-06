@@ -6,11 +6,13 @@ namespace App\Modules\Inventory\Services;
 
 use App\Models\User;
 use App\Modules\Catalog\Models\ProductVariant;
+use App\Modules\Inventory\Events\StockLowDetected;
 use App\Modules\Inventory\Models\BranchInventory;
 use App\Modules\Inventory\Models\InventoryMovement;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Scopes\TenantScope;
 use DomainException;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -29,6 +31,10 @@ use InvalidArgumentException;
  */
 final readonly class InventoryService
 {
+    public function __construct(
+        private Dispatcher $events,
+    ) {}
+
     public function recordEntry(
         Branch $branch,
         ProductVariant $variant,
@@ -79,8 +85,17 @@ final readonly class InventoryService
             );
         }
 
-        return DB::transaction(function () use (
-            $branch, $variant, $quantity, $user, $notes, $referenceType, $referenceId
+        // Capture the before-value and the threshold-crossing decision INSIDE the
+        // transaction, then dispatch the event OUTSIDE — after the transaction
+        // has committed successfully. This avoids ghost events on rollback and
+        // keeps Event::fake() working correctly in tests (DB::afterCommit() does
+        // not fire when RefreshDatabase wraps tests in a parent transaction).
+        $availableBefore = null;
+        $inventoryAfterExit = null;
+
+        $movement = DB::transaction(function () use (
+            $branch, $variant, $quantity, $user, $notes, $referenceType, $referenceId,
+            &$availableBefore, &$inventoryAfterExit
         ): InventoryMovement {
             $inventory = $this->lockInventoryRow($branch, $variant);
 
@@ -91,7 +106,12 @@ final readonly class InventoryService
                 );
             }
 
+            $availableBefore = $inventory->available;
             $inventory->decrement('quantity', $quantity);
+
+            // Re-read the generated `available` column after decrement.
+            $inventory->refresh();
+            $inventoryAfterExit = $inventory;
 
             return InventoryMovement::create([
                 'tenant_id' => $branch->tenant_id,
@@ -105,6 +125,14 @@ final readonly class InventoryService
                 'user_id' => $user?->id,
             ]);
         });
+
+        // Dispatch AFTER the transaction commits. Variables are populated only
+        // when the transaction succeeds (an exception would have escaped above).
+        if ($availableBefore !== null && $inventoryAfterExit !== null) {
+            $this->dispatchLowStockIfCrossed($inventoryAfterExit, $variant, $availableBefore, $inventoryAfterExit->available);
+        }
+
+        return $movement;
     }
 
     public function recordAdjustment(
@@ -114,7 +142,13 @@ final readonly class InventoryService
         ?User $user = null,
         ?string $notes = null,
     ): InventoryMovement {
-        return DB::transaction(function () use ($branch, $variant, $delta, $user, $notes): InventoryMovement {
+        $availableBefore = null;
+        $inventoryAfterAdj = null;
+
+        $movement = DB::transaction(function () use (
+            $branch, $variant, $delta, $user, $notes,
+            &$availableBefore, &$inventoryAfterAdj
+        ): InventoryMovement {
             $inventory = $this->lockInventoryRow($branch, $variant);
 
             // Adjustments can be positive or negative — but the resulting quantity
@@ -129,7 +163,12 @@ final readonly class InventoryService
                 );
             }
 
+            $availableBefore = $inventory->available;
             $inventory->update(['quantity' => $newQuantity]);
+
+            // Re-read the generated `available` column after update.
+            $inventory->refresh();
+            $inventoryAfterAdj = $inventory;
 
             return InventoryMovement::create([
                 'tenant_id' => $branch->tenant_id,
@@ -143,6 +182,13 @@ final readonly class InventoryService
                 'user_id' => $user?->id,
             ]);
         });
+
+        // Only check for low stock on negative adjustments. Dispatch after commit.
+        if ($delta < 0 && $availableBefore !== null && $inventoryAfterAdj !== null) {
+            $this->dispatchLowStockIfCrossed($inventoryAfterAdj, $variant, $availableBefore, $inventoryAfterAdj->available);
+        }
+
+        return $movement;
     }
 
     /**
@@ -175,8 +221,12 @@ final readonly class InventoryService
             );
         }
 
-        return DB::transaction(function () use (
-            $fromBranch, $toBranch, $variant, $quantity, $user, $notes
+        $sourceAvailableBefore = null;
+        $sourceInventoryAfter = null;
+
+        $result = DB::transaction(function () use (
+            $fromBranch, $toBranch, $variant, $quantity, $user, $notes,
+            &$sourceAvailableBefore, &$sourceInventoryAfter
         ): array {
             // Lock both inventory rows in a consistent order (by branch id) to prevent
             // deadlocks when two concurrent transfers touch the same pair in opposite directions.
@@ -202,7 +252,12 @@ final readonly class InventoryService
 
             $transferId = (string) Str::uuid();
 
+            $sourceAvailableBefore = $sourceInventory->available;
             $sourceInventory->decrement('quantity', $quantity);
+
+            // Re-read generated `available` after decrement.
+            $sourceInventory->refresh();
+            $sourceInventoryAfter = $sourceInventory;
 
             $exitMovement = InventoryMovement::create([
                 'tenant_id' => $fromBranch->tenant_id,
@@ -233,6 +288,13 @@ final readonly class InventoryService
 
             return [$exitMovement, $entryMovement];
         });
+
+        // Dispatch low-stock event for source branch after transaction commits.
+        if ($sourceAvailableBefore !== null && $sourceInventoryAfter !== null) {
+            $this->dispatchLowStockIfCrossed($sourceInventoryAfter, $variant, $sourceAvailableBefore, $sourceInventoryAfter->available);
+        }
+
+        return $result;
     }
 
     /**
@@ -310,6 +372,38 @@ final readonly class InventoryService
                 'reserved' => 0,
             ]
         );
+    }
+
+    /**
+     * Fire StockLowDetected when available stock crosses the alert threshold.
+     *
+     * "Cross" means: was at or above the threshold before, is strictly below now.
+     * Already-below-threshold stock that decreases further does NOT re-fire, to
+     * prevent notification spam (e.g. going from 2 → 1 when threshold is 5).
+     *
+     * Design choice: this method is called AFTER the enclosing DB::transaction()
+     * returns, not inside it. This ensures:
+     *  1. No ghost events when a transaction rolls back mid-operation.
+     *  2. Event::fake() works correctly in tests — DB::afterCommit() does not fire
+     *     when RefreshDatabase wraps tests in a parent transaction, which would
+     *     silently suppress all event assertions.
+     */
+    private function dispatchLowStockIfCrossed(
+        BranchInventory $inventory,
+        ProductVariant $variant,
+        int $availableBefore,
+        int $availableAfter,
+    ): void {
+        $threshold = $variant->min_stock_alert ?? config('inventory.default_min_stock', 10);
+
+        // Threshold crossing: was at or above the limit, is now strictly below it.
+        $crossedThreshold = $availableBefore >= $threshold && $availableAfter < $threshold;
+
+        if (! $crossedThreshold) {
+            return;
+        }
+
+        $this->events->dispatch(new StockLowDetected(inventory: $inventory, threshold: $threshold));
     }
 
     /**

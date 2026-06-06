@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Providers;
 
+use App\Modules\Inventory\Events\StockLowDetected;
+use App\Modules\Inventory\Listeners\NotifyOwnerOfLowStock;
 use App\Modules\Inventory\Models\BranchInventory;
 use App\Modules\Inventory\Policies\InventoryPolicy;
 use App\Modules\Inventory\Repositories\EloquentInventoryRepository;
 use App\Modules\Inventory\Repositories\InventoryRepositoryInterface;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,5 +24,7 @@ final class InventoryServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(BranchInventory::class, InventoryPolicy::class);
+
+        Event::listen(StockLowDetected::class, NotifyOwnerOfLowStock::class);
     }
 }

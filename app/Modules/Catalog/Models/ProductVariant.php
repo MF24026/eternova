@@ -39,6 +39,7 @@ final class ProductVariant extends Model
         'price_cents',
         'cost_price_cents',
         'weight_grams',
+        'min_stock_alert',
         'options',
         'image_url',
         'position',
@@ -51,6 +52,7 @@ final class ProductVariant extends Model
         'price_cents' => 'integer',
         'cost_price_cents' => 'integer',
         'weight_grams' => 'integer',
+        'min_stock_alert' => 'integer',
         'options' => 'array',
         'position' => 'integer',
     ];
