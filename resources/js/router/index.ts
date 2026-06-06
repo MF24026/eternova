@@ -46,7 +46,13 @@ const router = createRouter({
             path: '/admin/inventory',
             name: 'admin.inventory',
             component: () => import('@/pages/Admin/InventoryPage.vue'),
-            meta: { requiresAuth: true, layout: 'admin' },
+            meta: { requiresAuth: true, layout: 'admin', title: 'Inventario' },
+        },
+        {
+            path: '/admin/inventory/movements',
+            name: 'admin.inventory.movements',
+            component: () => import('@/pages/Admin/Inventory/MovementsPage.vue'),
+            meta: { requiresAuth: true, layout: 'admin', title: 'Movimientos de Inventario' },
         },
         {
             path: '/admin/pos',

@@ -1,181 +1,357 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Search, Filter, Minus, Plus } from 'lucide-vue-next'
-import AppSlideover from '@/components/base/AppSlideover.vue'
-import AppBadge from '@/components/base/AppBadge.vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Search, Plus, ArrowLeftRight, ChevronRight, Package } from 'lucide-vue-next'
 import AppButton from '@/components/base/AppButton.vue'
 import AppInput from '@/components/base/AppInput.vue'
+import AppTable, { type TableColumn } from '@/components/base/AppTable.vue'
+import AppBadge from '@/components/base/AppBadge.vue'
+import AppPagination from '@/components/base/AppPagination.vue'
+import AppEmptyState from '@/components/base/AppEmptyState.vue'
+import AppSpinner from '@/components/base/AppSpinner.vue'
+import AdjustStockSlideover from '@/components/composite/AdjustStockSlideover.vue'
+import TransferStockSlideover from '@/components/composite/TransferStockSlideover.vue'
+import { useInventoryStore } from '@/stores/inventory'
+import { useBranches } from '@/composables/useBranches'
+import { useStockBadge } from '@/composables/useStockBadge'
+import type { PaginatedMeta } from '@/composables/usePaginated'
+import type { BranchInventory } from '@/types/domain/Inventory'
 
-onMounted(() => { document.title = 'Inventario — Eternova' })
-
-interface InventoryItem {
-    id: string; name: string; cat: string; sku: string; stock: number; min: number; price: number
-}
-interface AdjustContext { item: InventoryItem; type: 'in' | 'out' }
-
-const items = ref<InventoryItem[]>([
-    { id: 'p1', name: 'Rosa Eterna Carmesi', cat: 'Rosas', sku: 'CC-P1', stock: 3, min: 5, price: 65.00 },
-    { id: 'p2', name: 'Bouquet Aurora', cat: 'Rosas', sku: 'CC-P2', stock: 12, min: 5, price: 89.00 },
-    { id: 'p3', name: 'Peluche Olivia', cat: 'Peluches', sku: 'CC-P3', stock: 8, min: 5, price: 32.00 },
-    { id: 'p4', name: 'Cartera Petalia', cat: 'Carteras', sku: 'CC-P4', stock: 6, min: 5, price: 78.00 },
-    { id: 'p5', name: 'Llavero Camelia', cat: 'Llaveros', sku: 'CC-P5', stock: 24, min: 10, price: 14.00 },
-    { id: 'p6', name: 'Rosa Eterna Marfil', cat: 'Rosas', sku: 'CC-P6', stock: 2, min: 5, price: 65.00 },
-    { id: 'p7', name: 'Peluche Lavanda', cat: 'Peluches', sku: 'CC-P7', stock: 5, min: 5, price: 36.00 },
-    { id: 'p8', name: 'Cartera Aurelia', cat: 'Carteras', sku: 'CC-P8', stock: 4, min: 5, price: 92.00 },
-])
-
-const searchQuery = ref('')
-const sortKey = ref<'name' | 'stock' | 'price'>('name')
-const adjustCtx = ref<AdjustContext | null>(null)
-const adjustQty = ref(1)
-const adjustNote = ref('')
-const adjustReason = ref('')
-
-const sorted = computed(() => {
-    const filtered = searchQuery.value
-        ? items.value.filter(i => i.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || i.sku.toLowerCase().includes(searchQuery.value.toLowerCase()))
-        : [...items.value]
-    return filtered.sort((a, b) => sortKey.value === 'stock' ? a.stock - b.stock : sortKey.value === 'price' ? b.price - a.price : a.name.localeCompare(b.name))
+onMounted(() => {
+    document.title = 'Inventario — Eternova'
+    void Promise.all([loadBranches(), loadInventory()])
 })
 
-function openAdjust(item: InventoryItem, type: 'in' | 'out') {
-    adjustCtx.value = { item, type }
-    adjustQty.value = type === 'in' ? 10 : 1
-    adjustNote.value = ''
-    adjustReason.value = type === 'in' ? 'Compra a proveedor' : 'Venta sin POS'
-}
-function confirmAdjust() {
-    if (!adjustCtx.value) return
-    const { item, type } = adjustCtx.value
-    const target = items.value.find(i => i.id === item.id)
-    if (target) target.stock = Math.max(0, target.stock + (type === 'in' ? adjustQty.value : -adjustQty.value))
-    adjustCtx.value = null
+const store = useInventoryStore()
+const { branches, loadBranches } = useBranches()
+const { forAvailable } = useStockBadge()
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+
+const searchQuery = ref('')
+const selectedBranchId = ref('')
+const filterLowStock = ref(false)
+const filterNoStock = ref(false)
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(searchQuery, () => {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => { void loadInventory() }, 300)
+})
+
+watch([selectedBranchId, filterLowStock, filterNoStock], () => { void loadInventory() })
+
+async function loadInventory(page = 1): Promise<void> {
+    await store.fetchList({
+        search: searchQuery.value.trim() || undefined,
+        branch_id: selectedBranchId.value || undefined,
+        low_stock: filterNoStock.value ? undefined : (filterLowStock.value ? true : undefined),
+        per_page: 20,
+        page,
+    })
 }
 
-const inReasons = ['Compra a proveedor', 'Devolucion de cliente', 'Ajuste manual']
-const outReasons = ['Venta sin POS', 'Producto danado', 'Regalo / muestra', 'Ajuste manual']
+// ── Table columns ─────────────────────────────────────────────────────────────
+
+// AppTable uses T extends Record<string, unknown>. We cast columns + rows to that
+// generic shape and recover the concrete type via typed slot params below.
+type Row = Record<string, unknown>
+
+const columns: TableColumn<Row>[] = [
+    { key: 'product_info', label: 'Producto' },
+    { key: 'branch', label: 'Sucursal', width: '140px' },
+    { key: 'available', label: 'Disponible', align: 'center', width: '110px', sortable: true },
+    { key: 'reserved', label: 'Reservado', align: 'center', width: '100px' },
+    { key: 'stock_status', label: 'Estado', align: 'center', width: '120px' },
+    { key: 'actions', label: '', width: '80px' },
+]
+
+// Typed table rows — cast to Row for the component, recovered in typed helpers.
+const tableRows = computed<Row[]>(() => {
+    const base: BranchInventory[] = filterNoStock.value
+        ? store.items.filter((item) => item.available <= 0)
+        : store.items
+    return base as unknown as Row[]
+})
+
+// These helpers accept the slot row (which is Record<string, unknown> from AppTable)
+// and recover the domain type for type-safe access.
+function asInventory(row: Row): BranchInventory {
+    return row as unknown as BranchInventory
+}
+
+function variantLabel(row: Row): string {
+    const item = asInventory(row)
+    const opts = item.product_variant?.options ?? {}
+    const parts = Object.values(opts)
+    return parts.length > 0 ? parts.join(' · ') : ''
+}
+
+// ── Slideovers ────────────────────────────────────────────────────────────────
+
+const adjustOpen = ref(false)
+const transferOpen = ref(false)
+const activeInventory = ref<BranchInventory | undefined>(undefined)
+
+function openAdjust(row?: Row): void {
+    activeInventory.value = row !== undefined ? asInventory(row) : undefined
+    adjustOpen.value = true
+}
+
+function openTransfer(row?: Row): void {
+    activeInventory.value = row !== undefined ? asInventory(row) : undefined
+    transferOpen.value = true
+}
+
+function onSlideverSaved(): void {
+    void loadInventory(store.pagination.meta?.current_page ?? 1)
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+// AppPagination expects PaginatedMeta from usePaginated (which adds from/to).
+// The store's meta comes from api.ts PaginatedMeta which lacks from/to.
+// We adapt it here — the display degrades gracefully (shows total only).
+const paginationMeta = computed<PaginatedMeta | null>(() => {
+    const m = store.pagination.meta
+    if (m === null) return null
+    return {
+        current_page: m.current_page,
+        last_page: m.last_page,
+        per_page: m.per_page,
+        total: m.total,
+        from: null,
+        to: null,
+    }
+})
 </script>
 
 <template>
-    <div class="h-[calc(100vh-120px)] overflow-hidden">
-        <div class="card" style="padding: 20px; height: 100%; display: flex; flex-direction: column">
-            <!-- Toolbar -->
-            <div class="flex flex-wrap gap-3 mb-4">
-                <div class="relative flex-1 min-w-[200px]">
-                    <AppInput v-model="searchQuery" placeholder="Buscar producto o SKU...">
-                        <template #icon><Search :size="16" /></template>
-                    </AppInput>
-                </div>
-                <div class="tabs">
-                    <button :class="['tab', { active: sortKey === 'name' }]" @click="sortKey = 'name'">Nombre</button>
-                    <button :class="['tab', { active: sortKey === 'stock' }]" @click="sortKey = 'stock'">Stock</button>
-                    <button :class="['tab', { active: sortKey === 'price' }]" @click="sortKey = 'price'">Precio</button>
-                </div>
-                <button class="btn btn-tertiary">
-                    <Filter :size="14" class="mr-1.5" /> Filtros
+    <div class="flex flex-col gap-4">
+        <!-- Toolbar -->
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Search -->
+            <div class="relative flex-1 min-w-52">
+                <AppInput
+                    v-model="searchQuery"
+                    placeholder="Buscar producto o SKU..."
+                >
+                    <template #icon>
+                        <Search :size="14" class="text-on-surface-variant" />
+                    </template>
+                </AppInput>
+            </div>
+
+            <!-- Branch filter -->
+            <select
+                v-model="selectedBranchId"
+                class="px-4 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm
+                       focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+                <option value="">Todas las sucursales</option>
+                <option v-for="branch in branches" :key="branch.id" :value="branch.id">
+                    {{ branch.name }}
+                </option>
+            </select>
+
+            <!-- Filter chips -->
+            <div class="flex gap-1.5">
+                <button
+                    :class="[
+                        'px-3.5 py-2 rounded-full text-xs font-medium transition-colors',
+                        filterLowStock
+                            ? 'bg-warning-container text-warning'
+                            : 'text-on-surface-variant hover:text-on-surface',
+                    ]"
+                    :style="!filterLowStock ? 'background: var(--surface-low)' : ''"
+                    @click="filterLowStock = !filterLowStock; filterNoStock = false"
+                >
+                    Stock bajo
+                </button>
+                <button
+                    :class="[
+                        'px-3.5 py-2 rounded-full text-xs font-medium transition-colors',
+                        filterNoStock
+                            ? 'bg-error-container text-error'
+                            : 'text-on-surface-variant hover:text-on-surface',
+                    ]"
+                    :style="!filterNoStock ? 'background: var(--surface-low)' : ''"
+                    @click="filterNoStock = !filterNoStock; filterLowStock = false"
+                >
+                    Sin stock
                 </button>
             </div>
 
-            <!-- Desktop header -->
-            <div class="inv-header">
-                <div v-for="h in ['Producto', 'SKU', 'Stock', 'Min', 'Precio', 'Acciones']" :key="h" class="label" style="font-size: 10px">{{ h }}</div>
-            </div>
-
-            <div class="scroll flex-1 min-h-0">
-                <div class="flex flex-col gap-1.5">
-                    <div
-                        v-for="it in sorted"
-                        :key="it.id"
-                        class="inv-row rounded-xl p-3"
-                        style="background: var(--surface-low)"
-                    >
-                        <!-- Product info -->
-                        <div class="flex items-center gap-3">
-                            <div class="w-11 h-11 rounded-lg shrink-0" style="background: var(--gradient-soft)" />
-                            <div class="grow min-w-0">
-                                <p class="serif text-base text-on-surface">{{ it.name }}</p>
-                                <p class="text-xs text-on-surface-variant">{{ it.cat }}</p>
-                            </div>
-                        </div>
-                        <!-- SKU (desktop) -->
-                        <div class="inv-desktop text-xs text-on-surface-variant font-mono">{{ it.sku }}</div>
-                        <!-- Stock -->
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg font-bold" :class="it.stock <= it.min ? 'text-error' : 'text-on-surface'">{{ it.stock }}</span>
-                            <AppBadge v-if="it.stock <= it.min" variant="error" size="sm">Bajo</AppBadge>
-                        </div>
-                        <!-- Min (desktop) -->
-                        <div class="inv-desktop text-sm text-on-surface-variant">{{ it.min }}</div>
-                        <!-- Price (desktop) -->
-                        <div class="inv-desktop text-sm font-semibold text-primary">${{ it.price.toFixed(2) }}</div>
-                        <!-- Actions -->
-                        <div class="flex items-center gap-1.5">
-                            <button class="btn-icon w-9 h-9 min-h-[36px]" aria-label="Salida de stock" @click="openAdjust(it, 'out')"><Minus :size="14" /></button>
-                            <button class="btn-icon w-9 h-9 min-h-[36px]" aria-label="Entrada de stock" style="background: var(--primary-container); color: var(--primary-dim)" @click="openAdjust(it, 'in')"><Plus :size="14" /></button>
-                        </div>
-                    </div>
-                </div>
+            <div class="flex gap-2 ml-auto">
+                <AppButton
+                    :icon="ArrowLeftRight"
+                    variant="secondary"
+                    size="sm"
+                    @click="openTransfer()"
+                >
+                    Transferencia
+                </AppButton>
+                <AppButton
+                    :icon="Plus"
+                    size="sm"
+                    @click="openAdjust()"
+                >
+                    Registrar movimiento
+                </AppButton>
             </div>
         </div>
+
+        <!-- KPI strip -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="card p-4">
+                <p class="label-gilt mb-1">Total registros</p>
+                <p class="serif text-2xl text-on-surface">{{ store.pagination.meta?.total ?? '—' }}</p>
+            </div>
+            <div class="card p-4">
+                <p class="label-gilt mb-1">Sin stock</p>
+                <p class="serif text-2xl text-error">
+                    {{ store.items.filter((i) => i.available <= 0).length }}
+                </p>
+            </div>
+            <div class="card p-4">
+                <p class="label-gilt mb-1">Stock bajo</p>
+                <p class="serif text-2xl text-warning">
+                    {{ store.items.filter((i) => i.available > 0 && i.available <= 10).length }}
+                </p>
+            </div>
+            <div class="card p-4 flex items-center justify-between">
+                <div>
+                    <p class="label-gilt mb-1">Movimientos</p>
+                    <p class="serif text-sm text-primary">Ver historial</p>
+                </div>
+                <router-link
+                    to="/admin/inventory/movements"
+                    class="btn-icon"
+                    aria-label="Ver historial de movimientos"
+                >
+                    <ChevronRight :size="16" />
+                </router-link>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div v-if="store.isLoading" class="flex justify-center py-12">
+            <AppSpinner />
+        </div>
+
+        <template v-else>
+            <AppTable
+                :columns="columns"
+                :rows="tableRows"
+                row-key="id"
+                @row-click="(row) => openAdjust(row)"
+            >
+                <!-- Product info cell -->
+                <template #cell-product_info="{ row }">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-9 h-9 rounded-lg shrink-0"
+                            style="background: var(--gradient-soft)"
+                        />
+                        <div class="min-w-0">
+                            <p class="text-sm text-on-surface truncate">
+                                {{ asInventory(row).product_variant?.product?.name ?? 'Producto desconocido' }}
+                            </p>
+                            <p class="text-xs text-on-surface-variant font-mono">
+                                {{ asInventory(row).product_variant?.sku ?? '' }}
+                                <span v-if="variantLabel(row)" class="ml-1 font-sans">
+                                    · {{ variantLabel(row) }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Branch cell -->
+                <template #cell-branch="{ row }">
+                    <span class="text-sm text-on-surface-variant">
+                        {{ asInventory(row).branch?.name ?? asInventory(row).branch_id }}
+                    </span>
+                </template>
+
+                <!-- Available cell -->
+                <template #cell-available="{ row }">
+                    <span
+                        class="font-bold text-base"
+                        :class="asInventory(row).available <= 0 ? 'text-error' : 'text-on-surface'"
+                    >
+                        {{ asInventory(row).available }}
+                    </span>
+                </template>
+
+                <!-- Reserved cell -->
+                <template #cell-reserved="{ row }">
+                    <span class="text-sm text-on-surface-variant">{{ asInventory(row).reserved }}</span>
+                </template>
+
+                <!-- Stock status badge -->
+                <template #cell-stock_status="{ row }">
+                    <AppBadge :variant="forAvailable(asInventory(row).available).variant" size="sm">
+                        {{ forAvailable(asInventory(row).available).label }}
+                    </AppBadge>
+                </template>
+
+                <!-- Actions cell -->
+                <template #cell-actions="{ row }">
+                    <div class="flex items-center gap-1.5" @click.stop>
+                        <button
+                            class="btn-icon w-8 h-8"
+                            aria-label="Ajustar stock"
+                            @click="openAdjust(row)"
+                        >
+                            <Plus :size="14" />
+                        </button>
+                        <button
+                            class="btn-icon w-8 h-8"
+                            aria-label="Transferir stock"
+                            @click="openTransfer(row)"
+                        >
+                            <ArrowLeftRight :size="14" />
+                        </button>
+                    </div>
+                </template>
+
+                <!-- Empty state -->
+                <template #empty>
+                    <AppEmptyState
+                        title="Sin registros de inventario"
+                        description="El inventario aparece aqui una vez que se registren movimientos o se importen productos."
+                    >
+                        <template #illustration>
+                            <Package :size="40" class="text-on-surface-variant opacity-40" />
+                        </template>
+                        <template #cta>
+                            <AppButton :icon="Plus" size="sm" @click="openAdjust()">
+                                Registrar movimiento
+                            </AppButton>
+                        </template>
+                    </AppEmptyState>
+                </template>
+            </AppTable>
+
+            <!-- Pagination -->
+            <AppPagination
+                v-if="paginationMeta && paginationMeta.last_page > 1"
+                :meta="paginationMeta"
+                @page-change="loadInventory"
+            />
+        </template>
     </div>
 
-    <!-- Adjust stock slideover -->
-    <AppSlideover
-        :model-value="!!adjustCtx"
-        :title="adjustCtx?.item.name ?? ''"
-        :subtitle="adjustCtx?.type === 'in' ? 'Entrada de inventario' : 'Salida de inventario'"
-        @update:model-value="adjustCtx = null"
-    >
-        <template v-if="adjustCtx">
-            <div class="flex flex-col gap-5">
-                <div class="rounded-xl p-4 flex gap-4 items-center" style="background: var(--surface-low)">
-                    <div class="w-14 h-14 rounded-xl" style="background: var(--gradient-soft)" />
-                    <div>
-                        <p class="text-xs text-on-surface-variant">Stock actual</p>
-                        <p class="serif text-4xl text-primary">{{ adjustCtx.item.stock }}</p>
-                    </div>
-                </div>
-                <div>
-                    <label class="field-label">Cantidad</label>
-                    <input v-model.number="adjustQty" class="field mt-1.5" type="number" min="1" />
-                </div>
-                <div>
-                    <label class="field-label">Motivo</label>
-                    <select v-model="adjustReason" class="field mt-1.5">
-                        <option v-for="r in (adjustCtx.type === 'in' ? inReasons : outReasons)" :key="r">{{ r }}</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="field-label">Nota</label>
-                    <textarea v-model="adjustNote" class="field mt-1.5" rows="3" placeholder="Opcional..." />
-                </div>
-            </div>
-        </template>
-        <template #footer>
-            <div class="flex gap-2.5">
-                <AppButton variant="secondary" class="flex-1 justify-center" @click="adjustCtx = null">Cancelar</AppButton>
-                <AppButton class="flex-1 justify-center" @click="confirmAdjust">Confirmar</AppButton>
-            </div>
-        </template>
-    </AppSlideover>
+    <!-- Slideovers -->
+    <AdjustStockSlideover
+        v-model="adjustOpen"
+        :initial-inventory="activeInventory"
+        @saved="onSlideverSaved"
+    />
+    <TransferStockSlideover
+        v-model="transferOpen"
+        :initial-inventory="activeInventory"
+        @saved="onSlideverSaved"
+    />
 </template>
-
-<style scoped>
-.inv-header {
-    display: none;
-    grid-template-columns: 1.8fr 100px 90px 70px 100px 120px;
-    gap: 16px;
-    padding: 8px 12px;
-    color: var(--on-surface-variant);
-    margin-bottom: 4px;
-}
-.inv-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.inv-row > :first-child { flex: 1; min-width: 180px; }
-.inv-desktop { display: none; }
-@media (min-width: 1024px) {
-    .inv-header { display: grid; }
-    .inv-row { display: grid; grid-template-columns: 1.8fr 100px 90px 70px 100px 120px; flex-wrap: nowrap; }
-    .inv-row > :first-child { flex: unset; min-width: unset; }
-    .inv-desktop { display: flex; align-items: center; }
-}
-</style>
