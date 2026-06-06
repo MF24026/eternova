@@ -61,6 +61,8 @@ final class CategoryController extends Controller
      */
     public function store(StoreCategoryRequest $request): JsonResponse
     {
+        $this->authorize('create', Category::class);
+
         $category = $this->categoryService->create($request->validated());
 
         $loaded = $this->categories->findWithRelations($category->id);
@@ -75,6 +77,8 @@ final class CategoryController extends Controller
      */
     public function update(UpdateCategoryRequest $request, Category $category): CategoryResource
     {
+        $this->authorize('update', $category);
+
         $updated = $this->categoryService->update($category, $request->validated());
 
         $loaded = $this->categories->findWithRelations($updated->id);

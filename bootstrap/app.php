@@ -15,6 +15,7 @@ use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
@@ -75,7 +76,22 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         // ── 403 Forbidden ─────────────────────────────────────────────────────
+        // Handles both Laravel's AuthorizationException (from $this->authorize() in
+        // Controllers) and Symfony's AccessDeniedHttpException (from FormRequest
+        // ::authorize() returning false — Laravel wraps the former into the latter).
         $exceptions->render(static function (AuthorizationException $e, Request $request) use ($shouldRespondJson) {
+            if (! $shouldRespondJson($request)) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => 'This action is unauthorized.',
+                'error_code' => 'auth.forbidden',
+                'meta' => ['request_id' => $request->header('X-Request-Id', '')],
+            ], 403);
+        });
+
+        $exceptions->render(static function (AccessDeniedHttpException $e, Request $request) use ($shouldRespondJson) {
             if (! $shouldRespondJson($request)) {
                 return null;
             }
