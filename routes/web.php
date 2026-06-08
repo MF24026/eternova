@@ -2,7 +2,28 @@
 
 declare(strict_types=1);
 
+use App\Modules\Catalog\Http\Controllers\RobotsController;
+use App\Modules\Catalog\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Tenant server-rendered routes (sitemap + robots)
+|--------------------------------------------------------------------------
+| These routes are declared BEFORE the SPA catch-all so Laravel handles
+| them directly rather than letting the SPA pick them up.
+|
+| Both use the 'tenant' middleware so EnsureTenant resolves the tenant
+| from the subdomain. No auth required — storefront is fully public.
+*/
+
+Route::middleware('tenant')->group(function (): void {
+    Route::get('/sitemap.xml', [SitemapController::class, 'index'])
+        ->name('storefront.sitemap');
+
+    Route::get('/robots.txt', [RobotsController::class, 'index'])
+        ->name('storefront.robots');
+});
 
 /*
 |--------------------------------------------------------------------------
