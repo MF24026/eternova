@@ -49,11 +49,11 @@ final class CatalogInventorySeederTest extends TestCase
         $this->assertNotNull($rosaEterna);
         $this->assertNotNull($tatiana);
 
-        // rosa-eterna: 3 roots + 3 + 2 + 3 children = 9 total
+        // rosa-eterna per ERD section 5.1: 3 roots + (3 + 2 + 3) children = 11 total
         $rosaCategoryCount = Category::withoutGlobalScopes()
             ->where('tenant_id', $rosaEterna->id)
             ->count();
-        $this->assertSame(9, $rosaCategoryCount, 'rosa-eterna should have 9 categories');
+        $this->assertSame(11, $rosaCategoryCount, 'rosa-eterna should have 11 categories');
 
         // tatiana: 4 flat root categories
         $tatianaCategoryCount = Category::withoutGlobalScopes()
