@@ -12,7 +12,6 @@ use App\Modules\Inventory\Models\InventoryMovement;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Scopes\TenantScope;
 use DomainException;
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -31,10 +30,6 @@ use InvalidArgumentException;
  */
 final readonly class InventoryService
 {
-    public function __construct(
-        private Dispatcher $events,
-    ) {}
-
     public function recordEntry(
         Branch $branch,
         ProductVariant $variant,
@@ -403,7 +398,11 @@ final readonly class InventoryService
             return;
         }
 
-        $this->events->dispatch(new StockLowDetected(inventory: $inventory, threshold: $threshold));
+        // Use the event() helper (not an injected Dispatcher) so the dispatcher is
+        // resolved from the container at call time. A constructor-injected Dispatcher
+        // is captured once and ignores Event::fake() swaps, silently breaking every
+        // event assertion in tests.
+        event(new StockLowDetected(inventory: $inventory, threshold: $threshold));
     }
 
     /**

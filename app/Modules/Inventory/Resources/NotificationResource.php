@@ -23,7 +23,10 @@ final class NotificationResource extends BaseResource
         return [
             'id' => $this->id,
             'type' => $this->type,
-            'data' => $this->data,
+            // Named "payload" instead of "data" on purpose: a key called "data" at the
+            // root of a JsonResource array collides with Laravel's envelope wrap key,
+            // which disables wrapping and flattens the response shape.
+            'payload' => $this->data,
             'read_at' => $this->read_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

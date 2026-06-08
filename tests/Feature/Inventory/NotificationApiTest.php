@@ -9,6 +9,7 @@ use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Str;
+use Tests\Support\ActingAsTenantMember;
 use Tests\TestCase;
 
 /**
@@ -19,6 +20,7 @@ use Tests\TestCase;
  */
 final class NotificationApiTest extends TestCase
 {
+    use ActingAsTenantMember;
     use RefreshDatabase;
 
     /**
@@ -76,7 +78,7 @@ final class NotificationApiTest extends TestCase
             'type' => 'inventory.low_stock',
             'notifiable_type' => User::class,
             'notifiable_id' => $this->user->id,
-            'data' => json_encode(['type' => 'inventory.low_stock', 'sku' => 'TEST-001']),
+            'data' => ['type' => 'inventory.low_stock', 'sku' => 'TEST-001'],
             'read_at' => $read ? now() : null,
             'tenant_id' => $this->tenant->id,
         ]);
@@ -90,8 +92,7 @@ final class NotificationApiTest extends TestCase
         $this->createNotification(read: false);
         $this->createNotification(read: true); // already read, should not be counted
 
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/v1/notifications/unread-count');
+        $response = $this->tenantGetJson($this->tenant, $this->user, '/api/v1/notifications/unread-count');
 
         $response->assertOk()
             ->assertJsonPath('data.count', 2);
@@ -108,13 +109,12 @@ final class NotificationApiTest extends TestCase
             'type' => 'inventory.low_stock',
             'notifiable_type' => User::class,
             'notifiable_id' => $this->user->id,
-            'data' => json_encode(['type' => 'inventory.low_stock']),
+            'data' => ['type' => 'inventory.low_stock'],
             'read_at' => null,
             'tenant_id' => $tenantB->id,
         ]);
 
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/v1/notifications/unread-count');
+        $response = $this->tenantGetJson($this->tenant, $this->user, '/api/v1/notifications/unread-count');
 
         // Only the current tenant's notification is counted.
         $response->assertOk()
@@ -128,8 +128,7 @@ final class NotificationApiTest extends TestCase
         $this->createNotification(read: false);
         $this->createNotification(read: true);
 
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/v1/notifications');
+        $response = $this->tenantGetJson($this->tenant, $this->user, '/api/v1/notifications');
 
         $response->assertOk()
             ->assertJsonCount(2, 'data');
@@ -140,8 +139,7 @@ final class NotificationApiTest extends TestCase
         $this->createNotification(read: false);
         $this->createNotification(read: true);
 
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/v1/notifications?unread_only=true');
+        $response = $this->tenantGetJson($this->tenant, $this->user, '/api/v1/notifications?unread_only=true');
 
         $response->assertOk()
             ->assertJsonCount(1, 'data');
@@ -153,8 +151,7 @@ final class NotificationApiTest extends TestCase
     {
         $notification = $this->createNotification(read: false);
 
-        $response = $this->actingAs($this->user)
-            ->patchJson("/api/v1/notifications/{$notification->id}/read");
+        $response = $this->tenantPatchJson($this->tenant, $this->user, "/api/v1/notifications/{$notification->id}/read");
 
         $response->assertOk()
             ->assertJsonPath('data.id', $notification->id);
@@ -173,14 +170,13 @@ final class NotificationApiTest extends TestCase
             'type' => 'inventory.low_stock',
             'notifiable_type' => User::class,
             'notifiable_id' => $otherUser->id,
-            'data' => json_encode(['type' => 'inventory.low_stock']),
+            'data' => ['type' => 'inventory.low_stock'],
             'read_at' => null,
             'tenant_id' => $this->tenant->id,
         ]);
 
         // $this->user tries to mark the other user's notification as read.
-        $response = $this->actingAs($this->user)
-            ->patchJson("/api/v1/notifications/{$notification->id}/read");
+        $response = $this->tenantPatchJson($this->tenant, $this->user, "/api/v1/notifications/{$notification->id}/read");
 
         $response->assertNotFound();
     }
@@ -199,13 +195,12 @@ final class NotificationApiTest extends TestCase
             'type' => 'inventory.low_stock',
             'notifiable_type' => User::class,
             'notifiable_id' => $this->user->id,
-            'data' => json_encode(['type' => 'inventory.low_stock']),
+            'data' => ['type' => 'inventory.low_stock'],
             'read_at' => null,
             'tenant_id' => $tenantB->id,
         ]);
 
-        $response = $this->actingAs($this->user)
-            ->patchJson('/api/v1/notifications/read-all');
+        $response = $this->tenantPatchJson($this->tenant, $this->user, '/api/v1/notifications/read-all');
 
         $response->assertOk()
             ->assertJsonPath('data.marked_read', 2);
