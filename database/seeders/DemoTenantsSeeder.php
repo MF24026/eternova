@@ -56,6 +56,12 @@ final class DemoTenantsSeeder extends Seeder
             $this->command->info("DemoTenantsSeeder: tenant rosa-eterna provisioned ({$tenant->id}).");
         }
 
+        // Ensure brand_extra has whatsapp_number for the storefront checkout button.
+        $this->mergeIntoTenantBrandExtra($tenant, [
+            'whatsapp_number' => '50370001234',
+            'tagline' => 'Flores que hablan por ti',
+        ]);
+
         $this->attachStaff($tenant, [
             ['email' => 'lucia@rosaeterna.com', 'name' => 'Lucia Martinez', 'role' => 'staff'],
             ['email' => 'daniel@rosaeterna.com', 'name' => 'Daniel Garcia', 'role' => 'staff'],
@@ -96,12 +102,38 @@ final class DemoTenantsSeeder extends Seeder
             $this->command->info("DemoTenantsSeeder: tenant tatiana provisioned ({$tenant->id}).");
         }
 
+        // Ensure brand_extra has whatsapp_number for the storefront checkout button.
+        $this->mergeIntoTenantBrandExtra($tenant, [
+            'whatsapp_number' => '573001234567',
+            'tagline' => 'Regalos que llegan al corazon',
+        ]);
+
         $this->attachStaff($tenant, [
             ['email' => 'maria@regalostatiana.com', 'name' => 'Maria Rojas', 'role' => 'staff'],
             ['email' => 'juan@regalostatiana.com', 'name' => 'Juan Restrepo', 'role' => 'admin'],
         ]);
 
         $this->command->info('DemoTenantsSeeder: tatiana staff attached (2 users).');
+    }
+
+    /**
+     * Merge new keys into a tenant's brand_extra JSON column without clobbering
+     * values that were already set by TenantProvisioner or previous seeder runs.
+     *
+     * Safe to call multiple times — only absent keys are added.
+     *
+     * @param  array<string, mixed>  $extra
+     */
+    private function mergeIntoTenantBrandExtra(Tenant $tenant, array $extra): void
+    {
+        /** @var array<string, mixed> $current */
+        $current = $tenant->brand_extra ?? [];
+
+        $merged = array_merge($extra, $current);
+
+        if ($merged !== $current) {
+            $tenant->update(['brand_extra' => $merged]);
+        }
     }
 
     /**
