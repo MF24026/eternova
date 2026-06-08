@@ -1,65 +1,75 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ShoppingCart, LogIn, Menu, X } from 'lucide-vue-next'
+import { ShoppingCart, Menu, X } from 'lucide-vue-next'
+import { useStorefrontStore } from '@/stores/storefront'
+import { useStorefrontBranding } from '@/composables/useStorefrontBranding'
 
+const store = useStorefrontStore()
 const mobileMenuOpen = ref(false)
+
+onMounted(async () => {
+    await store.fetchTenant()
+    useStorefrontBranding()
+})
 </script>
 
 <template>
     <div class="min-h-screen flex flex-col bg-surface text-on-surface">
-        <!-- Top navbar -->
-        <header class="sticky top-0 z-40 bg-surface-lowest/80 backdrop-blur-[24px]">
+        <!-- Top navbar: glassmorphism, sticky -->
+        <header class="sticky top-0 z-40 glass border-b" style="border-color: var(--outline-variant)">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="h-16 flex items-center justify-between gap-4">
-                    <!-- Brand -->
+                    <!-- Brand: logo image or business name text -->
                     <RouterLink
-                        to="/"
-                        class="font-serif font-semibold text-primary tracking-tighter text-xl shrink-0"
+                        :to="{ name: 'storefront.home' }"
+                        class="shrink-0 flex items-center gap-2"
+                        :aria-label="store.tenant?.business_name ?? 'Inicio'"
                     >
-                        Eternova
+                        <img
+                            v-if="store.tenant?.logo_url"
+                            :src="store.tenant.logo_url"
+                            :alt="store.tenant.business_name"
+                            class="h-8 w-auto object-contain"
+                        />
+                        <span
+                            v-else
+                            class="font-serif font-semibold tracking-tighter text-xl"
+                            style="color: var(--brand-primary, var(--primary))"
+                        >
+                            {{ store.tenant?.business_name ?? 'Tienda' }}
+                        </span>
                     </RouterLink>
 
                     <!-- Desktop nav -->
                     <nav class="hidden md:flex items-center gap-6">
                         <RouterLink
-                            to="/catalogo"
-                            class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+                            :to="{ name: 'storefront.home' }"
+                            class="text-sm text-on-surface-variant hover:text-on-surface transition-colors"
                         >
-                            Catalogo
+                            Inicio
                         </RouterLink>
                         <RouterLink
-                            to="/novedades"
-                            class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+                            :to="{ name: 'storefront.products' }"
+                            class="text-sm text-on-surface-variant hover:text-on-surface transition-colors"
                         >
-                            Novedades
+                            Catalogo
                         </RouterLink>
                     </nav>
 
                     <!-- Actions -->
-                    <div class="flex items-center gap-3">
-                        <!-- Cart -->
+                    <div class="flex items-center gap-2">
+                        <!--
+                            Cart icon — placeholder for S2-E5.
+                            The cart store and count badge will be wired in S2-E5.
+                            Currently links to /products as a non-functional stub.
+                        -->
                         <RouterLink
-                            to="/carrito"
+                            :to="{ name: 'storefront.products' }"
                             class="btn-icon relative"
                             aria-label="Carrito de compras"
                         >
                             <ShoppingCart :size="20" />
-                            <span
-                                class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-on-primary text-xs flex items-center justify-center font-semibold"
-                                aria-hidden="true"
-                            >
-                                0
-                            </span>
-                        </RouterLink>
-
-                        <!-- Login link -->
-                        <RouterLink
-                            to="/login"
-                            class="hidden sm:flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-primary transition-colors"
-                        >
-                            <LogIn :size="16" />
-                            Ingresar
                         </RouterLink>
 
                         <!-- Mobile menu toggle -->
@@ -86,29 +96,22 @@ const mobileMenuOpen = ref(false)
             >
                 <div
                     v-if="mobileMenuOpen"
-                    class="md:hidden bg-surface-lowest border-t border-outline-variant"
+                    class="md:hidden bg-surface-lowest"
                 >
                     <nav class="px-4 py-3 flex flex-col gap-1">
                         <RouterLink
-                            to="/catalogo"
-                            class="py-2.5 text-sm text-on-surface hover:text-primary transition-colors"
+                            :to="{ name: 'storefront.home' }"
+                            class="py-2.5 text-sm text-on-surface hover:text-primary transition-colors font-medium"
+                            @click="mobileMenuOpen = false"
+                        >
+                            Inicio
+                        </RouterLink>
+                        <RouterLink
+                            :to="{ name: 'storefront.products' }"
+                            class="py-2.5 text-sm text-on-surface hover:text-primary transition-colors font-medium"
                             @click="mobileMenuOpen = false"
                         >
                             Catalogo
-                        </RouterLink>
-                        <RouterLink
-                            to="/novedades"
-                            class="py-2.5 text-sm text-on-surface hover:text-primary transition-colors"
-                            @click="mobileMenuOpen = false"
-                        >
-                            Novedades
-                        </RouterLink>
-                        <RouterLink
-                            to="/login"
-                            class="py-2.5 text-sm text-primary font-medium"
-                            @click="mobileMenuOpen = false"
-                        >
-                            Ingresar
                         </RouterLink>
                     </nav>
                 </div>
@@ -121,40 +124,52 @@ const mobileMenuOpen = ref(false)
         </main>
 
         <!-- Footer -->
-        <footer class="bg-surface-low mt-16">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <footer class="mt-16" style="background: var(--surface-low)">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
                     <div>
-                        <p class="font-serif text-lg text-primary tracking-tighter mb-3">Eternova</p>
-                        <p class="text-sm text-on-surface-variant leading-relaxed">
-                            Rosas eternas, recuerdos que perduran.
+                        <p
+                            class="font-serif text-lg tracking-tighter mb-1"
+                            style="color: var(--brand-primary, var(--primary))"
+                        >
+                            {{ store.tenant?.business_name ?? 'Tienda' }}
+                        </p>
+                        <p
+                            v-if="store.tenant?.tagline"
+                            class="text-sm text-on-surface-variant leading-relaxed"
+                        >
+                            {{ store.tenant.tagline }}
                         </p>
                     </div>
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.05em] text-on-surface-variant mb-3">
-                            Tienda
-                        </p>
-                        <div class="flex flex-col gap-2">
-                            <RouterLink to="/catalogo" class="text-sm text-on-surface-variant hover:text-primary transition-colors">
-                                Catalogo
-                            </RouterLink>
-                            <RouterLink to="/pedidos" class="text-sm text-on-surface-variant hover:text-primary transition-colors">
-                                Mis pedidos
-                            </RouterLink>
-                        </div>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.05em] text-on-surface-variant mb-3">
-                            Contacto
-                        </p>
-                        <p class="text-sm text-on-surface-variant">
-                            Disponible por WhatsApp
-                        </p>
-                    </div>
+
+                    <nav class="flex flex-col sm:items-end gap-2">
+                        <RouterLink
+                            :to="{ name: 'storefront.products' }"
+                            class="text-sm text-on-surface-variant hover:text-on-surface transition-colors"
+                        >
+                            Catalogo
+                        </RouterLink>
+                        <a
+                            v-if="store.tenant?.whatsapp_number"
+                            :href="`https://wa.me/${store.tenant.whatsapp_number}`"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-sm text-on-surface-variant hover:text-on-surface transition-colors"
+                        >
+                            Contacto por WhatsApp
+                        </a>
+                    </nav>
                 </div>
-                <div class="mt-10 pt-6 border-t border-outline-variant text-center">
+
+                <div class="mt-8 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                     style="border-top: 1px solid var(--outline-variant)">
                     <p class="text-xs text-on-surface-variant">
-                        &copy; 2026 Eternova. Todos los derechos reservados.
+                        &copy; {{ new Date().getFullYear() }}
+                        {{ store.tenant?.business_name ?? 'Tienda' }}. Todos los derechos reservados.
+                    </p>
+                    <!-- SaaS attribution — appears in small secondary text per brand guidelines -->
+                    <p class="text-xs text-on-surface-variant opacity-60">
+                        Con tecnologia de Eternova
                     </p>
                 </div>
             </div>
