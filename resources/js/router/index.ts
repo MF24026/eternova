@@ -4,8 +4,33 @@ import { authGuard } from './guards'
 const router = createRouter({
     history: createWebHistory(),
     routes: [
+        // ── Storefront routes (public, tenant-subdomain root) ────────────────
+        // These own `/`, `/products`, and `/products/:slug` because on a TENANT
+        // subdomain the root is always the public catalog. The original generic
+        // HomePage has been moved to `/welcome` below. When a dedicated SaaS
+        // marketing site is built it will reclaim the main-domain root.
         {
             path: '/',
+            name: 'storefront.home',
+            component: () => import('@/pages/Storefront/HomePage.vue'),
+            meta: { layout: 'storefront', public: true },
+        },
+        {
+            path: '/products',
+            name: 'storefront.products',
+            component: () => import('@/pages/Storefront/ProductsListPage.vue'),
+            meta: { layout: 'storefront', public: true },
+        },
+        {
+            path: '/products/:slug',
+            name: 'storefront.product',
+            component: () => import('@/pages/Storefront/ProductDetailPage.vue'),
+            meta: { layout: 'storefront', public: true },
+        },
+
+        // ── SaaS marketing / generic landing (moved from `/`) ───────────────
+        {
+            path: '/welcome',
             name: 'home',
             component: () => import('@/pages/HomePage.vue'),
             meta: { layout: 'marketing' },
