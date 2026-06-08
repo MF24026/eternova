@@ -4,9 +4,13 @@ import { RouterLink } from 'vue-router'
 import { ShoppingCart, Menu, X } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
 import { useStorefrontBranding } from '@/composables/useStorefrontBranding'
+import { useCartStore } from '@/stores/cart'
+import CartSlideover from '@/components/composite/storefront/CartSlideover.vue'
 
 const store = useStorefrontStore()
+const cart = useCartStore()
 const mobileMenuOpen = ref(false)
+const cartOpen = ref(false)
 
 onMounted(async () => {
     await store.fetchTenant()
@@ -59,18 +63,27 @@ onMounted(async () => {
 
                     <!-- Actions -->
                     <div class="flex items-center gap-2">
-                        <!--
-                            Cart icon — placeholder for S2-E5.
-                            The cart store and count badge will be wired in S2-E5.
-                            Currently links to /products as a non-functional stub.
-                        -->
-                        <RouterLink
-                            :to="{ name: 'storefront.products' }"
+                        <!-- Cart icon with item count badge -->
+                        <button
+                            type="button"
                             class="btn-icon relative"
                             aria-label="Carrito de compras"
+                            data-testid="cart-icon-btn"
+                            @click="cartOpen = true"
                         >
                             <ShoppingCart :size="20" />
-                        </RouterLink>
+                            <span
+                                v-if="cart.count > 0"
+                                class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full
+                                       text-[10px] font-bold leading-[18px] text-center
+                                       text-on-primary"
+                                style="background: var(--primary)"
+                                data-testid="cart-badge"
+                                aria-label="`${cart.count} items en el carrito`"
+                            >
+                                {{ cart.count > 99 ? '99+' : cart.count }}
+                            </span>
+                        </button>
 
                         <!-- Mobile menu toggle -->
                         <button
@@ -122,6 +135,9 @@ onMounted(async () => {
         <main class="flex-1">
             <slot />
         </main>
+
+        <!-- Cart slideover — mounted at layout level so it persists across page navigations -->
+        <CartSlideover v-model="cartOpen" />
 
         <!-- Footer -->
         <footer class="mt-16" style="background: var(--surface-low)">

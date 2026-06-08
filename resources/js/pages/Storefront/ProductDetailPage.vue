@@ -15,6 +15,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { ShoppingCart, Minus, Plus, ChevronRight, AlertTriangle } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
+import { useCartStore } from '@/stores/cart'
 import { useToast } from '@/composables/useToast'
 import StorefrontImageGallery from '@/components/composite/storefront/StorefrontImageGallery.vue'
 import StorefrontVariantSelector from '@/components/composite/storefront/StorefrontVariantSelector.vue'
@@ -24,6 +25,7 @@ import type { StorefrontVariant } from '@/types/domain/Storefront'
 const route = useRoute()
 const router = useRouter()
 const store = useStorefrontStore()
+const cart = useCartStore()
 const toast = useToast()
 
 const quantity = ref(1)
@@ -63,11 +65,29 @@ function incrementQty(): void {
 }
 
 // ── Add-to-cart ────────────────────────────────────────────────────────────────
-// S2-E5 placeholder: shows a toast until the cart store is wired.
-// When S2-E5 is implemented: call cartStore.addItem({ variant: resolvedVariant.value, qty: quantity.value })
 function handleAddToCart(): void {
-    // TODO(S2-E5): replace with cartStore.addItem({ variant: resolvedVariant.value, qty: quantity.value })
-    toast.info('Carrito disponible proximamente')
+    if (!store.currentProduct) return
+
+    // When the product has no variants, resolvedVariant is null.
+    // We synthesise a minimal variant-shaped object from the product itself
+    // so that addItem always receives a consistent payload.
+    const variantPayload = resolvedVariant.value ?? {
+        id: store.currentProduct.id * -1, // negative id flags "no variant" — safe as a cart key
+        sku: '',
+        price_cents: store.currentProduct.base_price_cents,
+        options: {} as Record<string, string>,
+        image_url: store.currentProduct.default_image_url,
+        in_stock: true,
+        low_stock: false,
+    }
+
+    cart.addItem({
+        variant: variantPayload,
+        product: store.currentProduct,
+        qty: quantity.value,
+    })
+
+    toast.success('Agregado al carrito')
 }
 
 // ── Breadcrumb ────────────────────────────────────────────────────────────────
