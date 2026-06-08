@@ -7,6 +7,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Search, SlidersHorizontal } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
+import { useHead } from '@/composables/useHead'
 import StorefrontProductCard from '@/components/composite/storefront/StorefrontProductCard.vue'
 import StorefrontCategoryChip from '@/components/composite/storefront/StorefrontCategoryChip.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
@@ -73,9 +74,17 @@ function goToPage(page: number): void {
 
 // ── Mount: hydrate from URL params ────────────────────────────────────────────
 onMounted(async () => {
-    document.title = 'Catalogo'
-
     await Promise.all([store.fetchTenant(), store.fetchCategories()])
+
+    // S2-E7: set meta tags for the product list page.
+    useHead({
+        title: `Productos — ${store.tenant?.business_name ?? 'Tienda'}`,
+        description: store.tenant?.business_name
+            ? `Catalogo de ${store.tenant.business_name}`
+            : 'Catalogo de productos',
+        url: window.location.href,
+        type: 'website',
+    })
 
     // Read initial filter state from the URL so direct links and back-navigation work.
     const query = route.query
@@ -91,8 +100,6 @@ onMounted(async () => {
         sort: sortOption.value,
         page: initialPage,
     })
-
-    document.title = `Catalogo — ${store.tenant?.business_name ?? 'Tienda'}`
 })
 </script>
 
