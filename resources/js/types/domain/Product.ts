@@ -1,3 +1,14 @@
+/**
+ * A single gallery entry. Three pre-generated sizes are stored at upload time
+ * (ADR-007). Use `thumbnail` for list/grid views, `medium` for slideovers,
+ * `full` as the zoom/lightbox source.
+ */
+export interface ProductImage {
+    thumbnail: string
+    medium: string
+    full: string
+}
+
 export interface ProductOptionValue {
     id: number
     value: string
@@ -44,7 +55,7 @@ export interface Product {
     base_price_cents: number
     cost_price_cents: number | null
     default_image_url: string | null
-    gallery: string[]
+    gallery: ProductImage[]
     is_active: boolean
     is_featured: boolean
     tax_rate: string | null
@@ -81,7 +92,7 @@ export interface ProductInput {
     base_price_cents: number
     cost_price_cents?: number | null
     default_image_url?: string | null
-    gallery?: string[]
+    gallery?: ProductImage[]
     is_active?: boolean
     is_featured?: boolean
     tax_rate?: number | null

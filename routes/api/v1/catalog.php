@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Catalog\Http\Controllers\Api\V1\CategoryController;
 use App\Modules\Catalog\Http\Controllers\Api\V1\ProductController;
+use App\Modules\Catalog\Http\Controllers\Api\V1\ProductImageController;
 use App\Modules\Catalog\Http\Controllers\Api\V1\ProductVariantController;
 use App\Modules\Catalog\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
@@ -67,6 +68,20 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(static function (): void {
 
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])
         ->name('api.v1.products.destroy');
+
+    // ── Product images sub-resource ───────────────────────────────────────────
+    // Static action routes BEFORE {product} wildcard sub-routes.
+    Route::patch('/products/{product}/images/reorder', [ProductImageController::class, 'reorder'])
+        ->name('api.v1.products.images.reorder');
+
+    Route::patch('/products/{product}/images/set-default', [ProductImageController::class, 'setDefault'])
+        ->name('api.v1.products.images.set-default');
+
+    Route::post('/products/{product}/images', [ProductImageController::class, 'store'])
+        ->name('api.v1.products.images.store');
+
+    Route::delete('/products/{product}/images', [ProductImageController::class, 'destroy'])
+        ->name('api.v1.products.images.destroy');
 
     // Variant sub-resource
     Route::post('/products/{product}/variants', [ProductVariantController::class, 'store'])

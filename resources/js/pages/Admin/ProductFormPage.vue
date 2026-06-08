@@ -8,11 +8,15 @@ import AppSpinner from '@/components/base/AppSpinner.vue'
 import ProductVariantsEditor from '@/components/composite/ProductVariantsEditor.vue'
 import TagSelector from '@/components/composite/TagSelector.vue'
 import CategoryMultiSelect from '@/components/composite/CategoryMultiSelect.vue'
+import ImageUploader from '@/components/composite/ImageUploader.vue'
+import ImageGallery from '@/components/composite/ImageGallery.vue'
 import { useProductsStore } from '@/stores/products'
 import { useCategoriesStore } from '@/stores/categories'
 import { useTagsStore } from '@/stores/tags'
 import { useToast } from '@/composables/useToast'
-import type { ProductInput, ProductOptionInput } from '@/types/domain/Product'
+import { useImageUpload } from '@/composables/useImageUpload'
+import ProductImagesService from '@/services/ProductImagesService'
+import type { ProductInput, ProductOptionInput, ProductImage } from '@/types/domain/Product'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '@/types/api'
 
@@ -49,8 +53,8 @@ const form = ref({
     sku_root:          '',
     base_price_cents:  '',    // string for input binding, parsed on submit
     cost_price_cents:  '',
-    default_image_url: '',
-    gallery:           [] as string[],
+    default_image_url: null as string | null,
+    gallery:           [] as ProductImage[],
     is_active:         true,
     is_featured:       false,
     tax_rate:          '',
@@ -58,6 +62,11 @@ const form = ref({
     categories:        [] as number[],
     tags:              [] as number[],
 })
+
+// ── Image upload state ─────────────────────────────────────────────────────────
+const { isUploading, uploadProgress, uploadError, upload } = useImageUpload()
+const deletingUrl       = ref<string | null>(null)
+const settingDefaultUrl = ref<string | null>(null)
 
 const options   = ref<ProductOptionInput[]>([])
 const variants  = ref<VariantRow[]>([])
@@ -89,7 +98,7 @@ onMounted(async () => {
                     sku_root:          p.sku_root ?? '',
                     base_price_cents:  String(p.base_price_cents),
                     cost_price_cents:  p.cost_price_cents !== null ? String(p.cost_price_cents) : '',
-                    default_image_url: p.default_image_url ?? '',
+                    default_image_url: p.default_image_url ?? null,
                     gallery:           p.gallery ?? [],
                     is_active:         p.is_active,
                     is_featured:       p.is_featured,
@@ -127,8 +136,7 @@ async function submit(): Promise<void> {
         description:       form.value.description || null,
         sku_root:          form.value.sku_root || null,
         cost_price_cents:  costPriceParsed,
-        default_image_url: form.value.default_image_url || null,
-        gallery:           form.value.gallery,
+        // Images are managed via the dedicated image endpoints, not the product payload.
         tax_rate:          form.value.tax_rate !== '' ? parseFloat(form.value.tax_rate) / 100 : null,
         categories:        form.value.categories,
         tags:              form.value.tags,
@@ -173,6 +181,77 @@ async function submit(): Promise<void> {
         }
     } finally {
         isSaving.value = false
+    }
+}
+
+// ── Image actions ──────────────────────────────────────────────────────────────
+
+async function handleImageSelected(file: File): Promise<void> {
+    if (productId.value === null) {
+        toast.error('Guarda el producto primero antes de subir imagenes.')
+        return
+    }
+
+    const image = await upload(productId.value, file)
+    if (image !== null) {
+        form.value.gallery.push(image)
+        // Auto-set as default if this is the first image.
+        if (form.value.default_image_url === null) {
+            form.value.default_image_url = image.full
+        }
+        toast.success('Imagen subida')
+    }
+}
+
+async function handleSetDefault(fullUrl: string): Promise<void> {
+    if (productId.value === null) return
+
+    settingDefaultUrl.value = fullUrl
+    try {
+        const updated = await ProductImagesService.setDefault(productId.value, fullUrl)
+        form.value.default_image_url = updated.default_image_url
+        toast.success('Imagen principal actualizada')
+    } catch {
+        toast.error('Error al establecer la imagen principal')
+    } finally {
+        settingDefaultUrl.value = null
+    }
+}
+
+async function handleDeleteImage(fullUrl: string): Promise<void> {
+    if (productId.value === null) return
+
+    deletingUrl.value = fullUrl
+    try {
+        await ProductImagesService.delete(productId.value, fullUrl)
+
+        form.value.gallery = form.value.gallery.filter((img) => img.full !== fullUrl)
+
+        if (form.value.default_image_url === fullUrl) {
+            form.value.default_image_url = form.value.gallery[0]?.full ?? null
+        }
+
+        toast.success('Imagen eliminada')
+    } catch {
+        toast.error('Error al eliminar la imagen')
+    } finally {
+        deletingUrl.value = null
+    }
+}
+
+async function handleReorder(orderedFullUrls: string[]): Promise<void> {
+    if (productId.value === null) return
+
+    // Optimistic reorder — update local state immediately.
+    const indexed = Object.fromEntries(form.value.gallery.map((img) => [img.full, img]))
+    form.value.gallery = orderedFullUrls
+        .filter((url) => indexed[url] !== undefined)
+        .map((url) => indexed[url])
+
+    try {
+        await ProductImagesService.reorder(productId.value, orderedFullUrls)
+    } catch {
+        toast.error('Error al reordenar las imagenes')
     }
 }
 
@@ -373,16 +452,32 @@ const TABS = [
             </div>
 
             <!-- Tab: Imagenes -->
-            <div v-show="activeTab === 'images'" class="card p-6 flex flex-col gap-4">
-                <AppInput
-                    v-model="form.default_image_url"
-                    label="URL de imagen principal"
-                    placeholder="https://..."
-                    :error="fieldError('default_image_url')"
-                />
-                <div class="text-sm text-on-surface-variant">
-                    La galeria de imagenes (upload) estara disponible en una proxima version.
+            <div v-show="activeTab === 'images'" class="card p-6 flex flex-col gap-5">
+                <p class="label-gilt">Galeria de imagenes</p>
+
+                <!-- Uploader — disabled for new products until they are saved -->
+                <div v-if="!isEdit" class="text-sm text-on-surface-variant p-4 rounded-xl" style="background: var(--surface-low)">
+                    Guarda el producto primero para poder subir imagenes.
                 </div>
+                <ImageUploader
+                    v-else
+                    :is-uploading="isUploading"
+                    :upload-progress="uploadProgress"
+                    :upload-error="uploadError ?? undefined"
+                    @select="handleImageSelected"
+                />
+
+                <!-- Current gallery -->
+                <ImageGallery
+                    v-if="form.gallery.length > 0 || isEdit"
+                    :images="form.gallery"
+                    :default-image-url="form.default_image_url"
+                    :deleting-url="deletingUrl"
+                    :setting-default-url="settingDefaultUrl"
+                    @set-default="handleSetDefault"
+                    @delete="handleDeleteImage"
+                    @reorder="handleReorder"
+                />
             </div>
 
             <!-- Tab: Categorias y tags -->
