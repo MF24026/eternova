@@ -56,6 +56,24 @@ final class CategoryProduct extends Pivot
                 return;
             }
 
+            // No tenant in the container (e.g. an attach() called from test setup or a
+            // queued job). Derive tenant_id from the related product or category, both of
+            // which always carry it. This keeps the pivot self-sufficient without forcing
+            // every caller to resolve a tenant first, while still guaranteeing the column
+            // is never left null.
+            $derivedTenantId = Product::withoutGlobalScopes()
+                ->whereKey($pivot->product_id)
+                ->value('tenant_id')
+                ?? Category::withoutGlobalScopes()
+                    ->whereKey($pivot->category_id)
+                    ->value('tenant_id');
+
+            if ($derivedTenantId !== null) {
+                $pivot->tenant_id = $derivedTenantId;
+
+                return;
+            }
+
             throw new LogicException(
                 CategoryProduct::class.'::creating() requires a resolved tenant in the container. '
                 .'Either resolve a tenant via EnsureTenant middleware, call '

@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Catalog\Http\Controllers\Api\V1\CategoryController;
+use App\Modules\Catalog\Http\Controllers\Api\V1\ProductController;
+use App\Modules\Catalog\Http\Controllers\Api\V1\ProductVariantController;
+use App\Modules\Catalog\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,4 +41,53 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(static function (): void {
     Route::post('/categories/{category}/restore', [CategoryController::class, 'restore'])
         ->withTrashed()
         ->name('api.v1.categories.restore');
+
+    // ── Products ──────────────────────────────────────────────────────────────
+    // Static sub-routes declared BEFORE wildcard {product} routes to prevent
+    // "reorder" or "restore" from being captured as a product id.
+    Route::post('/products/{product}/restore', [ProductController::class, 'restore'])
+        ->withTrashed()
+        ->name('api.v1.products.restore');
+
+    // Variant reorder must come BEFORE the {variant} wildcard.
+    Route::patch('/products/{product}/variants/reorder', [ProductVariantController::class, 'reorder'])
+        ->name('api.v1.products.variants.reorder');
+
+    Route::get('/products', [ProductController::class, 'index'])
+        ->name('api.v1.products.index');
+
+    Route::post('/products', [ProductController::class, 'store'])
+        ->name('api.v1.products.store');
+
+    Route::get('/products/{product}', [ProductController::class, 'show'])
+        ->name('api.v1.products.show');
+
+    Route::patch('/products/{product}', [ProductController::class, 'update'])
+        ->name('api.v1.products.update');
+
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])
+        ->name('api.v1.products.destroy');
+
+    // Variant sub-resource
+    Route::post('/products/{product}/variants', [ProductVariantController::class, 'store'])
+        ->name('api.v1.products.variants.store');
+
+    Route::patch('/products/{product}/variants/{variant}', [ProductVariantController::class, 'update'])
+        ->name('api.v1.products.variants.update');
+
+    Route::delete('/products/{product}/variants/{variant}', [ProductVariantController::class, 'destroy'])
+        ->name('api.v1.products.variants.destroy');
+
+    // ── Tags ──────────────────────────────────────────────────────────────────
+    Route::get('/tags', [TagController::class, 'index'])
+        ->name('api.v1.tags.index');
+
+    Route::post('/tags', [TagController::class, 'store'])
+        ->name('api.v1.tags.store');
+
+    Route::patch('/tags/{tag}', [TagController::class, 'update'])
+        ->name('api.v1.tags.update');
+
+    Route::delete('/tags/{tag}', [TagController::class, 'destroy'])
+        ->name('api.v1.tags.destroy');
 });
