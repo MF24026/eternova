@@ -11,12 +11,13 @@
  *   document.title is set on mount. Full og: / meta tags require @vueuse/head
  *   or a head composable — left for S2-E7. A TODO marks the injection point.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, watchEffect } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { ShoppingCart, Minus, Plus, ChevronRight, AlertTriangle } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
 import { useCartStore } from '@/stores/cart'
 import { useToast } from '@/composables/useToast'
+import { useHead } from '@/composables/useHead'
 import StorefrontImageGallery from '@/components/composite/storefront/StorefrontImageGallery.vue'
 import StorefrontVariantSelector from '@/components/composite/storefront/StorefrontVariantSelector.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
@@ -104,9 +105,6 @@ async function loadProduct(slug: string): Promise<void> {
         return
     }
 
-    // TODO(S2-E7): inject og:title / og:image via @vueuse/head
-    document.title = `${store.currentProduct.name} — ${store.tenant?.business_name ?? 'Tienda'}`
-
     // Reset quantity when navigating to a different product.
     quantity.value = 1
     resolvedVariant.value = null
@@ -123,6 +121,24 @@ watch(
         if (typeof slug === 'string') void loadProduct(slug)
     },
 )
+
+// S2-E7: inject og:title, og:description, og:image, og:url for social previews.
+// watchEffect re-runs whenever currentProduct or tenant changes, ensuring the
+// tags stay accurate when navigating between products without a full page reload.
+watchEffect(() => {
+    const product = store.currentProduct
+    const tenant = store.tenant
+
+    if (product === null) return
+
+    useHead({
+        title: `${product.name} — ${tenant?.business_name ?? 'Tienda'}`,
+        description: product.description ?? `${product.name} disponible en nuestra tienda`,
+        image: product.default_image_url ?? undefined,
+        url: window.location.href,
+        type: 'product',
+    })
+})
 </script>
 
 <template>

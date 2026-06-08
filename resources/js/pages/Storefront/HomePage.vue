@@ -9,10 +9,11 @@
  *   public catalog. When a dedicated SaaS marketing site is built (S2-E7 or
  *   later sprint) it will live at the main domain and can reclaim its own path.
  */
-import { onMounted } from 'vue'
+import { onMounted, watchEffect } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
+import { useHead } from '@/composables/useHead'
 import StorefrontProductCard from '@/components/composite/storefront/StorefrontProductCard.vue'
 import StorefrontCategoryChip from '@/components/composite/storefront/StorefrontCategoryChip.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
@@ -20,17 +21,27 @@ import AppSpinner from '@/components/base/AppSpinner.vue'
 const store = useStorefrontStore()
 
 onMounted(async () => {
-    const title = store.tenant?.business_name ?? 'Tienda'
-    document.title = title
-
     await Promise.all([
         store.fetchTenant(),
         store.fetchFeatured(),
         store.fetchCategories(),
     ])
+})
 
-    // Update title once tenant is loaded.
-    document.title = store.tenant?.business_name ?? 'Tienda'
+// S2-E7: inject og:title, og:image, og:type for social link previews.
+// Re-runs after fetchTenant resolves so the title reflects the real business name.
+watchEffect(() => {
+    const tenant = store.tenant
+
+    useHead({
+        title: tenant?.business_name
+            ? (tenant.tagline ? `${tenant.business_name} — ${tenant.tagline}` : tenant.business_name)
+            : 'Tienda',
+        description: tenant?.description ?? (tenant?.business_name ? `Catalogo de ${tenant.business_name}` : undefined),
+        image: tenant?.logo_url ?? undefined,
+        url: window.location.href,
+        type: 'website',
+    })
 })
 </script>
 
