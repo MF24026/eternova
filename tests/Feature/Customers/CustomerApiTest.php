@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\Cache;
 use Tests\Support\ActingAsTenantMember;
 use Tests\TestCase;
@@ -23,29 +22,6 @@ final class CustomerApiTest extends TestCase
     private Tenant $tenantB;
 
     private User $ownerA;
-
-    /**
-     * Switch to a PID-unique MySQL database so parallel agents running
-     * migrate:fresh on the shared "testing" DB cannot destroy our schema mid-run.
-     */
-    protected function refreshApplication(): void
-    {
-        parent::refreshApplication();
-
-        $dbName = 'testing_cust_api_'.getmypid();
-
-        try {
-            $this->app['db']->connection('mysql')
-                ->statement("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        } catch (\Throwable) {
-            $dbName = 'testing';
-        }
-
-        $this->app['config']->set('database.connections.mysql.database', $dbName);
-        $this->app['db']->purge('mysql');
-
-        RefreshDatabaseState::$migrated = false;
-    }
 
     protected function setUp(): void
     {
