@@ -34,10 +34,21 @@ api.interceptors.response.use(
                 useAuthStore().clearLocal()
             })
             import('@/router').then(({ default: router }) => {
-                if (router.currentRoute.value.name !== 'login') {
+                const current = router.currentRoute.value
+
+                // Only force a login redirect on routes that actually require auth.
+                // Public routes (the storefront) call fetchMe() on boot, which 401s
+                // for anonymous visitors — that is expected and must NOT bounce them
+                // to /login. The router guard already skips public routes, but this
+                // interceptor runs asynchronously and would otherwise win the race.
+                const requiresAuth = current.matched.some(
+                    (record) => record.meta.requiresAuth === true,
+                )
+
+                if (requiresAuth && current.name !== 'login') {
                     router.push({
                         name: 'login',
-                        query: { redirect: router.currentRoute.value.fullPath },
+                        query: { redirect: current.fullPath },
                     })
                 }
             })

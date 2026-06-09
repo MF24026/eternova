@@ -77,13 +77,20 @@ function initializeDefaults(): void {
         }
     }
     selectedOptions.value = defaults
+
+    // Emit the resolved variant explicitly after defaults are set. Relying on a
+    // watch with `immediate: true` would fire during setup while selectedOptions
+    // is still empty, emitting null and leaving the parent thinking nothing is
+    // selected even though the first option is visually highlighted. Emitting here
+    // keeps the parent's resolvedVariant in sync with the visual default from the
+    // first render.
+    emit('update:resolved', resolveVariant())
 }
 
-onMounted(initializeDefaults)
-watch(() => props.variants, initializeDefaults)
-
-// The resolved variant: the first variant whose options are an exact match.
-const resolvedVariant = computed((): StorefrontVariant | null => {
+// Resolve the variant matching the current selection. Used both by the computed
+// (for the template's availability checks) and by initializeDefaults (for the
+// initial emit), so the logic lives in one place.
+function resolveVariant(): StorefrontVariant | null {
     if (Object.keys(selectedOptions.value).length === 0) return null
 
     return (
@@ -91,10 +98,17 @@ const resolvedVariant = computed((): StorefrontVariant | null => {
             optionNames.value.every((name) => v.options[name] === selectedOptions.value[name]),
         ) ?? null
     )
-})
+}
 
-// Notify the parent whenever the resolved variant changes.
-watch(resolvedVariant, (v) => emit('update:resolved', v), { immediate: true })
+onMounted(initializeDefaults)
+watch(() => props.variants, initializeDefaults)
+
+// The resolved variant: the first variant whose options are an exact match.
+const resolvedVariant = computed((): StorefrontVariant | null => resolveVariant())
+
+// Notify the parent on subsequent user changes (the initial emit is handled by
+// initializeDefaults, so this watch is NOT immediate to avoid a premature null).
+watch(resolvedVariant, (v) => emit('update:resolved', v))
 
 // Returns true when a specific value is unavailable given the currently selected
 // options for every OTHER option name.

@@ -18,8 +18,19 @@ export function useStorefrontBranding() {
 
     function applyBranding(primary: string | null, secondary: string | null): void {
         const root = document.documentElement
-        root.style.setProperty('--brand-primary', primary ?? DEFAULT_PRIMARY)
-        root.style.setProperty('--brand-secondary', secondary ?? DEFAULT_SECONDARY)
+        const resolvedPrimary = primary ?? DEFAULT_PRIMARY
+        const resolvedSecondary = secondary ?? DEFAULT_SECONDARY
+
+        root.style.setProperty('--brand-primary', resolvedPrimary)
+        root.style.setProperty('--brand-secondary', resolvedSecondary)
+
+        // Override the global Ethereal Boutique tokens too. Most components read
+        // --primary / --secondary (the design-system tokens), not the brand-* aliases,
+        // so without this the tenant colors are injected but never visually applied —
+        // every storefront would render with the default mauve. Overriding here on the
+        // storefront root themes the whole public catalog per tenant.
+        root.style.setProperty('--primary', resolvedPrimary)
+        root.style.setProperty('--secondary', resolvedSecondary)
     }
 
     function applyFavicon(faviconUrl: string | null): void {
