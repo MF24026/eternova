@@ -4,53 +4,115 @@ declare(strict_types=1);
 
 namespace App\Modules\Orders\Models;
 
+use App\Models\User;
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
+use Database\Factories\Orders\OrderFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Order extends Model
+/**
+ * A sale or reservation that belongs to a specific branch of a tenant.
+ *
+ * Monetary values are always stored in centavos (int). Never expose raw
+ * _cents columns in API responses — format in API Resources.
+ *
+ * order_number is generated per-tenant (CC-{year}-{seq}) using a locked
+ * sequence row in order_sequences. See OrderService::nextOrderNumber().
+ */
+final class Order extends Model
 {
     use BelongsToTenant;
-    use HasFactory;
 
+    /** @use HasFactory<OrderFactory> */
+    use HasFactory;
+    use HasUlids;
+    use SoftDeletes;
+
+    protected static function newFactory(): OrderFactory
+    {
+        return OrderFactory::new();
+    }
+
+    /**
+     * @var list<string>
+     */
     protected $fillable = [
-        'tenant_id',
-        'order_number',
+        'branch_id',
         'customer_id',
+        'order_number',
         'status',
-        'subtotal',
-        'tax',
-        'delivery_fee',
-        'total',
         'source',
+        'subtotal_cents',
+        'tax_cents',
+        'discount_cents',
+        'total_cents',
         'payment_method',
         'payment_status',
         'notes',
-        'shipping_address',
-        'tracking_id',
-        'dispatched_at',
-        'delivered_at',
+        'user_id',
     ];
 
+    /**
+     * @var array<string, string>
+     */
     protected $casts = [
-        'subtotal' => 'integer',
-        'tax' => 'integer',
-        'delivery_fee' => 'integer',
-        'total' => 'integer',
-        'dispatched_at' => 'datetime',
-        'delivered_at' => 'datetime',
+        'subtotal_cents' => 'integer',
+        'tax_cents' => 'integer',
+        'discount_cents' => 'integer',
+        'total_cents' => 'integer',
     ];
 
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return HasMany<OrderItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'paid';
+    }
+
+    /**
+     * Mark the order as fully paid and persist.
+     *
+     * Does not open a transaction — caller is responsible for wrapping in one
+     * if this must be atomic with other writes.
+     */
+    public function markPaid(): void
+    {
+        $this->update(['payment_status' => 'paid']);
     }
 }
