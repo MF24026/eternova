@@ -125,16 +125,19 @@ const breadcrumbCategory = computed(() =>
 
 // ── Load product on mount and when slug changes ───────────────────────────────
 async function loadProduct(slug: string): Promise<void> {
+    // Reset BEFORE the awaits. If reset after, the variant selector mounts and
+    // emits its default resolved variant while the await is in flight, and the
+    // post-await reset would then wipe that emit back to null — leaving the
+    // add-to-cart button stuck on "Selecciona una opcion" even though a variant
+    // is visually selected.
+    quantity.value = 1
+    resolvedVariant.value = null
+
     await Promise.all([store.fetchTenant(), store.fetchProduct(slug)])
 
     if (!store.currentProduct) {
         void router.replace({ name: 'storefront.products' })
-        return
     }
-
-    // Reset quantity when navigating to a different product.
-    quantity.value = 1
-    resolvedVariant.value = null
 }
 
 onMounted(() => {
