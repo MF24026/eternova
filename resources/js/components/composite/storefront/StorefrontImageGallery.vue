@@ -11,10 +11,8 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// The index of the currently displayed full/medium image.
 const activeIndex = ref(0)
 
-// Reset to first image when the gallery changes (navigating between products).
 watch(() => props.gallery, () => { activeIndex.value = 0 })
 
 function selectIndex(i: number): void {
@@ -33,9 +31,9 @@ function next(): void {
         : 0
 }
 
-function activeMediumSrc(): string | null {
+function activeFullSrc(): string | null {
     if (props.gallery.length > 0) {
-        return props.gallery[activeIndex.value]?.medium ?? null
+        return props.gallery[activeIndex.value]?.full ?? props.gallery[activeIndex.value]?.medium ?? null
     }
     return props.defaultImage
 }
@@ -43,14 +41,14 @@ function activeMediumSrc(): string | null {
 
 <template>
     <div class="space-y-3">
-        <!-- Main image -->
+        <!-- Main image — 4/5 ratio matching prototype -->
         <div
-            class="relative w-full aspect-square rounded-xl overflow-hidden"
-            style="background: var(--gradient-bloom)"
+            class="relative w-full overflow-hidden"
+            style="aspect-ratio: 4/5; border-radius: var(--r-xl); background: var(--gradient-bloom)"
         >
             <img
-                v-if="activeMediumSrc()"
-                :src="activeMediumSrc()!"
+                v-if="activeFullSrc()"
+                :src="activeFullSrc()!"
                 :alt="productName"
                 class="w-full h-full object-cover"
             />
@@ -58,15 +56,15 @@ function activeMediumSrc(): string | null {
                 v-else
                 class="w-full h-full flex items-center justify-center"
             >
-                <ImageOff :size="48" class="text-on-surface-variant opacity-30" />
+                <ImageOff :size="48" style="color: var(--on-surface-variant); opacity: .3" />
             </div>
 
-            <!-- Prev/Next arrows — only shown when there are multiple images -->
+            <!-- Prev/Next only when multiple images -->
             <template v-if="gallery.length > 1">
                 <button
                     type="button"
-                    class="absolute left-2 top-1/2 -translate-y-1/2 btn-icon w-9 h-9"
-                    style="background: color-mix(in oklab, var(--surface-lowest) 80%, transparent)"
+                    class="btn-icon absolute left-3 top-1/2 -translate-y-1/2"
+                    style="width: 36px; height: 36px; background: color-mix(in oklab, var(--surface-lowest) 80%, transparent)"
                     aria-label="Imagen anterior"
                     @click="prev"
                 >
@@ -74,8 +72,8 @@ function activeMediumSrc(): string | null {
                 </button>
                 <button
                     type="button"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 btn-icon w-9 h-9"
-                    style="background: color-mix(in oklab, var(--surface-lowest) 80%, transparent)"
+                    class="btn-icon absolute right-3 top-1/2 -translate-y-1/2"
+                    style="width: 36px; height: 36px; background: color-mix(in oklab, var(--surface-lowest) 80%, transparent)"
                     aria-label="Imagen siguiente"
                     @click="next"
                 >
@@ -84,18 +82,21 @@ function activeMediumSrc(): string | null {
             </template>
         </div>
 
-        <!-- Thumbnail strip — rendered only when more than one image exists -->
+        <!-- Thumbnail strip -->
         <div
             v-if="gallery.length > 1"
-            class="flex gap-2 overflow-x-auto pb-1 scroll"
+            class="grid gap-3"
+            style="grid-template-columns: repeat(3, 1fr)"
         >
             <button
                 v-for="(image, i) in gallery"
                 :key="i"
                 type="button"
-                class="shrink-0 w-16 h-16 rounded-lg overflow-hidden transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-1"
-                :class="activeIndex === i ? 'ring-2' : 'opacity-60 hover:opacity-100'"
-                :style="activeIndex === i ? 'ring-color: var(--brand-primary, var(--primary))' : ''"
+                class="overflow-hidden transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-1"
+                style="aspect-ratio: 1/1; border-radius: var(--r-lg)"
+                :style="activeIndex === i
+                    ? 'box-shadow: 0 0 0 2px var(--primary)'
+                    : 'opacity: .65'"
                 :aria-label="`Ver imagen ${i + 1}`"
                 :aria-pressed="activeIndex === i"
                 @click="selectIndex(i)"
