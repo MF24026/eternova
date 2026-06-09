@@ -30,7 +30,7 @@ function businessNameParts(name: string): [string, string] {
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col" style="background: var(--surface); color: var(--on-surface)">
+    <div class="min-h-screen flex flex-col overflow-x-clip" style="background: var(--surface); color: var(--on-surface)">
 
         <!-- Ambient floating petals (subtle, non-interactive) -->
         <div

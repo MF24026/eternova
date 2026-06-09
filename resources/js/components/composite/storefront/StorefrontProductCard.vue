@@ -25,8 +25,8 @@ function toneFromId(id: number): SurrogateTone {
 <template>
     <RouterLink
         :to="{ name: 'storefront.product', params: { slug: product.slug } }"
-        class="group block text-left card-hover"
-        style="transition: transform .35s ease"
+        class="group block text-left card-hover overflow-hidden"
+        style="transition: transform .35s ease; border-radius: var(--r-xl)"
     >
         <!-- Product image -->
         <div
