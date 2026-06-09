@@ -4,15 +4,13 @@
  * Deep-link: ?category_slug= and ?search= are read on mount and pushed on filter change.
  */
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { Search, SlidersHorizontal } from 'lucide-vue-next'
+import { useRouter, useRoute, RouterLink } from 'vue-router'
+import { Search, SlidersHorizontal, ArrowLeft, ArrowRight } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
 import { useHead } from '@/composables/useHead'
-import StorefrontProductCard from '@/components/composite/storefront/StorefrontProductCard.vue'
-import StorefrontCategoryChip from '@/components/composite/storefront/StorefrontCategoryChip.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import AppEmptyState from '@/components/base/AppEmptyState.vue'
-import AppButton from '@/components/base/AppButton.vue'
+import Surrogate from '@/components/base/Surrogate.vue'
 import type { StorefrontSortOption } from '@/types/domain/Storefront'
 
 const router = useRouter()
@@ -76,7 +74,6 @@ function goToPage(page: number): void {
 onMounted(async () => {
     await Promise.all([store.fetchTenant(), store.fetchCategories()])
 
-    // S2-E7: set meta tags for the product list page.
     useHead({
         title: `Productos — ${store.tenant?.business_name ?? 'Tienda'}`,
         description: store.tenant?.business_name
@@ -86,7 +83,6 @@ onMounted(async () => {
         type: 'website',
     })
 
-    // Read initial filter state from the URL so direct links and back-navigation work.
     const query = route.query
     if (typeof query['category_slug'] === 'string') activeCategory.value = query['category_slug']
     if (typeof query['search'] === 'string') searchQuery.value = query['search']
@@ -101,36 +97,46 @@ onMounted(async () => {
         page: initialPage,
     })
 })
+
+// Tone cycles from product id for surrogate fallback
+const TONES = ['rose', 'lilac', 'cream', 'sage'] as const
+type SurrogateTone = typeof TONES[number]
+function toneFromId(id: number): SurrogateTone {
+    return TONES[id % TONES.length]
+}
 </script>
 
 <template>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <!-- Page header -->
-        <div>
-            <p class="label-gilt mb-1">Catalogo</p>
-            <h1 class="font-serif text-3xl font-semibold text-on-surface tracking-tighter">
-                Todos los productos
-            </h1>
-        </div>
+    <!-- Header section with tier background -->
+    <section
+        class="tier px-6 py-12 sm:px-10 lg:px-20"
+    >
+        <div class="label-gilt" style="margin-bottom: 12px">Catalogo</div>
+        <h1 class="serif" style="font-size: 48px; margin: 0">
+            {{ store.tenant?.business_name ? `Todo de ${store.tenant.business_name}` : 'Todos los productos' }}
+        </h1>
+    </section>
 
-        <!-- Filters bar -->
-        <div
-            class="rounded-xl p-4 space-y-3"
-            style="background: var(--surface-low)"
-        >
+    <!-- Filters + grid content -->
+    <div class="px-6 pb-14 sm:px-10 lg:px-20 lg:pb-24">
+
+        <!-- Filters bar: search + sort + category chips -->
+        <div style="padding: 24px 0 32px">
             <!-- Search + sort row -->
-            <div class="flex flex-col sm:flex-row gap-3">
-                <!-- Search input -->
-                <div class="relative flex-1">
+            <div class="flex gap-3 mb-5">
+                <!-- Search -->
+                <div class="relative flex-1" style="max-width: 480px">
                     <Search
                         :size="16"
-                        class="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
+                        class="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                        style="color: var(--on-surface-variant)"
                     />
                     <input
                         v-model="searchQuery"
                         type="search"
                         placeholder="Buscar productos..."
-                        class="field pl-10 pr-4 text-sm"
+                        class="field"
+                        style="padding-left: 44px"
                         data-testid="search-input"
                         aria-label="Buscar productos"
                     />
@@ -138,11 +144,11 @@ onMounted(async () => {
 
                 <!-- Sort dropdown -->
                 <div class="flex items-center gap-2 shrink-0">
-                    <SlidersHorizontal :size="14" class="text-on-surface-variant shrink-0" />
+                    <SlidersHorizontal :size="14" class="shrink-0" style="color: var(--on-surface-variant)" />
                     <select
                         v-model="sortOption"
-                        class="field text-sm py-2.5 pr-8 cursor-pointer"
-                        style="background: var(--surface-highest)"
+                        class="field text-sm cursor-pointer"
+                        style="background: var(--surface-high); padding: 10px 14px; width: auto"
                         aria-label="Ordenar productos"
                         data-testid="sort-select"
                     >
@@ -157,27 +163,38 @@ onMounted(async () => {
                 </div>
             </div>
 
-            <!-- Category chips -->
+            <!-- Category chips as bloom pills -->
             <div
-                v-if="store.categories.length > 0"
+                v-if="store.categories.length"
                 class="flex flex-wrap gap-2"
                 role="group"
                 aria-label="Filtrar por categoria"
             >
-                <StorefrontCategoryChip
-                    :category="null"
-                    :active="activeCategory === null"
+                <button
+                    type="button"
+                    class="bloom transition-all duration-200"
+                    :class="activeCategory === null ? 'bloom-primary' : 'bloom-soft'"
+                    :aria-pressed="activeCategory === null"
                     data-testid="chip-all"
-                    @select="selectCategory(null)"
-                />
-                <StorefrontCategoryChip
+                    @click="selectCategory(null)"
+                >
+                    Todos
+                </button>
+                <button
                     v-for="cat in store.categories"
                     :key="cat.id"
-                    :category="cat"
-                    :active="activeCategory === cat.slug"
+                    type="button"
+                    class="bloom transition-all duration-200"
+                    :class="activeCategory === cat.slug ? 'bloom-primary' : 'bloom-soft'"
+                    :aria-pressed="activeCategory === cat.slug"
                     :data-testid="`chip-${cat.slug}`"
-                    @select="selectCategory"
-                />
+                    @click="selectCategory(cat.slug)"
+                >
+                    {{ cat.name }}
+                    <span v-if="cat.products_count > 0" class="opacity-60 text-xs font-normal">
+                        {{ cat.products_count }}
+                    </span>
+                </button>
             </div>
         </div>
 
@@ -193,49 +210,86 @@ onMounted(async () => {
             description="Intenta con otro termino de busqueda o una categoria diferente."
         />
 
-        <!-- Product grid -->
+        <!-- Product grid — card style matches the curated grid on home -->
         <div
             v-else
-            class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"
             data-testid="products-grid"
         >
-            <StorefrontProductCard
+            <RouterLink
                 v-for="product in store.products"
                 :key="product.id"
-                :product="product"
+                :to="{ name: 'storefront.product', params: { slug: product.slug } }"
+                class="group block text-left card-hover"
+                style="transition: transform .35s ease"
                 :data-testid="`product-card-${product.slug}`"
-            />
+            >
+                <div
+                    class="relative overflow-hidden mb-3.5"
+                    style="aspect-ratio: 1/1; border-radius: var(--r-xl)"
+                >
+                    <img
+                        v-if="product.default_image_url"
+                        :src="product.default_image_url"
+                        :alt="product.name"
+                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                    />
+                    <Surrogate
+                        v-else
+                        :tone="toneFromId(product.id)"
+                        :fill="true"
+                    />
+
+                    <!-- Featured badge -->
+                    <span
+                        v-if="product.is_featured"
+                        class="absolute top-2 left-2 bloom bloom-primary text-xs"
+                        aria-label="Producto destacado"
+                    >
+                        Destacado
+                    </span>
+                </div>
+                <div class="label-gilt" style="margin-bottom: 4px">
+                    {{ product.categories[0]?.name ?? 'Producto' }}
+                </div>
+                <div class="serif" style="font-size: 18px; margin-bottom: 6px">{{ product.name }}</div>
+                <div style="font-size: 14px; font-weight: 600; color: var(--primary)">
+                    {{ store.formatPrice(product.base_price_cents) }}
+                </div>
+            </RouterLink>
         </div>
 
         <!-- Pagination -->
         <div
             v-if="lastPage > 1"
-            class="flex items-center justify-between pt-4"
+            class="flex items-center justify-between mt-10 pt-6"
+            style="border-top: 1px solid var(--outline-variant)"
         >
-            <p class="text-sm text-on-surface-variant">
+            <p class="text-sm" style="color: var(--on-surface-variant)">
                 Pagina {{ currentPage }} de {{ lastPage }}
-                <span v-if="store.pagination.meta">
-                    ({{ store.pagination.meta.total }} productos)
-                </span>
+                <span v-if="store.pagination.meta"> ({{ store.pagination.meta.total }} productos)</span>
             </p>
 
             <div class="flex gap-2">
-                <AppButton
-                    variant="secondary"
-                    size="sm"
+                <button
+                    type="button"
+                    class="btn btn-tertiary"
                     :disabled="currentPage <= 1"
+                    :style="currentPage <= 1 ? 'opacity: .4; pointer-events: none' : ''"
                     @click="goToPage(currentPage - 1)"
                 >
-                    Anterior
-                </AppButton>
-                <AppButton
-                    variant="secondary"
-                    size="sm"
+                    <ArrowLeft :size="14" /> Anterior
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-tertiary"
                     :disabled="currentPage >= lastPage"
+                    :style="currentPage >= lastPage ? 'opacity: .4; pointer-events: none' : ''"
                     @click="goToPage(currentPage + 1)"
                 >
-                    Siguiente
-                </AppButton>
+                    Siguiente <ArrowRight :size="14" />
+                </button>
             </div>
         </div>
     </div>
