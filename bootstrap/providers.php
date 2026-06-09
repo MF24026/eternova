@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Catalog\Providers\CatalogServiceProvider;
+use App\Modules\Customers\Providers\CustomersServiceProvider;
 use App\Modules\Inventory\Providers\InventoryServiceProvider;
 use App\Modules\Orders\Providers\OrdersServiceProvider;
 use App\Modules\Tenancy\Providers\TenancyServiceProvider;
@@ -12,4 +13,5 @@ return [
     CatalogServiceProvider::class,
     InventoryServiceProvider::class,
     OrdersServiceProvider::class,
+    CustomersServiceProvider::class,
 ];
