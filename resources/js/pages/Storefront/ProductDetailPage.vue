@@ -42,9 +42,17 @@ const displayPriceCents = computed((): number => {
 
 const displayPrice = computed((): string => store.formatPrice(displayPriceCents.value))
 
+// True when the product has variants and every one is out of stock — the whole
+// product is unavailable regardless of which option is selected.
+const allVariantsOutOfStock = computed((): boolean => {
+    const variants = store.currentProduct?.variants ?? []
+    return variants.length > 0 && variants.every((v) => !v.in_stock)
+})
+
 const isOutOfStock = computed((): boolean => {
-    if (!resolvedVariant.value) return false
-    return !resolvedVariant.value.in_stock
+    if (allVariantsOutOfStock.value) return true
+    if (resolvedVariant.value) return !resolvedVariant.value.in_stock
+    return false
 })
 
 const isLowStock = computed((): boolean => {
@@ -55,6 +63,22 @@ const isLowStock = computed((): boolean => {
 const hasVariants = computed((): boolean =>
     (store.currentProduct?.variants?.length ?? 0) > 0,
 )
+
+// Product has variants but none resolved yet: shopper must pick an option before
+// adding to cart. Distinct from out-of-stock so the label guides them.
+const needsVariantSelection = computed((): boolean =>
+    hasVariants.value && !resolvedVariant.value && !allVariantsOutOfStock.value,
+)
+
+const addToCartDisabled = computed((): boolean =>
+    isOutOfStock.value || needsVariantSelection.value,
+)
+
+const addToCartLabel = computed((): string => {
+    if (isOutOfStock.value) return 'Agotado'
+    if (needsVariantSelection.value) return 'Selecciona una opcion'
+    return 'Agregar al carrito'
+})
 
 // ── Quantity stepper ──────────────────────────────────────────────────────────
 function decrementQty(): void {
@@ -68,6 +92,9 @@ function incrementQty(): void {
 // ── Add-to-cart ────────────────────────────────────────────────────────────────
 function handleAddToCart(): void {
     if (!store.currentProduct) return
+    // Defense in depth: never add an out-of-stock or unselected item even if the
+    // button somehow fires (e.g. keyboard activation bypassing the disabled state).
+    if (addToCartDisabled.value) return
 
     // When the product has no variants, resolvedVariant is null.
     // We synthesise a minimal variant-shaped object from the product itself
@@ -298,13 +325,13 @@ watchEffect(() => {
                         <button
                             type="button"
                             class="btn btn-primary flex-1 flex items-center justify-center gap-2"
-                            :disabled="isOutOfStock"
-                            :aria-disabled="isOutOfStock"
+                            :disabled="addToCartDisabled"
+                            :aria-disabled="addToCartDisabled"
                             data-testid="add-to-cart-btn"
                             @click="handleAddToCart"
                         >
                             <ShoppingCart :size="16" />
-                            {{ isOutOfStock ? 'Agotado' : 'Agregar al carrito' }}
+                            {{ addToCartLabel }}
                         </button>
                     </div>
 
