@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Minus, Plus, Trash2, ShoppingBag, MessageCircle } from 'lucide-vue-next'
-import AppSlideover from '@/components/base/AppSlideover.vue'
-import AppInput from '@/components/base/AppInput.vue'
+import { Minus, Plus, Trash2, ShoppingBag, MessageCircle, X } from 'lucide-vue-next'
 import { useCartStore } from '@/stores/cart'
 import { useStorefrontStore } from '@/stores/storefront'
 import { useWhatsappCheckout } from '@/composables/useWhatsappCheckout'
 import { useToast } from '@/composables/useToast'
+import Surrogate from '@/components/base/Surrogate.vue'
 
 interface Props {
     modelValue: boolean
@@ -24,9 +23,11 @@ const storefront = useStorefrontStore()
 const toast = useToast()
 const { checkout } = useWhatsappCheckout()
 
-// Optional customer fields shown at the bottom of the cart
-const customerName = ref('')
 const customerNote = ref('')
+
+function close(): void {
+    emit('update:modelValue', false)
+}
 
 function handleUpdateQty(variantId: number, delta: number): void {
     const item = cart.items.find((i) => i.variantId === variantId)
@@ -41,23 +42,17 @@ function handleCheckout(): void {
     }
 
     const opened = checkout(cart.items, storefront.tenant, {
-        name: customerName.value,
+        name: '',
         note: customerNote.value,
     })
 
     if (opened) {
         toast.success('Pedido enviado por WhatsApp')
-        // UX decision: do NOT auto-clear the cart after checkout.
-        // The customer may want to re-send the message (network issues, closed
-        // WhatsApp by accident, needs to forward to a different number, etc.).
-        // A visible "Vaciar carrito" option below the button lets them clear
-        // intentionally if needed.
     }
 }
 
 function handleClear(): void {
     cart.clear()
-    customerName.value = ''
     customerNote.value = ''
 }
 
@@ -66,55 +61,92 @@ function optionLabel(options: Record<string, string>): string {
         .map(([key, value]) => `${key}: ${value}`)
         .join(' · ')
 }
+
+// Subtotal and total calculations (mirroring prototype — no actual shipping API)
+function subtotalCents(): number {
+    return cart.subtotalCents
+}
 </script>
 
 <template>
-    <AppSlideover
-        :model-value="modelValue"
-        title="Tu carrito"
-        :subtitle="cart.isEmpty ? '' : `${cart.count} ${cart.count === 1 ? 'producto' : 'productos'}`"
-        @update:model-value="emit('update:modelValue', $event)"
-    >
-        <!-- Empty state -->
-        <div
-            v-if="cart.isEmpty"
-            class="flex flex-col items-center justify-center gap-4 py-16 text-center"
-            data-testid="cart-empty-state"
-        >
-            <div
-                class="w-16 h-16 rounded-full flex items-center justify-center"
-                style="background: var(--surface-high)"
-            >
-                <ShoppingBag :size="28" style="color: var(--on-surface-variant)" />
-            </div>
-            <div>
-                <p class="font-medium text-on-surface text-sm">Tu carrito esta vacio</p>
-                <p class="text-xs text-on-surface-variant mt-1">
-                    Agrega productos para comenzar tu pedido
-                </p>
-            </div>
-            <RouterLink
-                :to="{ name: 'storefront.products' }"
-                class="btn btn-primary text-sm"
-                @click="emit('update:modelValue', false)"
-            >
-                Ver catalogo
-            </RouterLink>
-        </div>
+    <!-- Scrim -->
+    <div
+        class="slideover-scrim"
+        :class="{ open: modelValue }"
+        @click="close"
+    />
 
-        <!-- Item list -->
-        <template v-else>
-            <ul class="space-y-4" data-testid="cart-items">
-                <li
+    <!-- Panel -->
+    <aside
+        class="slideover"
+        :class="{ open: modelValue }"
+        role="dialog"
+        :aria-label="`Tu canasta — ${cart.count} ${cart.count === 1 ? 'pieza' : 'piezas'}`"
+    >
+        <!-- Header -->
+        <header style="padding: 24px 24px 16px; display: flex; align-items: flex-start; gap: 12px">
+            <div class="grow">
+                <div class="label-gilt" style="margin-bottom: 6px">
+                    {{ cart.count }} {{ cart.count === 1 ? 'pieza' : 'piezas' }}
+                </div>
+                <h2 class="serif" style="margin: 0; font-size: 28px; line-height: 1.1">Tu canasta</h2>
+            </div>
+            <button
+                type="button"
+                class="btn-icon"
+                aria-label="Cerrar carrito"
+                @click="close"
+            >
+                <X :size="18" />
+            </button>
+        </header>
+
+        <!-- Body (scrollable) -->
+        <div class="scroll grow" style="padding: 0 24px 24px">
+
+            <!-- Empty state -->
+            <div
+                v-if="cart.isEmpty"
+                class="flex flex-col items-center justify-center gap-4 text-center"
+                style="padding: 80px 0"
+                data-testid="cart-empty-state"
+            >
+                <div
+                    style="width: 96px; height: 96px; margin: 0 auto 8px; border-radius: 50%; background: var(--surface-low); display: grid; place-items: center"
+                >
+                    <ShoppingBag :size="32" style="color: var(--on-surface-variant)" />
+                </div>
+                <p style="color: var(--on-surface-variant)">
+                    Tu canasta esta vacia. Comienza por elegir un producto.
+                </p>
+                <RouterLink
+                    :to="{ name: 'storefront.products' }"
+                    class="btn btn-primary text-sm"
+                    @click="close"
+                >
+                    Ver catalogo
+                </RouterLink>
+            </div>
+
+            <!-- Item list -->
+            <div
+                v-else
+                class="stack"
+                style="gap: 14px"
+                data-testid="cart-items"
+            >
+                <!-- Cart item row -->
+                <div
                     v-for="item in cart.items"
                     :key="item.variantId"
-                    class="flex gap-3"
+                    class="card flex gap-3.5 items-center"
+                    style="background: var(--surface-low); padding: 14px; border-radius: var(--r-lg)"
                     :data-testid="`cart-item-${item.variantId}`"
                 >
-                    <!-- Thumbnail -->
+                    <!-- Thumbnail: real image or surrogate -->
                     <div
-                        class="w-16 h-16 shrink-0 rounded-xl overflow-hidden"
-                        style="background: var(--surface-high)"
+                        class="relative shrink-0 overflow-hidden"
+                        style="width: 64px; height: 64px; border-radius: var(--r-lg)"
                     >
                         <img
                             v-if="item.imageUrl"
@@ -122,143 +154,151 @@ function optionLabel(options: Record<string, string>): string {
                             :alt="item.productName"
                             class="w-full h-full object-cover"
                         />
-                        <div
+                        <Surrogate
                             v-else
-                            class="w-full h-full flex items-center justify-center"
-                        >
-                            <ShoppingBag :size="20" style="color: var(--on-surface-variant)" />
-                        </div>
+                            tone="rose"
+                            :fill="true"
+                        />
                     </div>
 
-                    <!-- Details + controls -->
-                    <div class="flex-1 min-w-0 flex flex-col gap-1.5">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold text-on-surface truncate leading-tight">
-                                    {{ item.productName }}
-                                </p>
-                                <p
-                                    v-if="Object.keys(item.variantOptions).length > 0"
-                                    class="text-xs text-on-surface-variant mt-0.5 truncate"
-                                    :data-testid="`cart-item-options-${item.variantId}`"
-                                >
-                                    {{ optionLabel(item.variantOptions) }}
-                                </p>
-                            </div>
-                            <!-- Remove button -->
+                    <!-- Name + price + qty -->
+                    <div class="grow min-w-0">
+                        <div
+                            class="serif"
+                            style="font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+                        >
+                            {{ item.productName }}
+                        </div>
+                        <div
+                            v-if="Object.keys(item.variantOptions).length > 0"
+                            class="text-xs truncate mt-0.5"
+                            style="color: var(--on-surface-variant)"
+                            :data-testid="`cart-item-options-${item.variantId}`"
+                        >
+                            {{ optionLabel(item.variantOptions) }}
+                        </div>
+                        <div style="font-size: 13px; color: var(--primary); font-weight: 600; margin-top: 2px">
+                            {{ storefront.formatPrice(item.priceCents) }}
+                        </div>
+
+                        <!-- Qty stepper (compact) -->
+                        <div
+                            class="inline-flex items-center gap-0.5 mt-2"
+                            style="background: var(--surface-lowest); border-radius: 999px; padding: 2px"
+                        >
                             <button
                                 type="button"
-                                class="btn-icon shrink-0 -mt-0.5"
-                                :aria-label="`Eliminar ${item.productName}`"
-                                @click="cart.removeItem(item.variantId)"
+                                style="width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px"
+                                :aria-label="`Reducir cantidad de ${item.productName}`"
+                                :disabled="item.quantity <= 1"
+                                :data-testid="`cart-item-decrement-${item.variantId}`"
+                                @click="handleUpdateQty(item.variantId, -1)"
                             >
-                                <Trash2 :size="14" style="color: var(--error)" />
+                                <Minus :size="12" />
+                            </button>
+                            <span
+                                style="min-width: 22px; text-align: center; font-size: 13px; font-weight: 600"
+                                :data-testid="`cart-item-qty-${item.variantId}`"
+                            >
+                                {{ item.quantity }}
+                            </span>
+                            <button
+                                type="button"
+                                style="width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px"
+                                :aria-label="`Aumentar cantidad de ${item.productName}`"
+                                :data-testid="`cart-item-increment-${item.variantId}`"
+                                @click="handleUpdateQty(item.variantId, 1)"
+                            >
+                                <Plus :size="12" />
                             </button>
                         </div>
-
-                        <div class="flex items-center justify-between gap-2">
-                            <!-- Quantity stepper -->
-                            <div
-                                class="flex items-center rounded-full overflow-hidden gap-0.5"
-                                style="background: var(--surface-high)"
-                            >
-                                <button
-                                    type="button"
-                                    class="btn-icon w-7 h-7 rounded-full text-xs"
-                                    :aria-label="`Reducir cantidad de ${item.productName}`"
-                                    :disabled="item.quantity <= 1"
-                                    :data-testid="`cart-item-decrement-${item.variantId}`"
-                                    @click="handleUpdateQty(item.variantId, -1)"
-                                >
-                                    <Minus :size="12" />
-                                </button>
-                                <span
-                                    class="w-6 text-center text-xs font-bold text-on-surface select-none"
-                                    :data-testid="`cart-item-qty-${item.variantId}`"
-                                >
-                                    {{ item.quantity }}
-                                </span>
-                                <button
-                                    type="button"
-                                    class="btn-icon w-7 h-7 rounded-full text-xs"
-                                    :aria-label="`Aumentar cantidad de ${item.productName}`"
-                                    :data-testid="`cart-item-increment-${item.variantId}`"
-                                    @click="handleUpdateQty(item.variantId, 1)"
-                                >
-                                    <Plus :size="12" />
-                                </button>
-                            </div>
-
-                            <!-- Line subtotal -->
-                            <p
-                                class="text-sm font-bold text-on-surface"
-                                :data-testid="`cart-item-subtotal-${item.variantId}`"
-                            >
-                                {{ storefront.formatPrice(item.priceCents * item.quantity) }}
-                            </p>
-                        </div>
                     </div>
-                </li>
-            </ul>
 
-            <!-- Divider via background shift (no 1px border rule) -->
-            <div
-                class="mt-5 -mx-5 px-5 py-4 space-y-3"
-                style="background: var(--surface-mid)"
-            >
-                <!-- Subtotal row -->
-                <div class="flex items-center justify-between">
-                    <p class="label-gilt">Subtotal</p>
-                    <p
-                        class="text-sm font-bold text-on-surface"
-                        data-testid="cart-subtotal"
+                    <!-- Remove -->
+                    <button
+                        type="button"
+                        class="btn-icon shrink-0"
+                        :aria-label="`Eliminar ${item.productName}`"
+                        @click="cart.removeItem(item.variantId)"
                     >
-                        {{ storefront.formatPrice(cart.subtotalCents) }}
-                    </p>
+                        <Trash2 :size="16" style="color: var(--error)" />
+                    </button>
+                </div>
+
+                <!-- Nota para el atelier -->
+                <div
+                    style="background: var(--surface-mid); border-radius: var(--r-lg); padding: 16px; margin-top: 12px"
+                >
+                    <div class="label-gilt" style="margin-bottom: 6px">Nota para el atelier</div>
+                    <textarea
+                        v-model="customerNote"
+                        class="field"
+                        rows="3"
+                        placeholder="Quisiera que la cinta sea color crema…"
+                        style="background: var(--surface-lowest); resize: vertical"
+                        data-testid="checkout-customer-note"
+                    />
                 </div>
             </div>
+        </div>
 
-            <!-- Optional customer fields — no required, helps the tenant identify the order -->
-            <div class="mt-4 space-y-3">
-                <p class="label-gilt">Tu informacion (opcional)</p>
-                <AppInput
-                    v-model="customerName"
-                    label="Tu nombre"
-                    placeholder="Ej: Maria Lopez"
-                    data-testid="checkout-customer-name"
-                />
-                <AppInput
-                    v-model="customerNote"
-                    label="Nota"
-                    placeholder="Ej: Para entregar el viernes"
-                    data-testid="checkout-customer-note"
-                />
-            </div>
-        </template>
+        <!-- Footer — only when cart has items -->
+        <footer
+            v-if="!cart.isEmpty"
+            style="padding: 16px 24px 24px; background: var(--surface-low)"
+        >
+            <div class="stack" style="gap: 16px">
+                <!-- Totals -->
+                <div class="stack" style="gap: 8px; font-size: 14px">
+                    <div class="row" style="justify-content: space-between; color: var(--on-surface-variant)">
+                        <span>Subtotal</span>
+                        <span
+                            class="font-bold"
+                            style="color: var(--on-surface)"
+                            data-testid="cart-subtotal"
+                        >
+                            {{ storefront.formatPrice(subtotalCents()) }}
+                        </span>
+                    </div>
+                    <!-- Total row -->
+                    <div class="row" style="justify-content: space-between; padding-top: 10px">
+                        <span style="font-size: 16px; font-weight: 700">Total</span>
+                        <span
+                            class="serif"
+                            style="color: var(--primary); font-size: 24px"
+                        >
+                            {{ storefront.formatPrice(subtotalCents()) }}
+                        </span>
+                    </div>
+                </div>
 
-        <!-- Sticky footer with checkout CTA -->
-        <template v-if="!cart.isEmpty" #footer>
-            <div class="space-y-2">
+                <!-- WhatsApp CTA -->
                 <button
                     type="button"
-                    class="btn btn-primary w-full flex items-center justify-center gap-2"
+                    class="btn btn-primary w-full justify-center"
+                    style="width: 100%; padding: 16px 22px"
                     data-testid="checkout-whatsapp-btn"
                     @click="handleCheckout"
                 >
                     <MessageCircle :size="16" />
-                    Finalizar pedido por WhatsApp
+                    Confirmar por WhatsApp
                 </button>
 
-                <!-- Secondary: clear cart -->
+                <p class="text-center text-xs" style="color: var(--on-surface-variant); margin: 0">
+                    Pago contra entrega · transferencia · efectivo
+                </p>
+
+                <!-- Clear cart -->
                 <button
                     type="button"
-                    class="btn w-full text-sm text-on-surface-variant hover:text-error transition-colors text-center py-1"
+                    class="btn w-full text-center text-sm justify-center"
+                    style="color: var(--on-surface-variant)"
                     data-testid="clear-cart-btn"
                     @click="handleClear"
                 >
-                    Vaciar carrito
+                    Vaciar canasta
                 </button>
             </div>
-        </template>
-    </AppSlideover>
+        </footer>
+    </aside>
 </template>

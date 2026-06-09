@@ -1,22 +1,12 @@
 <script setup lang="ts">
-/**
- * S2-E2 — Storefront homepage for a tenant subdomain.
- *
- * Routing decision (see router/index.ts):
- *   The original `/` route pointed to a generic marketing/SaaS landing page.
- *   That page has been moved to `/welcome` (as a placeholder). The storefront
- *   homepage now owns `/` because on a TENANT subdomain the root is always the
- *   public catalog. When a dedicated SaaS marketing site is built (S2-E7 or
- *   later sprint) it will live at the main domain and can reclaim its own path.
- */
-import { onMounted, watchEffect } from 'vue'
+import { ref, onMounted, watchEffect } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
 import { useHead } from '@/composables/useHead'
-import StorefrontProductCard from '@/components/composite/storefront/StorefrontProductCard.vue'
-import StorefrontCategoryChip from '@/components/composite/storefront/StorefrontCategoryChip.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
+import Petal from '@/components/base/Petal.vue'
+import Surrogate from '@/components/base/Surrogate.vue'
 
 const store = useStorefrontStore()
 
@@ -28,11 +18,8 @@ onMounted(async () => {
     ])
 })
 
-// S2-E7: inject og:title, og:image, og:type for social link previews.
-// Re-runs after fetchTenant resolves so the title reflects the real business name.
 watchEffect(() => {
     const tenant = store.tenant
-
     useHead({
         title: tenant?.business_name
             ? (tenant.tagline ? `${tenant.business_name} — ${tenant.tagline}` : tenant.business_name)
@@ -43,126 +30,334 @@ watchEffect(() => {
         type: 'website',
     })
 })
+
+// Tone cycles from product id so surrogate fallbacks look varied.
+const TONES = ['rose', 'lilac', 'cream', 'sage'] as const
+type SurrogateTone = typeof TONES[number]
+
+function toneFromId(id: number): SurrogateTone {
+    return TONES[id % TONES.length]
+}
+
+// Active curated-grid tab (null = all)
+const activeCategoryTab = ref<string | null>(null)
 </script>
 
 <template>
-    <!-- Hero section -->
+    <!-- ── Hero ────────────────────────────────────────────────────────────── -->
     <section
-        class="relative overflow-hidden px-4 sm:px-6 lg:px-8 py-20 sm:py-28"
+        class="relative overflow-hidden px-6 py-12 sm:px-10 sm:py-16 lg:px-20 lg:py-20"
         style="background: var(--gradient-bloom)"
     >
-        <!-- Decorative bloom blobs -->
+        <!-- Ambient petals (desktop only, hidden on tiny screens) -->
         <div
-            class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40 petal-anim"
-            style="background: var(--primary-container)"
-        />
+            class="petal petal-anim absolute hidden sm:block"
+            style="top: -60px; right: -80px; width: 360px; height: 360px; opacity: .65"
+            aria-hidden="true"
+        >
+            <Petal tone="lilac" :size="1" />
+        </div>
         <div
-            class="pointer-events-none absolute -bottom-12 -left-8 w-48 h-48 rounded-full opacity-30 petal-anim"
-            style="background: var(--secondary-container); animation-delay: -4s"
-        />
+            class="petal petal-anim absolute hidden sm:block"
+            style="bottom: -100px; left: -80px; width: 280px; height: 280px; opacity: .45; animation-delay: -5s"
+            aria-hidden="true"
+        >
+            <Petal tone="rose" :size="1" />
+        </div>
 
-        <div class="relative max-w-3xl mx-auto text-center fade-in">
-            <p class="label-gilt mb-4">Bienvenida</p>
+        <!-- Two-column on desktop, stacked on mobile -->
+        <div class="relative grid grid-cols-1 md:grid-cols-2 items-center gap-8 lg:gap-16"
+             style="--hero-cols: 1.1fr 1fr"
+        >
+            <!-- Left: copy + CTAs -->
+            <div class="fade-in">
+                <div class="label-gilt" style="margin-bottom: 16px">
+                    {{ store.tenant?.tagline ? store.tenant.tagline.split(' ').slice(0, 3).join(' ') : 'Coleccion' }}
+                </div>
+                <h1
+                    class="serif"
+                    style="font-size: clamp(40px, 6vw, 72px); line-height: .98; margin: 0 0 24px; font-weight: 400; letter-spacing: -.03em"
+                >
+                    <template v-if="store.tenant?.tagline">
+                        {{ store.tenant.tagline }}<br />
+                        <em style="font-style: italic; color: var(--primary)">para siempre.</em>
+                    </template>
+                    <template v-else>
+                        Cada detalle<br />
+                        es <em style="font-style: italic; color: var(--primary)">una historia</em><br />
+                        que perdura.
+                    </template>
+                </h1>
+                <p
+                    class="leading-relaxed"
+                    style="color: var(--on-surface-variant); font-size: 17px; max-width: 460px; margin-bottom: 32px"
+                >
+                    {{ store.tenant?.description ?? 'Articulos curados a mano para los momentos que merecen quedarse.' }}
+                </p>
+                <div class="flex gap-3 flex-wrap">
+                    <RouterLink
+                        :to="{ name: 'storefront.products' }"
+                        class="btn btn-primary"
+                    >
+                        Explorar la coleccion
+                        <ArrowRight :size="16" />
+                    </RouterLink>
+                    <RouterLink
+                        v-if="store.categories.length"
+                        :to="{ name: 'storefront.products', query: { category_slug: store.categories[0]?.slug } }"
+                        class="btn btn-secondary"
+                    >
+                        Ver categorias
+                    </RouterLink>
+                </div>
+            </div>
 
-            <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tighter text-on-surface mb-4">
-                {{ store.tenant?.business_name ?? 'Nuestra Tienda' }}
-            </h1>
-
-            <p
-                v-if="store.tenant?.tagline"
-                class="text-lg sm:text-xl text-on-surface-variant leading-relaxed mb-8"
+            <!-- Right: asymmetric 4-image mosaic (hidden on mobile to avoid overflow) -->
+            <div
+                class="fade-in-delay-1 relative hidden md:block"
+                style="aspect-ratio: 4/5; display: grid; grid-template-columns: repeat(6,1fr); grid-template-rows: repeat(6,1fr); gap: 8px"
             >
-                {{ store.tenant.tagline }}
-            </p>
+                <!-- Top-left large (4/6 × 4/6) -->
+                <div style="grid-column: 1/5; grid-row: 1/5">
+                    <div class="relative w-full h-full overflow-hidden" style="border-radius: var(--r-xl)">
+                        <img
+                            v-if="store.featured[0]?.default_image_url"
+                            :src="store.featured[0].default_image_url"
+                            :alt="store.featured[0].name"
+                            class="w-full h-full object-cover"
+                        />
+                        <Surrogate
+                            v-else
+                            kind="rose"
+                            :tone="store.featured[0] ? toneFromId(store.featured[0].id) : 'rose'"
+                            :fill="true"
+                        />
+                    </div>
+                </div>
+                <!-- Top-right narrow (2/6 × 3/6) -->
+                <div style="grid-column: 5/7; grid-row: 2/5">
+                    <div class="relative w-full h-full overflow-hidden" style="border-radius: var(--r-xl)">
+                        <img
+                            v-if="store.featured[1]?.default_image_url"
+                            :src="store.featured[1].default_image_url"
+                            :alt="store.featured[1].name"
+                            class="w-full h-full object-cover"
+                        />
+                        <Surrogate v-else kind="peluche" tone="lilac" :fill="true" />
+                    </div>
+                </div>
+                <!-- Bottom-center (3/6 × 2/6) -->
+                <div style="grid-column: 3/6; grid-row: 5/7">
+                    <div class="relative w-full h-full overflow-hidden" style="border-radius: var(--r-xl)">
+                        <img
+                            v-if="store.featured[2]?.default_image_url"
+                            :src="store.featured[2].default_image_url"
+                            :alt="store.featured[2].name"
+                            class="w-full h-full object-cover"
+                        />
+                        <Surrogate v-else kind="bolso" tone="cream" :fill="true" />
+                    </div>
+                </div>
+                <!-- Bottom-left (2/6 × 2/6) -->
+                <div style="grid-column: 1/3; grid-row: 5/7">
+                    <div class="relative w-full h-full overflow-hidden" style="border-radius: var(--r-xl)">
+                        <img
+                            v-if="store.featured[3]?.default_image_url"
+                            :src="store.featured[3].default_image_url"
+                            :alt="store.featured[3].name"
+                            class="w-full h-full object-cover"
+                        />
+                        <Surrogate v-else kind="llavero" tone="rose" :fill="true" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- ── Featured Categories ─────────────────────────────────────────────── -->
+    <section
+        v-if="store.categories.length"
+        class="px-6 py-14 sm:px-10 sm:py-20 lg:px-20 lg:py-24"
+    >
+        <div class="flex items-baseline justify-between gap-4 mb-8 flex-wrap">
+            <div>
+                <div class="label-gilt" style="margin-bottom: 12px">Categorias</div>
+                <h2 class="serif" style="font-size: clamp(28px, 4vw, 48px); margin: 0">
+                    Cuatro maneras<br class="hidden sm:block" /> de hacer memoria.
+                </h2>
+            </div>
+            <RouterLink :to="{ name: 'storefront.products' }" class="btn btn-secondary hidden md:inline-flex">
+                Ver todo
+            </RouterLink>
+        </div>
+
+        <!-- 2 cols on mobile, 4 on desktop -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <RouterLink
-                :to="{ name: 'storefront.products' }"
-                class="btn btn-primary inline-flex items-center gap-2 fade-in-delay-1"
+                v-for="(cat, i) in store.categories.slice(0, 4)"
+                :key="cat.id"
+                :to="{ name: 'storefront.products', query: { category_slug: cat.slug } }"
+                class="card card-hover"
+                style="padding: 0; overflow: hidden; text-align: left; aspect-ratio: 3/4; display: flex; flex-direction: column; background: var(--surface-lowest)"
             >
-                Ver catalogo
-                <ArrowRight :size="16" />
+                <div class="relative flex-1">
+                    <img
+                        v-if="cat.image_url"
+                        :src="cat.image_url"
+                        :alt="cat.name"
+                        class="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <Surrogate
+                        v-else
+                        :kind="(['rose','peluche','bolso','llavero'] as const)[i % 4]"
+                        :tone="(['rose','lilac','cream','sage'] as const)[i % 4]"
+                        :fill="true"
+                    />
+                </div>
+                <div style="padding: 20px">
+                    <div class="label-gilt" style="margin-bottom: 6px">
+                        <template v-if="cat.products_count > 0">{{ cat.products_count }} productos</template>
+                        <template v-else>Coleccion</template>
+                    </div>
+                    <div class="serif" style="font-size: 20px">{{ cat.name }}</div>
+                </div>
             </RouterLink>
         </div>
     </section>
 
-    <!-- Categories section -->
-    <section
-        v-if="store.categories.length > 0"
-        class="px-4 sm:px-6 lg:px-8 py-12"
-        style="background: var(--surface-low)"
-    >
-        <div class="max-w-7xl mx-auto">
-            <p class="label-gilt mb-6">Categorias</p>
-
-            <div class="flex flex-wrap gap-2">
-                <StorefrontCategoryChip
-                    :category="null"
-                    :active="false"
-                    data-testid="category-chip-all"
-                    @select="() => {}"
-                />
-                <StorefrontCategoryChip
-                    v-for="cat in store.categories"
-                    :key="cat.id"
-                    :category="cat"
-                    :active="false"
-                    :data-testid="`category-chip-${cat.slug}`"
-                    @select="(slug) => $router.push({ name: 'storefront.products', query: slug ? { category_slug: slug } : {} })"
-                />
+    <!-- ── Curated grid (featured products) ───────────────────────────────── -->
+    <section class="tier px-6 py-14 sm:px-10 sm:py-20 lg:px-20 lg:py-24">
+        <div class="flex items-baseline justify-between gap-4 mb-8 flex-wrap">
+            <div>
+                <div class="label-gilt" style="margin-bottom: 12px">Curados a mano</div>
+                <h2 class="serif" style="font-size: clamp(28px, 4vw, 48px); margin: 0">Lo que florece esta semana.</h2>
+            </div>
+            <div class="tabs">
+                <button
+                    class="tab"
+                    :class="{ active: activeCategoryTab === null }"
+                    @click="activeCategoryTab = null"
+                >
+                    Todo
+                </button>
+                <button
+                    v-for="cat in store.categories.slice(0, 3)"
+                    :key="cat.slug"
+                    class="tab hidden sm:block"
+                    :class="{ active: activeCategoryTab === cat.slug }"
+                    @click="activeCategoryTab = cat.slug"
+                >
+                    {{ cat.name }}
+                </button>
             </div>
         </div>
+
+        <div v-if="store.isLoading" class="flex justify-center py-16">
+            <AppSpinner />
+        </div>
+
+        <div
+            v-else-if="store.featured.length"
+            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5"
+            data-testid="featured-products-grid"
+        >
+            <RouterLink
+                v-for="product in store.featured
+                    .filter(p => !activeCategoryTab || p.categories.some(c => c.slug === activeCategoryTab))
+                    .slice(0, 8)"
+                :key="product.id"
+                :to="{ name: 'storefront.product', params: { slug: product.slug } }"
+                class="group block text-left card-hover"
+                style="transition: transform .35s ease"
+            >
+                <div
+                    class="relative overflow-hidden mb-3"
+                    style="aspect-ratio: 1/1; border-radius: var(--r-xl)"
+                >
+                    <img
+                        v-if="product.default_image_url"
+                        :src="product.default_image_url"
+                        :alt="product.name"
+                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                    />
+                    <Surrogate
+                        v-else
+                        :tone="toneFromId(product.id)"
+                        :fill="true"
+                    />
+                </div>
+                <div class="label-gilt" style="margin-bottom: 4px">
+                    {{ product.categories[0]?.name ?? 'Producto' }}
+                </div>
+                <div class="serif" style="font-size: 17px; margin-bottom: 4px">{{ product.name }}</div>
+                <div style="font-size: 14px; font-weight: 600; color: var(--primary)">
+                    {{ store.formatPrice(product.base_price_cents) }}
+                </div>
+            </RouterLink>
+        </div>
+
+        <p v-else class="text-center py-12 text-sm" style="color: var(--on-surface-variant)">
+            Pronto encontraras productos aqui.
+        </p>
     </section>
 
-    <!-- Featured products section -->
-    <section class="px-4 sm:px-6 lg:px-8 py-12">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <p class="label-gilt mb-1">Destacados</p>
-                    <h2 class="font-serif text-2xl font-semibold text-on-surface tracking-tighter">
-                        Productos favoritos
-                    </h2>
-                </div>
-                <RouterLink
-                    :to="{ name: 'storefront.products' }"
-                    class="btn-secondary text-sm hidden sm:flex items-center gap-1"
-                >
-                    Ver todos
-                    <ArrowRight :size="14" />
-                </RouterLink>
-            </div>
+    <!-- ── Story section ──────────────────────────────────────────────────── -->
+    <section
+        class="relative overflow-hidden px-6 py-14 sm:px-10 sm:py-20 lg:px-20 lg:py-32"
+    >
+        <!-- Ambient petal -->
+        <div
+            class="petal petal-anim absolute pointer-events-none hidden lg:block"
+            style="right: -120px; top: -60px; width: 380px; height: 380px; opacity: .35"
+            aria-hidden="true"
+        >
+            <Petal tone="rose" :size="1" />
+        </div>
 
-            <div v-if="store.isLoading" class="flex justify-center py-16">
-                <AppSpinner />
-            </div>
-
+        <!-- One column on mobile, two on desktop -->
+        <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-10 lg:gap-20">
+            <!-- Left: decorative gradient panel -->
             <div
-                v-else-if="store.featured.length > 0"
-                class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
-                data-testid="featured-products-grid"
+                class="relative overflow-hidden"
+                style="aspect-ratio: 4/5; border-radius: var(--r-2xl)"
             >
-                <StorefrontProductCard
-                    v-for="product in store.featured"
-                    :key="product.id"
-                    :product="product"
-                    :data-testid="`product-card-${product.slug}`"
-                />
+                <div class="absolute inset-0" style="background: var(--gradient-soft)" />
+                <div class="absolute inset-0" style="opacity: .8">
+                    <Petal tone="rose" :size="1" />
+                </div>
+                <div
+                    class="glass absolute"
+                    style="bottom: 24px; left: 24px; right: 24px; padding: 20px; border-radius: var(--r-lg)"
+                >
+                    <div class="label-gilt" style="margin-bottom: 6px">Atelier</div>
+                    <div class="serif" style="font-size: 22px">
+                        {{ store.tenant?.business_name ?? 'Nuestro atelier' }}
+                    </div>
+                </div>
             </div>
 
-            <p
-                v-else
-                class="text-center text-on-surface-variant py-12 text-sm"
-            >
-                Pronto encontraras productos aqui.
-            </p>
-
-            <!-- Mobile "ver todos" CTA -->
-            <div class="mt-8 text-center sm:hidden">
+            <!-- Right: copy -->
+            <div>
+                <div class="label-gilt" style="margin-bottom: 16px">Nuestra historia</div>
+                <h2
+                    class="serif"
+                    style="font-size: clamp(28px, 4vw, 56px); margin: 0 0 24px; line-height: 1.02"
+                >
+                    Hecho despacio,<br />con manos que recuerdan.
+                </h2>
+                <p
+                    class="leading-relaxed"
+                    style="color: var(--on-surface-variant); font-size: 16px; line-height: 1.7; margin-bottom: 24px; max-width: 540px"
+                >
+                    {{ store.tenant?.description
+                        ?? 'Cada pieza es creada con atencion al detalle, pensada para perdurar. Catalogos curados para los momentos que merecen quedarse.' }}
+                </p>
                 <RouterLink
                     :to="{ name: 'storefront.products' }"
-                    class="btn btn-primary inline-flex items-center gap-2"
+                    class="btn btn-tertiary inline-flex"
                 >
-                    Ver catalogo completo
+                    Ver la coleccion completa
                     <ArrowRight :size="16" />
                 </RouterLink>
             </div>

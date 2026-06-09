@@ -16,20 +16,16 @@ const emit = defineEmits<{
 <template>
     <button
         type="button"
-        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-1"
-        :class="active
-            ? 'text-on-primary shadow-sm'
-            : 'text-on-surface-variant hover:text-on-surface'"
-        :style="active
-            ? 'background: var(--brand-primary, var(--primary))'
-            : 'background: var(--surface-high)'"
+        class="bloom transition-all duration-200"
+        :class="active ? 'bloom-primary' : 'bloom-soft'"
         :aria-pressed="active"
         @click="emit('select', category?.slug ?? null)"
     >
         {{ category?.name ?? 'Todos' }}
         <span
             v-if="category && category.products_count > 0"
-            class="text-xs font-normal opacity-70"
+            class="opacity-60 font-normal"
+            style="font-size: 11px"
         >
             {{ category.products_count }}
         </span>
