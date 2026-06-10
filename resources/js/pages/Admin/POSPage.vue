@@ -151,10 +151,6 @@ async function handleCheckout(): Promise<void> {
     }
 }
 
-function handleReceiptClose(): void {
-    receiptOpen.value = false
-}
-
 function handleNewSale(): void {
     receiptData.value = null
     receiptOpen.value = false
