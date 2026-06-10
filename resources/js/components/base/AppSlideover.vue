@@ -46,9 +46,13 @@ onUnmounted(() => {
     document.body.style.overflow = ''
 })
 
+// Mobile: full-width bottom sheet (bottom-0 left-0 right-0).
+// Desktop (md+): dock to one edge. The md:left-auto / md:right-auto is essential —
+// without it the leftover mobile `left-0`/`right-0` combines with the explicit
+// width and pins the panel to the wrong (opposite) edge.
 const slideClasses = {
-    right: 'md:right-0 md:top-0 md:bottom-0 rounded-t-2xl md:rounded-t-none md:rounded-l-2xl bottom-0 left-0 right-0',
-    left: 'md:left-0 md:top-0 md:bottom-0 rounded-t-2xl md:rounded-t-none md:rounded-r-2xl bottom-0 left-0 right-0',
+    right: 'md:left-auto md:right-0 md:top-0 md:bottom-0 rounded-t-2xl md:rounded-t-none md:rounded-l-2xl bottom-0 left-0 right-0',
+    left: 'md:right-auto md:left-0 md:top-0 md:bottom-0 rounded-t-2xl md:rounded-t-none md:rounded-r-2xl bottom-0 left-0 right-0',
 }
 
 const enterFrom = {
@@ -63,7 +67,8 @@ const enterFrom = {
             enter-active-class="duration-300 ease-out"
             leave-active-class="duration-200 ease-in"
         >
-            <div v-if="modelValue" class="fixed inset-0 z-50 overflow-hidden">
+            <!-- z above the admin sidebar (z-80) so the backdrop covers the whole app. -->
+            <div v-if="modelValue" class="fixed inset-0 z-[90] overflow-hidden">
                 <!-- Backdrop -->
                 <div
                     class="absolute inset-0 bg-on-surface/30 backdrop-blur-sm"
