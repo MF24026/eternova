@@ -9,12 +9,15 @@ interface Props {
     subtitle?: string
     side?: 'right' | 'left'
     width?: string
+    /** Optional data-testid forwarded to the panel dialog element. */
+    testId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
     subtitle: '',
     side: 'right',
     width: '480px',
+    testId: undefined,
 })
 
 const emit = defineEmits<{
@@ -96,6 +99,7 @@ const enterFrom = {
                         :style="{ [side === 'right' ? 'width' : 'width']: `min(${width}, 100vw)` }"
                         role="dialog"
                         :aria-label="title"
+                        :data-testid="testId"
                         @touchstart="onTouchStart"
                         @touchmove.prevent="onTouchMove"
                         @touchend="onTouchEnd"

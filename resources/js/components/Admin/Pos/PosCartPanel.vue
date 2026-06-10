@@ -13,6 +13,7 @@ interface Props {
     totalCents: number
     isSubmitting: boolean
     formatCents: (cents: number) => string
+    selectedCustomerName: string | null
 }
 
 const props = defineProps<Props>()
@@ -22,6 +23,7 @@ const emit = defineEmits<{
     removeLine: [variantId: number]
     'update:paymentMethod': [method: PosPaymentMethod]
     checkout: []
+    'open-customer-selector': []
 }>()
 
 const isEmpty = computed(() => props.lines.length === 0)
@@ -46,17 +48,29 @@ const cobrarLabel = computed(() =>
             max-width: 380px;
         "
     >
-        <!-- Panel header -->
+        <!-- Panel header: sale title + customer selector button -->
         <div class="flex justify-between items-start mb-4">
-            <div>
+            <div class="min-w-0 flex-1">
                 <p class="label-gilt">Venta en curso</p>
-                <p class="serif text-xl text-on-surface">Nueva venta</p>
+                <p
+                    class="serif text-xl text-on-surface truncate"
+                    :title="selectedCustomerName ?? 'Nueva venta'"
+                >
+                    {{ selectedCustomerName ?? 'Nueva venta' }}
+                </p>
             </div>
             <button
-                class="btn-icon"
+                class="btn-icon shrink-0"
+                :title="selectedCustomerName ? `Cliente: ${selectedCustomerName}` : 'Seleccionar cliente'"
                 aria-label="Seleccionar cliente"
+                data-testid="pos-customer-btn"
+                @click="emit('open-customer-selector')"
             >
-                <User :size="18" aria-hidden="true" />
+                <User
+                    :size="18"
+                    :style="selectedCustomerName ? 'color: var(--primary)' : ''"
+                    aria-hidden="true"
+                />
             </button>
         </div>
 
@@ -96,10 +110,9 @@ const cobrarLabel = computed(() =>
                 <span class="tabular-nums">{{ formatCents(subtotalCents) }}</span>
             </div>
             <!--
-                IVA row is shown as $0.00 intentionally.
-                Tax logic is a backend TODO — the backend currently returns tax_cents: 0.
+                IVA row shown as $0.00 intentionally.
+                Tax logic is a backend TODO — backend currently returns tax_cents: 0.
                 Showing the row keeps the layout design-ready for when tax lands.
-                The "Cobrar" amount correctly matches totalCents = subtotalCents + 0.
             -->
             <div class="flex justify-between text-on-surface-variant">
                 <span>IVA</span>
