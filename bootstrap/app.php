@@ -15,6 +15,7 @@ use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
@@ -38,6 +39,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             AddLinkHeadersForPreloadedAssets::class,
+        ]);
+
+        // SPA cookie auth: requests coming from a stateful domain (the first-party
+        // SPA — see SANCTUM_STATEFUL_DOMAINS) get the session/cookie/CSRF stack so
+        // Auth::attempt() persists a session and the `auth:sanctum` guard can
+        // authenticate /api/v1 calls via that session. Without this, login returns
+        // 200 but no session cookie is issued, so every subsequent API call (e.g.
+        // /me on a full page reload) 401s and bounces the user to /login.
+        // Third-party clients without a stateful Origin fall through to token auth.
+        $middleware->api(prepend: [
+            EnsureFrontendRequestsAreStateful::class,
         ]);
 
         // Register alias — apply to tenant-scoped routes when ready
