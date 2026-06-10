@@ -2,12 +2,13 @@
 import { ref, watch, onMounted } from 'vue'
 import PosProductGrid from '@/components/Admin/Pos/PosProductGrid.vue'
 import PosCartPanel from '@/components/Admin/Pos/PosCartPanel.vue'
+import PosReceiptSlideover from '@/components/Admin/Pos/PosReceiptSlideover.vue'
 import { usePosStore } from '@/stores/pos'
 import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useToast } from '@/composables/useToast'
 import PosService from '@/services/PosService'
-import type { PosProduct, PosProductCategory, PosPaymentMethod } from '@/types/domain/POS'
+import type { PosProduct, PosProductCategory, PosPaymentMethod, PosReceipt } from '@/types/domain/POS'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '@/types/api'
 
@@ -98,9 +99,11 @@ function deduplicateCategories(cats: PosProductCategory[]): PosProductCategory[]
     })
 }
 
-// ── Checkout ─────────────────────────────────────────────────────────────────
+// ── Checkout + receipt ────────────────────────────────────────────────────────
 
 const isSubmitting = ref(false)
+const receiptData = ref<PosReceipt | null>(null)
+const receiptOpen = ref(false)
 
 async function handleCheckout(): Promise<void> {
     if (store.isEmpty || isSubmitting.value) return
@@ -119,12 +122,23 @@ async function handleCheckout(): Promise<void> {
             notes: store.notes || undefined,
         })
 
-        // Clear the cart on success — the authoritative totals are in result.data.
+        // The sale is committed at this point. Clear the cart and refresh stock
+        // immediately so a subsequent receipt-fetch failure can never leave the
+        // cashier with a full cart that invites a duplicate checkout.
         store.clear()
-        toast.success(`Venta #${result.data.order_number} registrada correctamente`)
-
-        // Reload products so available_quantity reflects the new stock levels.
         void loadProducts()
+
+        // Fetch the richer receipt for display/printing. If this fails the sale
+        // still went through, so we surface a soft message rather than a checkout
+        // error. The receipt data lives in receiptData, so reprinting is safe
+        // while the slideover is open.
+        try {
+            const receiptResponse = await PosService.receipt(result.data.id)
+            receiptData.value = receiptResponse.data
+            receiptOpen.value = true
+        } catch {
+            toast.success(`Venta #${result.data.order_number} registrada. No se pudo cargar el recibo.`)
+        }
     } catch (err) {
         const axiosErr = err as AxiosError<ApiErrorResponse>
         const status = axiosErr.response?.status
@@ -139,6 +153,11 @@ async function handleCheckout(): Promise<void> {
     } finally {
         isSubmitting.value = false
     }
+}
+
+function handleNewSale(): void {
+    receiptData.value = null
+    receiptOpen.value = false
 }
 
 // ── Cart event handlers ───────────────────────────────────────────────────────
@@ -185,6 +204,13 @@ function handlePaymentMethodChange(method: PosPaymentMethod): void {
             @checkout="handleCheckout"
         />
     </div>
+
+    <!-- Receipt slideover — rendered outside pos-shell so it overlays the full screen -->
+    <PosReceiptSlideover
+        v-model="receiptOpen"
+        :receipt="receiptData"
+        @new-sale="handleNewSale"
+    />
 </template>
 
 <style scoped>
