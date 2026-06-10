@@ -122,19 +122,23 @@ async function handleCheckout(): Promise<void> {
             notes: store.notes || undefined,
         })
 
-        // Fetch the richer receipt before clearing the cart.
-        // The cart is cleared AFTER the receipt is captured so that the cashier
-        // can still see what was in the sale while the receipt is open, and
-        // reprinting is safe while the slideover is open (data lives in receiptData).
-        const receiptResponse = await PosService.receipt(result.data.id)
-        receiptData.value = receiptResponse.data
-
-        // Clear the cart now that we have the receipt data captured in a local ref.
+        // The sale is committed at this point. Clear the cart and refresh stock
+        // immediately so a subsequent receipt-fetch failure can never leave the
+        // cashier with a full cart that invites a duplicate checkout.
         store.clear()
-        receiptOpen.value = true
-
-        // Reload products so available_quantity reflects the new stock levels.
         void loadProducts()
+
+        // Fetch the richer receipt for display/printing. If this fails the sale
+        // still went through, so we surface a soft message rather than a checkout
+        // error. The receipt data lives in receiptData, so reprinting is safe
+        // while the slideover is open.
+        try {
+            const receiptResponse = await PosService.receipt(result.data.id)
+            receiptData.value = receiptResponse.data
+            receiptOpen.value = true
+        } catch {
+            toast.success(`Venta #${result.data.order_number} registrada. No se pudo cargar el recibo.`)
+        }
     } catch (err) {
         const axiosErr = err as AxiosError<ApiErrorResponse>
         const status = axiosErr.response?.status

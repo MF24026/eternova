@@ -70,7 +70,8 @@ export interface PosOrderItem {
 }
 
 export interface PosOrder {
-    id: number
+    // Orders use a ULID primary key (human-readable, sortable by creation time).
+    id: string
     order_number: string
     status: string
     payment_method: PosPaymentMethod

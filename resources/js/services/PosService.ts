@@ -52,8 +52,8 @@ const PosService = {
         return response.data
     },
 
-    async receipt(orderId: number): Promise<PosReceiptResponse> {
-        const response = await api.get<PosReceiptResponse>(`/pos/receipt/${orderId}`)
+    async receipt(orderId: string): Promise<PosReceiptResponse> {
+        const response = await api.get<PosReceiptResponse>(`/pos/orders/${orderId}/receipt`)
         return response.data
     },
 }
