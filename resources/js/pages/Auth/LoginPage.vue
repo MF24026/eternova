@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Flower2, ArrowRight, Loader2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { extractFieldErrors, extractErrorMessage } from '@/utils/errors'
-import AppButton from '@/components/base/AppButton.vue'
-import AppInput from '@/components/base/AppInput.vue'
-import AppCard from '@/components/base/AppCard.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -38,57 +36,223 @@ async function handleSubmit() {
 </script>
 
 <template>
-    <div class="min-h-screen bg-surface flex items-center justify-center px-4 py-12">
-        <div class="w-full max-w-sm">
-            <router-link
-                :to="{ name: 'home' }"
-                class="block text-center font-serif font-semibold text-primary tracking-tighter text-2xl mb-8"
-            >
-                Eternova
-            </router-link>
+    <div class="login-bloom">
+        <!-- Decorative bloom petals -->
+        <span class="petal petal--rose" aria-hidden="true" />
+        <span class="petal petal--lilac" aria-hidden="true" />
 
-            <AppCard>
-                <h2 class="text-lg font-semibold text-on-surface mb-6">
-                    Iniciar sesion
-                </h2>
+        <div class="card login-card fade-in">
+            <div class="brand">
+                <span class="brand-badge">
+                    <Flower2 :size="22" />
+                </span>
+                <span class="serif brand-name">Eternova</span>
+            </div>
 
-                <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
-                    <AppInput
+            <p class="label-gilt">Panel del negocio</p>
+            <h1 class="serif login-title">Bienvenido<br>de nuevo.</h1>
+            <p class="login-subtitle">
+                Tu jardin te espera. Ingresa con tus credenciales para continuar.
+            </p>
+
+            <form class="login-form" novalidate @submit.prevent="handleSubmit">
+                <div class="field-group">
+                    <label for="email" class="field-label">Correo electronico</label>
+                    <input
                         id="email"
                         v-model="email"
                         type="email"
-                        label="Correo electronico"
+                        class="field"
                         placeholder="tu@correo.com"
                         autocomplete="email"
-                        :error="fieldErrors.email ?? ''"
-                    />
+                        :aria-invalid="!!fieldErrors.email"
+                    >
+                    <p v-if="fieldErrors.email" class="field-error" role="alert">{{ fieldErrors.email }}</p>
+                </div>
 
-                    <AppInput
+                <div class="field-group">
+                    <label for="password" class="field-label">Contrasena</label>
+                    <input
                         id="password"
                         v-model="password"
                         type="password"
-                        label="Contrasena"
+                        class="field"
                         placeholder="••••••••"
                         autocomplete="current-password"
-                        :error="fieldErrors.password ?? ''"
-                    />
+                        :aria-invalid="!!fieldErrors.password"
+                    >
+                    <p v-if="fieldErrors.password" class="field-error" role="alert">{{ fieldErrors.password }}</p>
+                </div>
 
-                    <p v-if="generalError && !Object.keys(fieldErrors).length" class="text-sm text-error">
-                        {{ generalError }}
-                    </p>
-
-                    <AppButton type="submit" :loading="submitting" class="mt-2">
-                        Entrar
-                    </AppButton>
-                </form>
-
-                <p class="mt-5 text-center text-sm text-on-surface-variant">
-                    Sin cuenta?
-                    <router-link :to="{ name: 'signup' }" class="text-primary hover:underline font-medium">
-                        Crear una gratis
-                    </router-link>
+                <p v-if="generalError && !Object.keys(fieldErrors).length" class="field-error general-error" role="alert">
+                    {{ generalError }}
                 </p>
-            </AppCard>
+
+                <button type="submit" class="btn btn-primary login-submit" :disabled="submitting">
+                    <Loader2 v-if="submitting" :size="16" class="spin" />
+                    <template v-else>
+                        Entrar
+                        <ArrowRight :size="16" />
+                    </template>
+                </button>
+            </form>
+
+            <p class="login-footer">
+                Sin cuenta?
+                <router-link :to="{ name: 'signup' }" class="login-link">Crear una gratis</router-link>
+            </p>
         </div>
     </div>
 </template>
+
+<style scoped>
+.login-bloom {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    background: var(--gradient-bloom);
+}
+
+.petal {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(8px);
+    pointer-events: none;
+}
+
+.petal--rose {
+    top: -120px;
+    right: -140px;
+    width: 460px;
+    height: 460px;
+    opacity: 0.55;
+    background: radial-gradient(circle at 35% 35%, #f7c9d2 0%, #f3b6c4 45%, transparent 70%);
+}
+
+.petal--lilac {
+    bottom: -120px;
+    left: -100px;
+    width: 340px;
+    height: 340px;
+    opacity: 0.5;
+    background: radial-gradient(circle at 40% 40%, #e3d2ff 0%, #d3bcff 45%, transparent 70%);
+}
+
+.login-card {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 440px;
+    padding: 48px;
+    background: var(--surface-lowest);
+    box-shadow: var(--shadow-ambient);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.brand-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--gradient);
+    color: var(--on-primary);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.brand-name {
+    font-size: 22px;
+    line-height: 1;
+    color: var(--on-surface);
+}
+
+.login-title {
+    font-size: 36px;
+    line-height: 1.05;
+    margin: 8px 0;
+    color: var(--on-surface);
+}
+
+.login-subtitle {
+    color: var(--on-surface-variant);
+    font-size: 14px;
+    margin-bottom: 28px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-error {
+    font-size: 13px;
+    color: var(--error, #b3261e);
+}
+
+.general-error {
+    margin-top: -4px;
+}
+
+.login-submit {
+    width: 100%;
+    justify-content: center;
+    padding: 16px;
+    margin-top: 8px;
+    font-size: 16px;
+}
+
+.login-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.spin {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.login-footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--on-surface-variant);
+}
+
+.login-link {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.login-link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 32px 24px;
+    }
+
+    .login-title {
+        font-size: 30px;
+    }
+}
+</style>

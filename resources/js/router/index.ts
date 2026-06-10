@@ -39,7 +39,9 @@ const router = createRouter({
             path: '/login',
             name: 'login',
             component: () => import('@/pages/Auth/LoginPage.vue'),
-            meta: { guestOnly: true, layout: 'onboarding' },
+            // No layout wrapper: LoginPage is a full-screen self-contained design
+            // (gradient-bloom backdrop + bloom petals) matching the Carol Creaciones prototype.
+            meta: { guestOnly: true },
         },
         {
             path: '/signup',
