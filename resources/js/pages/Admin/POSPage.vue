@@ -2,12 +2,13 @@
 import { ref, watch, onMounted } from 'vue'
 import PosProductGrid from '@/components/Admin/Pos/PosProductGrid.vue'
 import PosCartPanel from '@/components/Admin/Pos/PosCartPanel.vue'
+import PosReceiptSlideover from '@/components/Admin/Pos/PosReceiptSlideover.vue'
 import { usePosStore } from '@/stores/pos'
 import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useToast } from '@/composables/useToast'
 import PosService from '@/services/PosService'
-import type { PosProduct, PosProductCategory, PosPaymentMethod } from '@/types/domain/POS'
+import type { PosProduct, PosProductCategory, PosPaymentMethod, PosReceipt } from '@/types/domain/POS'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '@/types/api'
 
@@ -98,9 +99,11 @@ function deduplicateCategories(cats: PosProductCategory[]): PosProductCategory[]
     })
 }
 
-// ── Checkout ─────────────────────────────────────────────────────────────────
+// ── Checkout + receipt ────────────────────────────────────────────────────────
 
 const isSubmitting = ref(false)
+const receiptData = ref<PosReceipt | null>(null)
+const receiptOpen = ref(false)
 
 async function handleCheckout(): Promise<void> {
     if (store.isEmpty || isSubmitting.value) return
@@ -119,9 +122,16 @@ async function handleCheckout(): Promise<void> {
             notes: store.notes || undefined,
         })
 
-        // Clear the cart on success — the authoritative totals are in result.data.
+        // Fetch the richer receipt before clearing the cart.
+        // The cart is cleared AFTER the receipt is captured so that the cashier
+        // can still see what was in the sale while the receipt is open, and
+        // reprinting is safe while the slideover is open (data lives in receiptData).
+        const receiptResponse = await PosService.receipt(result.data.id)
+        receiptData.value = receiptResponse.data
+
+        // Clear the cart now that we have the receipt data captured in a local ref.
         store.clear()
-        toast.success(`Venta #${result.data.order_number} registrada correctamente`)
+        receiptOpen.value = true
 
         // Reload products so available_quantity reflects the new stock levels.
         void loadProducts()
@@ -139,6 +149,15 @@ async function handleCheckout(): Promise<void> {
     } finally {
         isSubmitting.value = false
     }
+}
+
+function handleReceiptClose(): void {
+    receiptOpen.value = false
+}
+
+function handleNewSale(): void {
+    receiptData.value = null
+    receiptOpen.value = false
 }
 
 // ── Cart event handlers ───────────────────────────────────────────────────────
@@ -185,6 +204,13 @@ function handlePaymentMethodChange(method: PosPaymentMethod): void {
             @checkout="handleCheckout"
         />
     </div>
+
+    <!-- Receipt slideover — rendered outside pos-shell so it overlays the full screen -->
+    <PosReceiptSlideover
+        v-model="receiptOpen"
+        :receipt="receiptData"
+        @new-sale="handleNewSale"
+    />
 </template>
 
 <style scoped>
