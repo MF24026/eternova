@@ -5,6 +5,7 @@ import type {
     PosProduct,
     PosCheckoutPayload,
     PosCheckoutResponse,
+    PosReceiptResponse,
 } from '@/types/domain/POS'
 
 interface BranchesApiResponse {
@@ -48,6 +49,11 @@ const PosService = {
 
     async checkout(payload: PosCheckoutPayload): Promise<PosCheckoutResponse> {
         const response = await api.post<PosCheckoutResponse>('/pos/checkout', payload)
+        return response.data
+    },
+
+    async receipt(orderId: number): Promise<PosReceiptResponse> {
+        const response = await api.get<PosReceiptResponse>(`/pos/receipt/${orderId}`)
         return response.data
     },
 }

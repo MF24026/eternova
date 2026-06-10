@@ -85,3 +85,58 @@ export interface PosOrder {
 export interface PosCheckoutResponse {
     data: PosOrder
 }
+
+// ── Receipt ───────────────────────────────────────────────────────────────────
+
+export interface PosReceiptBusiness {
+    name: string
+    logo_url: string | null
+    primary_color: string | null
+}
+
+export interface PosReceiptBranch {
+    name: string
+    address: string | null
+    phone: string | null
+}
+
+export interface PosReceiptCustomer {
+    id: number
+    name: string
+}
+
+export interface PosReceiptCashier {
+    id: number
+    name: string
+}
+
+export interface PosReceiptItem {
+    name: string
+    /** Key-value pairs of the selected variant options, e.g. { "Color": "Rojo" } */
+    variant_options: Record<string, string>
+    sku: string | null
+    quantity: number
+    unit_price_cents: number
+    total_cents: number
+}
+
+export interface PosReceipt {
+    order_number: string
+    created_at: string          // ISO-8601
+    status: string
+    payment_method: PosPaymentMethod
+    payment_status: string
+    business: PosReceiptBusiness
+    branch: PosReceiptBranch | null
+    customer: PosReceiptCustomer | null
+    cashier: PosReceiptCashier
+    items: PosReceiptItem[]
+    subtotal_cents: number
+    tax_cents: number
+    discount_cents: number
+    total_cents: number
+}
+
+export interface PosReceiptResponse {
+    data: PosReceipt
+}
