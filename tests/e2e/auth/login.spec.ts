@@ -16,7 +16,8 @@ async function createUser(request: APIRequestContext): Promise<{ name: string; e
     const user = {
         name: `Test User ${ts}`,
         email: `test-${ts}-${suffix}@example.com`,
-        password: 'password123',
+        // Must satisfy the password policy: min 8 chars, mixed case, and a number.
+        password: 'Password123',
     }
 
     const res = await request.post(`${baseURL}/api/v1/auth/register`, {
@@ -80,12 +81,11 @@ test.describe('Login flow', () => {
         // Must stay on /login
         await expect(page).toHaveURL(`${baseURL}/login`, { timeout: 10_000 })
 
-        // An error message must be visible (either field-level or general)
-        const errorVisible = await page.getByText(/credencial|contrasena|wrong|invalid|incorrecta|estas credenciales/i).isVisible()
-            .catch(() => false)
-        const generalErrorVisible = await page.locator('p.text-error, [class*="text-error"]').first().isVisible()
-            .catch(() => false)
-        expect(errorVisible || generalErrorVisible).toBe(true)
+        // An inline error must be visible. The login surfaces validation/auth
+        // errors as role="alert" elements (accessible live region).
+        const alert = page.getByRole('alert').first()
+        await expect(alert).toBeVisible({ timeout: 10_000 })
+        await expect(alert).toContainText(/credencial/i)
     })
 
     test('logout returns to login page', async ({ page, request }) => {
@@ -99,8 +99,9 @@ test.describe('Login flow', () => {
         await page.getByRole('button', { name: 'Entrar' }).click()
         await page.waitForURL(`${baseURL}/admin/dashboard`, { timeout: 15_000 })
 
-        // Click the logout button in the dashboard
-        await page.getByRole('button', { name: 'Cerrar sesion' }).click()
+        // Open the user menu (trigger is labelled with the user's name), then log out.
+        await page.getByRole('button', { name: new RegExp(user.name) }).first().click()
+        await page.getByRole('menuitem', { name: 'Cerrar sesion' }).click()
 
         await page.waitForURL(`${baseURL}/login`, { timeout: 10_000 })
         await expect(page).toHaveURL(`${baseURL}/login`)
