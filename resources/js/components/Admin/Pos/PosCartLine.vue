@@ -37,7 +37,7 @@ const variantLabel = Object.values(props.line.variantOptions).join(' · ')
 
         <!-- Name + unit price -->
         <div class="grow min-w-0">
-            <p class="text-sm font-semibold truncate text-on-surface">{{ line.productName }}</p>
+            <p class="text-sm font-semibold truncate text-on-surface" :title="line.productName">{{ line.productName }}</p>
             <p class="text-xs text-on-surface-variant">
                 <span v-if="variantLabel" class="mr-1">{{ variantLabel }} ·</span>
                 {{ formatCents(line.priceCents) }} c/u
