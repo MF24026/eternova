@@ -18,6 +18,7 @@ use App\Modules\Tenancy\Scopes\TenantScope;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -111,6 +112,7 @@ final readonly class OrderService
                 'branch_id' => $branch->id,
                 'customer_id' => $customer?->id,
                 'order_number' => $orderNumber,
+                'tracking_token' => $this->generateTrackingToken(),
                 'status' => 'preparing',
                 'source' => 'pos',
                 'subtotal_cents' => $subtotalCents,
@@ -511,5 +513,21 @@ final readonly class OrderService
 
         // Load via relationship when no tenant is bound (queue/CLI context)
         return $branch->tenant;
+    }
+
+    /**
+     * Generate a 32-char url-safe tracking token unique across all orders.
+     *
+     * Collision probability across millions of orders is astronomically low
+     * (192 bits of entropy). The while loop is a cheap defensive guard — in
+     * practice it never iterates more than once.
+     */
+    private function generateTrackingToken(): string
+    {
+        do {
+            $token = Str::random(32);
+        } while (Order::withoutGlobalScopes()->where('tracking_token', $token)->exists());
+
+        return $token;
     }
 }
