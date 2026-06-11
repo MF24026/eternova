@@ -269,6 +269,76 @@ final readonly class OrderService
     }
 
     /**
+     * Assign (or un-assign) a staff member to an order.
+     *
+     * Passing null for $assignee clears the assignment — this is a valid operation,
+     * not an error condition. The caller decides whether "unassigned" is allowed by
+     * business rules; this method only enforces the cross-tenant invariant.
+     *
+     * Timeline entry design: we write an OrderStatusHistory row where
+     * from_status === to_status === $order->status. The status does not change, but the
+     * assignment event is recorded so the order's full activity timeline is visible.
+     * The frontend can detect assignment-only events by checking from_status === to_status.
+     * Alternative (a nullable note-only entry with null statuses) was rejected because
+     * it would require widening the not-null constraint on to_status in the schema and
+     * would make the history model semantically inconsistent.
+     *
+     * @throws DomainException When $assignee belongs to a different tenant than the order
+     */
+    public function assign(Order $order, ?User $assignee, ?User $actor = null): Order
+    {
+        if ($assignee !== null) {
+            $this->assertAssigneeBelongsToOrderTenant(order: $order, assignee: $assignee);
+        }
+
+        $note = $assignee !== null
+            ? "Assigned to {$assignee->name}"
+            : 'Unassigned';
+
+        DB::transaction(function () use ($order, $assignee, $actor, $note): void {
+            $order->update(['assigned_to' => $assignee?->id]);
+
+            OrderStatusHistory::create([
+                'tenant_id' => $order->tenant_id,
+                'order_id' => $order->id,
+                'from_status' => $order->status,
+                'to_status' => $order->status,
+                'user_id' => $actor?->id,
+                'note' => $note,
+            ]);
+        });
+
+        Log::info('Order assignment updated', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'tenant_id' => $order->tenant_id,
+            'assigned_to' => $assignee?->id,
+            'actor_id' => $actor?->id,
+        ]);
+
+        return $order->fresh()->load('assignee');
+    }
+
+    /**
+     * Assert that $assignee is a member of the same tenant as the order.
+     *
+     * Users are globally scoped (no tenant_id column on the users table). Membership
+     * is tracked in the tenant_users pivot. User::belongsToTenant() queries that pivot.
+     *
+     * @throws DomainException When the user has no membership in the order's tenant
+     */
+    private function assertAssigneeBelongsToOrderTenant(Order $order, User $assignee): void
+    {
+        $tenant = Tenant::find($order->tenant_id);
+
+        if ($tenant === null || ! $assignee->belongsToTenant($tenant)) {
+            throw new DomainException(
+                "Cannot assign order #{$order->order_number} to a user from another tenant."
+            );
+        }
+    }
+
+    /**
      * Assert that $toStatus is a valid next step from the order's current status.
      *
      * @throws DomainException When $toStatus is unknown or not reachable from current status

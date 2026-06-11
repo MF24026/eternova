@@ -56,6 +56,7 @@ final class Order extends Model
         'payment_status',
         'notes',
         'user_id',
+        'assigned_to',
     ];
 
     /**
@@ -90,6 +91,18 @@ final class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The staff member currently assigned to prepare or dispatch this order.
+     *
+     * Null when the order has not been assigned to anyone.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     /**
