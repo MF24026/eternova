@@ -46,6 +46,9 @@ final class OrderResource extends BaseResource
         return [
             'id' => $order->id,
             'order_number' => $order->order_number,
+            // The public tracking credential — staff use it to build/share the
+            // customer-facing /track/{token} link. Authenticated staff only.
+            'tracking_token' => $order->tracking_token,
             'status' => $order->status,
             'source' => $order->source,
             'payment_method' => $order->payment_method,
