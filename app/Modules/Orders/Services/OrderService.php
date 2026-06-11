@@ -10,6 +10,7 @@ use App\Modules\Catalog\Models\ProductVariant;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Models\OrderStatusHistory;
 use App\Modules\Orders\Repositories\OrderRepositoryInterface;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 /**
- * Orchestrates POS order creation.
+ * Orchestrates POS order creation and the order status state machine.
  *
  * The single most important invariant: every createFromPos() call is all-or-nothing.
  * If ANY product variant has insufficient stock, the entire order is rolled back —
@@ -33,16 +34,43 @@ use InvalidArgumentException;
  * Rationale: auto-restock on cancel opens a window for fraudulent "cancel to get free
  * stock" flows. In v1, staff must create a manual inventory adjustment if needed.
  * TODO(#81): add an optional restock flag to cancel() when the Returns flow is built.
+ *
+ * State machine transitions:
+ *   pending    → preparing | cancelled
+ *   preparing  → ready     | cancelled
+ *   ready      → dispatched | delivered | cancelled
+ *   dispatched → delivered | cancelled
+ *   delivered  → (terminal)
+ *   cancelled  → (terminal)
+ *
+ * Every transition is recorded in order_status_history (append-only).
  */
 final readonly class OrderService
 {
+    /**
+     * Valid next statuses for each status.
+     *
+     * Terminal statuses (delivered, cancelled) map to empty arrays — no transitions
+     * are allowed from them. Unknown statuses are rejected before this map is consulted.
+     *
+     * @var array<string, list<string>>
+     */
+    private const TRANSITIONS = [
+        'pending'    => ['preparing', 'cancelled'],
+        'preparing'  => ['ready', 'cancelled'],
+        'ready'      => ['dispatched', 'delivered', 'cancelled'],
+        'dispatched' => ['delivered', 'cancelled'],
+        'delivered'  => [],
+        'cancelled'  => [],
+    ];
+
     public function __construct(
         private InventoryService $inventoryService,
         private OrderRepositoryInterface $orders,
     ) {}
 
     /**
-     * Create a POS sale atomically: order + items + inventory deduction.
+     * Create a POS sale atomically: order + items + inventory deduction + initial history row.
      *
      * @param  list<array{product_variant_id: int, quantity: int}>  $items
      *
@@ -119,6 +147,17 @@ final readonly class OrderService
                 );
             }
 
+            // Write the initial history entry. from_status=null signals this is not
+            // a transition but the birth of the order into its initial status.
+            OrderStatusHistory::create([
+                'tenant_id' => $tenant->id,
+                'order_id' => $order->id,
+                'from_status' => null,
+                'to_status' => 'preparing',
+                'user_id' => $user?->id,
+                'note' => 'POS sale created',
+            ]);
+
             Log::info('POS order created', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
@@ -139,6 +178,10 @@ final readonly class OrderService
      * v1: sets status to 'cancelled' only — does NOT restock inventory.
      * See class-level docblock for the restock decision rationale.
      *
+     * The friendly pre-checks here produce targeted error messages before
+     * delegating to transitionTo(). This preserves the exact exception
+     * messages that existing callers and tests depend on.
+     *
      * @throws DomainException When the order is already cancelled or delivered
      */
     public function cancel(Order $order, ?User $user = null): void
@@ -156,14 +199,102 @@ final readonly class OrderService
             );
         }
 
-        $order->update(['status' => 'cancelled']);
+        $this->transitionTo(order: $order, toStatus: 'cancelled', actor: $user);
 
-        Log::info('POS order cancelled', [
+        Log::info('Order cancelled', [
             'order_id' => $order->id,
             'order_number' => $order->order_number,
             'tenant_id' => $order->tenant_id,
             'cancelled_by' => $user?->id,
         ]);
+    }
+
+    /**
+     * Advance the order to a new status, recording the transition in the history.
+     *
+     * Validates the transition against the state machine map. Throws DomainException
+     * for any invalid move — including unknown status values and terminal states.
+     *
+     * The DB write (status update + history row) is wrapped in a transaction so that
+     * a partial write can never leave the order in an inconsistent state.
+     *
+     * @throws DomainException When the transition is not allowed by the state machine
+     */
+    public function transitionTo(
+        Order $order,
+        string $toStatus,
+        ?User $actor = null,
+        ?string $note = null,
+    ): Order {
+        $fromStatus = $order->status;
+
+        $this->assertTransitionAllowed(order: $order, toStatus: $toStatus);
+
+        DB::transaction(function () use ($order, $fromStatus, $toStatus, $actor, $note): void {
+            $order->update(['status' => $toStatus]);
+
+            OrderStatusHistory::create([
+                'tenant_id' => $order->tenant_id,
+                'order_id' => $order->id,
+                'from_status' => $fromStatus,
+                'to_status' => $toStatus,
+                'user_id' => $actor?->id,
+                'note' => $note,
+            ]);
+        });
+
+        Log::info('Order status transitioned', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'tenant_id' => $order->tenant_id,
+            'from_status' => $fromStatus,
+            'to_status' => $toStatus,
+            'actor_id' => $actor?->id,
+        ]);
+
+        return $order->fresh()->load('statusHistory');
+    }
+
+    /**
+     * Return the list of valid next statuses for the order's current status.
+     *
+     * Returns an empty array for terminal statuses (delivered, cancelled).
+     * The frontend uses this to render only the valid action buttons.
+     *
+     * @return list<string>
+     */
+    public function allowedTransitions(Order $order): array
+    {
+        return self::TRANSITIONS[$order->status] ?? [];
+    }
+
+    /**
+     * Assert that $toStatus is a valid next step from the order's current status.
+     *
+     * @throws DomainException When $toStatus is unknown or not reachable from current status
+     */
+    private function assertTransitionAllowed(Order $order, string $toStatus): void
+    {
+        if (! array_key_exists($toStatus, self::TRANSITIONS)) {
+            throw new DomainException(
+                "'{$toStatus}' is not a recognised order status."
+            );
+        }
+
+        $allowed = self::TRANSITIONS[$order->status] ?? null;
+
+        // Current status is not in the map — should not happen with clean data, but be safe
+        if ($allowed === null) {
+            throw new DomainException(
+                "Order #{$order->order_number} has an unrecognised status '{$order->status}'."
+            );
+        }
+
+        if (! in_array($toStatus, $allowed, strict: true)) {
+            throw new DomainException(
+                "Cannot transition order #{$order->order_number} from '{$order->status}' to '{$toStatus}'."
+            );
+        }
     }
 
     /**
