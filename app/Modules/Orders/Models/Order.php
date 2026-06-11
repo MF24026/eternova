@@ -100,6 +100,18 @@ final class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /**
+     * Full audit trail of every status transition, oldest-first.
+     *
+     * Call ->latest('created_at') at the query level if you need reverse order.
+     *
+     * @return HasMany<OrderStatusHistory, $this>
+     */
+    public function statusHistory(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class)->oldest('created_at');
+    }
+
     public function isPaid(): bool
     {
         return $this->payment_status === 'paid';
