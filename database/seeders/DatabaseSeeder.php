@@ -9,6 +9,7 @@ use Database\Seeders\Catalog\ProductsSeeder;
 use Database\Seeders\Catalog\TagsSeeder;
 use Database\Seeders\Inventory\BranchInventorySeeder;
 use Database\Seeders\Inventory\InventoryMovementsSeeder;
+use Database\Seeders\Orders\OrdersSeeder;
 use Illuminate\Database\Seeder;
 
 final class DatabaseSeeder extends Seeder
@@ -26,6 +27,7 @@ final class DatabaseSeeder extends Seeder
      *   7. Catalog\ProductsSeeder        — ~20 products per tenant with variants
      *   8. Inventory\BranchInventorySeeder   — initial stock snapshot per variant/branch
      *   9. Inventory\InventoryMovementsSeeder — historical movement ledger (last 30 days)
+     *  10. Orders\OrdersSeeder               — demo orders with items + status timelines
      */
     public function run(): void
     {
@@ -39,6 +41,7 @@ final class DatabaseSeeder extends Seeder
             ProductsSeeder::class,
             BranchInventorySeeder::class,
             InventoryMovementsSeeder::class,
+            OrdersSeeder::class,
         ]);
     }
 }
