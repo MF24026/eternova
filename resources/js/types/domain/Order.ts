@@ -43,6 +43,9 @@ export interface Order {
     discount_cents: number
     total_cents: number
     notes: string | null
+    // Public share link token — present when the backend has S4-E4 deployed.
+    // null when not yet generated or for pre-migration rows.
+    tracking_token: string | null
     allowed_transitions: OrderStatus[]
     created_at: string               // ISO-8601
     updated_at: string

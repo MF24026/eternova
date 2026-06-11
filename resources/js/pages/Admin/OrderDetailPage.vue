@@ -13,6 +13,7 @@ import {
     XCircle,
     Clock,
     AlertTriangle,
+    Link,
 } from 'lucide-vue-next'
 import AppBadge from '@/components/base/AppBadge.vue'
 import AppButton from '@/components/base/AppButton.vue'
@@ -186,6 +187,39 @@ const ROLE_LABELS: Record<string, string> = {
     admin: 'Administrador',
     staff: 'Personal',
 }
+
+// ── Tracking link ─────────────────────────────────────────────────────────────
+
+// Visible when the order has a tracking_token and is not cancelled.
+// We guard cancelled so there is no point sharing a tracking link for a
+// terminal order that shows a "cancelled" banner.
+const showTrackingLink = computed<boolean>(() => {
+    if (!order.value?.tracking_token) return false
+    return order.value.status !== 'cancelled'
+})
+
+async function copyTrackingLink(): Promise<void> {
+    if (!order.value?.tracking_token) return
+    const url = `${window.location.origin}/track/${order.value.tracking_token}`
+    try {
+        await navigator.clipboard.writeText(url)
+        toast.success('Link copiado')
+    } catch {
+        // Clipboard API can fail in non-secure contexts (HTTP dev without HTTPS).
+        // Fall back to the legacy execCommand approach.
+        const el = document.createElement('textarea')
+        el.value = url
+        el.style.position = 'fixed'
+        el.style.opacity = '0'
+        document.body.appendChild(el)
+        el.select()
+        document.execCommand('copy')
+        document.body.removeChild(el)
+        toast.success('Link copiado')
+    }
+}
+
+// ── Timeline node Lucide icon per status ──────────────────────────────────────
 
 // Timeline node Lucide icon per status.
 function timelineIcon(status: OrderStatus) {
@@ -523,6 +557,18 @@ function timelineIcon(status: OrderStatus) {
                                 class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                             />
                         </div>
+                    </div>
+
+                    <!-- Tracking link (share with customer) -->
+                    <div v-if="showTrackingLink" class="mb-4">
+                        <AppButton
+                            variant="secondary"
+                            :icon="Link"
+                            class="w-full"
+                            @click="copyTrackingLink"
+                        >
+                            Copiar link de seguimiento
+                        </AppButton>
                     </div>
 
                     <!-- Cancel action -->

@@ -144,6 +144,16 @@ const router = createRouter({
             meta: { requiresAuth: true, layout: 'admin' },
         },
 
+        // ── Public tracking ─────────────────────────────────────────────────
+        // No `layout` key → LayoutSwitcher falls back to bare <slot /> (default).
+        // No `requiresAuth` → auth guard never redirects to /login for this route.
+        {
+            path: '/track/:token',
+            name: 'track.show',
+            component: () => import('@/pages/Public/OrderTrackingPage.vue'),
+            meta: { public: true },
+        },
+
         // ── Catch-all ────────────────────────────────────────────────────────
         {
             path: '/:pathMatch(.*)*',
