@@ -277,7 +277,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutsideUserMe
                             class="absolute right-0 mt-2 w-52 rounded-xl bg-surface-lowest shadow-[var(--shadow-lifted)] py-1 z-50 dark:bg-surface-mid"
                             role="menu"
                         >
-                            <div class="px-4 py-2.5 border-b border-outline-variant">
+                            <div class="px-4 py-2.5 mb-1 bg-surface-low dark:bg-surface-high rounded-t-xl">
                                 <p class="text-xs font-semibold text-on-surface">{{ currentUser?.name }}</p>
                                 <p class="text-xs text-on-surface-variant truncate">{{ currentUser?.email }}</p>
                             </div>

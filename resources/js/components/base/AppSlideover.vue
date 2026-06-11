@@ -109,8 +109,8 @@ const enterFrom = {
                             <div class="w-10 h-1 rounded-full bg-outline-soft" aria-hidden="true" />
                         </div>
 
-                        <!-- Header -->
-                        <header class="flex items-start justify-between gap-3 px-5 py-4 shrink-0 border-b border-outline-variant">
+                        <!-- Header — separated from the body by a tonal shift, not a 1px line (No-Line Rule) -->
+                        <header class="flex items-start justify-between gap-3 px-5 py-4 shrink-0 bg-surface-low dark:bg-surface-mid">
                             <div class="min-w-0">
                                 <h2 class="font-serif text-xl text-on-surface tracking-tighter truncate">
                                     {{ title }}
@@ -137,7 +137,7 @@ const enterFrom = {
                         <!-- Footer slot (optional) -->
                         <footer
                             v-if="$slots.footer"
-                            class="shrink-0 px-5 py-4 bg-surface-low dark:bg-surface-mid border-t border-outline-variant"
+                            class="shrink-0 px-5 py-4 bg-surface-low dark:bg-surface-mid"
                         >
                             <slot name="footer" />
                         </footer>

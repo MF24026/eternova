@@ -152,7 +152,7 @@ const mobileMenuOpen = ref(false)
                         </div>
                     </div>
                 </div>
-                <div class="mt-12 pt-6 border-t border-outline-variant text-center">
+                <div class="mt-12 pt-6 text-center">
                     <p class="text-xs text-on-surface-variant">
                         &copy; 2026 Eternova. Todos los derechos reservados.
                     </p>
