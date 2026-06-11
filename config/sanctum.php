@@ -20,8 +20,13 @@ return [
 
     'stateful' => explode(',', env(
         'SANCTUM_STATEFUL_DOMAINS',
-        'localhost,localhost:8080,127.0.0.1,127.0.0.1:8080,eternova.localhost:8080,'.
-        '*.eternova.localhost:8080,eternova.app,*.eternova.app'
+        // Port-less variants (eternova.localhost / *.eternova.localhost) are required
+        // for in-container access (the app listens on :80 inside Sail) — e.g. the
+        // Playwright E2E suite hits tenant subdomains without the host :8080 mapping.
+        'localhost,localhost:8080,127.0.0.1,127.0.0.1:8080,'.
+        'eternova.localhost,eternova.localhost:8080,'.
+        '*.eternova.localhost,*.eternova.localhost:8080,'.
+        'eternova.app,*.eternova.app'
     )),
 
     /*
