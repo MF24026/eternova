@@ -2,6 +2,7 @@ import api from './api'
 import type { Paginated, Resource } from '@/types/api'
 import type {
     Order,
+    OrderDetail,
     OrderListFilters,
     OrderStatus,
     StatusCounts,
@@ -45,17 +46,18 @@ const OrderService = {
     },
 
     /** Full order detail including items, history, customer, branch, assignee. */
-    async get(id: string): Promise<Order> {
-        const response = await api.get<Resource<Order>>(`/orders/${id}`)
+    async get(id: string): Promise<OrderDetail> {
+        const response = await api.get<Resource<OrderDetail>>(`/orders/${id}`)
         return response.data.data
     },
 
     /**
      * Advance or change the order status.
-     * Corresponds to PATCH /api/v1/orders/{id}/status
+     * Corresponds to PATCH /api/v1/orders/{id}/status.
+     * Returns the full OrderDetail so the detail page can replace its state in-place.
      */
-    async transition(id: string, status: OrderStatus, note?: string): Promise<Order> {
-        const response = await api.patch<Resource<Order>>(`/orders/${id}/status`, {
+    async transition(id: string, status: OrderStatus, note?: string): Promise<OrderDetail> {
+        const response = await api.patch<Resource<OrderDetail>>(`/orders/${id}/status`, {
             status,
             ...(note !== undefined ? { note } : {}),
         })
@@ -66,9 +68,10 @@ const OrderService = {
      * Assign (or un-assign) a staff member to an order.
      * Corresponds to PATCH /api/v1/orders/{id}/assignee
      * Pass null to un-assign.
+     * Returns the full OrderDetail so the detail page can replace its state in-place.
      */
-    async assign(id: string, assignedTo: number | null): Promise<Order> {
-        const response = await api.patch<Resource<Order>>(`/orders/${id}/assignee`, {
+    async assign(id: string, assignedTo: number | null): Promise<OrderDetail> {
+        const response = await api.patch<Resource<OrderDetail>>(`/orders/${id}/assignee`, {
             assigned_to: assignedTo,
         })
         return response.data.data
@@ -78,9 +81,10 @@ const OrderService = {
      * Cancel an order via the dedicated endpoint.
      * Corresponds to POST /api/v1/orders/{id}/cancel — the backend records the
      * cancellation in the timeline and enforces the "cannot cancel delivered" guard.
+     * Returns the full OrderDetail so the detail page can replace its state in-place.
      */
-    async cancel(id: string): Promise<Order> {
-        const response = await api.post<Resource<Order>>(`/orders/${id}/cancel`)
+    async cancel(id: string): Promise<OrderDetail> {
+        const response = await api.post<Resource<OrderDetail>>(`/orders/${id}/cancel`)
         return response.data.data
     },
 }
