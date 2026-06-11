@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
+use App\Modules\Tenancy\Models\Tenant;
 use Database\Factories\Orders\OrderFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -46,6 +47,7 @@ final class Order extends Model
         'branch_id',
         'customer_id',
         'order_number',
+        'tracking_token',
         'status',
         'source',
         'subtotal_cents',
@@ -68,6 +70,14 @@ final class Order extends Model
         'discount_cents' => 'integer',
         'total_cents' => 'integer',
     ];
+
+    /**
+     * @return BelongsTo<Tenant, $this>
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 
     /**
      * @return BelongsTo<Branch, $this>
