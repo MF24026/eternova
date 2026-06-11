@@ -179,13 +179,21 @@ body {
     font-feature-settings: 'ss01', 'cv11';
 }
 
-button {
-    font-family: inherit;
-    cursor: pointer;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    padding: 0;
+/*
+ * Element reset for <button> lives in @layer base so Tailwind utility classes
+ * (bg-primary, bg-error, etc.) win over it. Unlayered, this rule would beat every
+ * layered utility in Tailwind 4's cascade and leave every <button> transparent —
+ * silently clobbering AppButton's variant backgrounds (QA S4: order detail actions).
+ */
+@layer base {
+    button {
+        font-family: inherit;
+        cursor: pointer;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+    }
 }
 
 input,

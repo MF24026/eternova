@@ -43,6 +43,9 @@ async function loadTracking(): Promise<void> {
     } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status
         pageState.value = status === 404 ? 'not-found' : 'error'
+        // A bogus token can't resolve a tenant, so we have no brand to show. Use a
+        // neutral, customer-friendly title instead of leaking the SaaS brand name.
+        document.title = 'Pedido no encontrado'
     }
 }
 
