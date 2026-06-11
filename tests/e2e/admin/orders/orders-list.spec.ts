@@ -164,11 +164,6 @@ test.describe('Orders list page (S4-E5)', () => {
             { timeout: 10_000 },
         )
 
-        // If rows are shown, they should NOT contain 'Preparando', 'Listo', etc. status pills
-        // We check by querying visible status badges that are NOT 'Pendiente'
-        const wrongStatusBadges = page.locator('tbody td span[class*="bg-info"]')
-        // info = preparing/dispatched; if the filter works, there should be none
-        // (but we can only assert 0 if the API actually returned results for pending)
         const apiResult = await apiFetch(page, '/api/v1/orders?status=pending')
         const body = apiResult.body as Record<string, unknown>
         const data = body['data'] as unknown[]
@@ -177,10 +172,18 @@ test.describe('Orders list page (S4-E5)', () => {
             // Empty state should be shown
             await expect(page.getByRole('heading', { name: 'Sin pedidos' })).toBeVisible()
         } else {
-            // Rows should be shown — no "Preparando" badges should appear
-            const preparingBadges = page.getByText('Preparando')
-            const count = await preparingBadges.count()
-            expect(count, 'No "Preparando" badges should appear on the Pendiente tab').toBe(0)
+            // Scope assertions to the table body — the status TABS also contain
+            // these labels (e.g. "Preparando (3)"), so a page-wide getByText would
+            // match the tab, not just the row status pills.
+            const tbody = page.locator('tbody')
+
+            // No non-Pendiente status pill should appear in the rows.
+            for (const wrong of ['Preparando', 'Listo', 'Despachado', 'Entregado', 'Cancelado']) {
+                await expect(tbody.getByText(wrong, { exact: true })).toHaveCount(0)
+            }
+
+            // At least one Pendiente pill is present.
+            await expect(tbody.getByText('Pendiente', { exact: true }).first()).toBeVisible()
         }
     })
 
