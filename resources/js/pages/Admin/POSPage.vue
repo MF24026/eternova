@@ -30,20 +30,29 @@ const toast = useToast()
 // ── Branch resolution ──────────────────────────────────────────────────────────
 
 function resolveDefaultBranch(): void {
-    if (store.branchId) return  // already set from localStorage
+    // Wait until branches have loaded — validating against an empty list would
+    // wrongly discard a valid persisted branchId before the data arrives.
+    if (branches.value.length === 0) return
+
+    // Keep the persisted branchId only if it still belongs to this tenant. A stale
+    // id (branch removed, or the dev DB re-seeded with new ULIDs) would otherwise
+    // 500 the products endpoint — discard it and fall back to the main/first branch.
+    const persistedIsValid = store.branchId !== ''
+        && branches.value.some((b) => b.id === store.branchId)
+    if (persistedIsValid) return
 
     const main = branches.value.find((b) => b.is_main)
     const first = branches.value[0]
     const resolved = main ?? first
     if (resolved) {
-        // setBranch clears the cart, but since branchId was empty there is nothing to clear.
         store.branchId = resolved.id
     }
 }
 
-// If branches load after mount (race), resolve once they arrive.
+// If branches load after mount (race), resolve once they arrive. The function
+// self-guards (empty list / already-valid), so it is safe to call unconditionally.
 watch(branches, () => {
-    if (!store.branchId) resolveDefaultBranch()
+    resolveDefaultBranch()
 })
 
 // ── Product loading ────────────────────────────────────────────────────────────

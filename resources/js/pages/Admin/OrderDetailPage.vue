@@ -154,6 +154,14 @@ function extractApiMessage(err: unknown): string | null {
     return body?.message ?? null
 }
 
+// Forward-progression transitions only. 'cancelled' is excluded here because
+// cancellation is a destructive action with its own dedicated button below —
+// it must not appear as a primary "advance" action.
+const advanceTransitions = computed<OrderStatus[]>(() => {
+    if (!order.value) return []
+    return order.value.allowed_transitions.filter((s) => s !== 'cancelled')
+})
+
 // Whether "cancel" should appear in the actions. We show it when 'cancelled' is
 // in allowed_transitions OR when the status is not a terminal state — the server
 // guards the 422 case; prefer showing so staff can attempt it.
@@ -507,12 +515,12 @@ function timelineIcon(status: OrderStatus) {
 
                     <!-- Advance status buttons -->
                     <div
-                        v-if="order.allowed_transitions.length > 0"
+                        v-if="advanceTransitions.length > 0"
                         class="flex flex-col gap-2 mb-5"
                     >
                         <p class="text-xs label-gilt mb-1">Avanzar estado</p>
                         <AppButton
-                            v-for="next in order.allowed_transitions"
+                            v-for="next in advanceTransitions"
                             :key="next"
                             variant="primary"
                             :icon="ChevronRight"
