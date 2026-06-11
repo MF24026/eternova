@@ -56,6 +56,13 @@ final class DemoTenantsSeeder extends Seeder
             $this->command->info("DemoTenantsSeeder: tenant rosa-eterna provisioned ({$tenant->id}).");
         }
 
+        // Brand colours — rosa-eterna keeps the Ethereal Boutique mauve/rose identity.
+        // Set explicitly (not null) so the storefront themes deterministically.
+        $tenant->update([
+            'primary_color' => '#7c545d',
+            'secondary_color' => '#5a4b71',
+        ]);
+
         // Ensure brand_extra has whatsapp_number for the storefront checkout button.
         $this->mergeIntoTenantBrandExtra($tenant, [
             'whatsapp_number' => '50370001234',
@@ -101,6 +108,13 @@ final class DemoTenantsSeeder extends Seeder
 
             $this->command->info("DemoTenantsSeeder: tenant tatiana provisioned ({$tenant->id}).");
         }
+
+        // Brand colours — tatiana uses a distinct teal/terracotta palette so the
+        // multi-tenant storefront theming is visibly different from rosa-eterna.
+        $tenant->update([
+            'primary_color' => '#2f7d72',
+            'secondary_color' => '#b5642f',
+        ]);
 
         // Ensure brand_extra has whatsapp_number for the storefront checkout button.
         $this->mergeIntoTenantBrandExtra($tenant, [
