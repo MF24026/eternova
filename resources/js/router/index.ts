@@ -106,6 +106,14 @@ const router = createRouter({
             meta: { requiresAuth: true, layout: 'admin' },
         },
         {
+            path: '/admin/orders/:id',
+            name: 'admin.orders.detail',
+            // Stub replaced by S4-E6 — providing the route now so row-click
+            // navigation works before the detail page is fully built.
+            component: () => import('@/pages/Admin/OrderDetailPage.vue'),
+            meta: { requiresAuth: true, layout: 'admin' },
+        },
+        {
             path: '/admin/reservations',
             name: 'admin.reservations',
             component: () => import('@/pages/Admin/ReservationsPage.vue'),

@@ -1,219 +1,344 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Filter, Phone, MapPin, Clock, MessageCircle, Check } from 'lucide-vue-next'
-import AppSlideover from '@/components/base/AppSlideover.vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { Search, ShoppingBag } from 'lucide-vue-next'
+import AppInput from '@/components/base/AppInput.vue'
+import AppTable, { type TableColumn } from '@/components/base/AppTable.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
-import AppButton from '@/components/base/AppButton.vue'
+import AppPagination from '@/components/base/AppPagination.vue'
+import AppEmptyState from '@/components/base/AppEmptyState.vue'
+import OrderService from '@/services/OrderService'
+import { useBranches } from '@/composables/useBranches'
+import { useFormatCurrency } from '@/composables/useFormatCurrency'
+import { useFormatDate } from '@/composables/useFormatDate'
+import type { PaginatedMeta } from '@/composables/usePaginated'
+import type { Order, OrderStatus, OrderListFilters, StatusCounts } from '@/types/domain/Order'
+import type { PaginatedMeta as ApiPaginatedMeta } from '@/types/api'
 
-onMounted(() => { document.title = 'Pedidos — Eternova' })
+onMounted(() => {
+    document.title = 'Pedidos — Eternova'
+    void Promise.all([loadBranches(), fetchOrders()])
+})
 
-interface OrderStatus { id: string; label: string; variant: 'warning' | 'info' | 'primary' | 'success' }
-interface Order { id: string; customer: string; date: string; source: string; total: number; status: string; items: number }
+const router = useRouter()
+const { branches, loadBranches } = useBranches()
+const { formatCents } = useFormatCurrency()
+const { formatDateTime } = useFormatDate()
 
-const ORDER_STATUS: OrderStatus[] = [
-    { id: 'pendiente', label: 'Pendiente', variant: 'warning' },
-    { id: 'preparando', label: 'Preparando', variant: 'info' },
-    { id: 'listo', label: 'Listo', variant: 'primary' },
-    { id: 'entregado', label: 'Entregado', variant: 'success' },
+// ── Status metadata ───────────────────────────────────────────────────────────
+
+const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+    pending: 'Pendiente',
+    preparing: 'Preparando',
+    ready: 'Listo',
+    dispatched: 'Despachado',
+    delivered: 'Entregado',
+    cancelled: 'Cancelado',
+}
+
+type BadgeVariant = 'warning' | 'info' | 'primary' | 'success' | 'error' | 'neutral'
+
+const ORDER_STATUS_VARIANT: Record<OrderStatus, BadgeVariant> = {
+    pending: 'warning',
+    preparing: 'info',
+    ready: 'primary',
+    dispatched: 'info',
+    delivered: 'success',
+    cancelled: 'error',
+}
+
+const SOURCE_LABEL: Record<string, string> = {
+    pos: 'POS',
+    catalog: 'Catálogo',
+    reservation: 'Reserva',
+}
+
+const ALL_STATUSES: OrderStatus[] = [
+    'pending',
+    'preparing',
+    'ready',
+    'dispatched',
+    'delivered',
+    'cancelled',
 ]
 
-const orders = ref<Order[]>([
-    { id: 'CC-0143', customer: 'Ana Lopez', date: 'Hoy · 10:24', source: 'WhatsApp', total: 89.00, status: 'pendiente', items: 2 },
-    { id: 'CC-0142', customer: 'Maria Gonzalez', date: 'Hoy · 09:10', source: 'POS', total: 166.00, status: 'preparando', items: 3 },
-    { id: 'CC-0141', customer: 'Sofia Ramirez', date: 'Ayer · 17:30', source: 'Web', total: 245.00, status: 'preparando', items: 4 },
-    { id: 'CC-0140', customer: 'Lucia Perez', date: 'Ayer · 14:00', source: 'WhatsApp', total: 78.00, status: 'listo', items: 1 },
-    { id: 'CC-0139', customer: 'Camila Diaz', date: '13 mayo · 16:00', source: 'POS', total: 124.00, status: 'entregado', items: 2 },
-    { id: 'CC-0138', customer: 'Valeria Castro', date: '13 mayo · 11:00', source: 'Web', total: 65.00, status: 'entregado', items: 1 },
-])
+// ── Filters ───────────────────────────────────────────────────────────────────
 
-const filter = ref('all')
-const selected = ref<Order | null>(null)
+const activeTab = ref<OrderStatus | ''>('')
+const selectedBranchId = ref('')
+const dateFrom = ref('')
+const dateTo = ref('')
+const searchQuery = ref('')
 
-const shown = computed(() =>
-    filter.value === 'all' ? orders.value : orders.value.filter(o => o.status === filter.value)
-)
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 
-function getStatus(id: string): OrderStatus {
-    return ORDER_STATUS.find(s => s.id === id) ?? ORDER_STATUS[0]
-}
-function getStatusIdx(statusId: string): number {
-    return ORDER_STATUS.findIndex(s => s.id === statusId)
-}
-function nextStatusLabel(statusId: string): string {
-    const idx = getStatusIdx(statusId)
-    return ORDER_STATUS[Math.min(ORDER_STATUS.length - 1, idx + 1)].label
-}
-function advance(id: string) {
-    const order = orders.value.find(o => o.id === id)
-    if (!order) return
-    const idx = getStatusIdx(order.status)
-    if (idx < ORDER_STATUS.length - 1) {
-        order.status = ORDER_STATUS[idx + 1].id
-        if (selected.value?.id === id) selected.value = { ...order }
+watch(searchQuery, () => {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => { void fetchOrders() }, 300)
+})
+
+watch([activeTab, selectedBranchId, dateFrom, dateTo], () => {
+    void fetchOrders()
+})
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const orders = ref<Order[]>([])
+const statusCounts = ref<StatusCounts>({
+    pending: 0,
+    preparing: 0,
+    ready: 0,
+    dispatched: 0,
+    delivered: 0,
+    cancelled: 0,
+})
+const isLoading = ref(false)
+const apiMeta = ref<ApiPaginatedMeta | null>(null)
+
+async function fetchOrders(page = 1): Promise<void> {
+    isLoading.value = true
+    try {
+        const filters: OrderListFilters = {
+            per_page: 20,
+            page,
+            ...(activeTab.value ? { status: activeTab.value } : {}),
+            ...(selectedBranchId.value ? { branch_id: selectedBranchId.value } : {}),
+            ...(dateFrom.value ? { date_from: dateFrom.value } : {}),
+            ...(dateTo.value ? { date_to: dateTo.value } : {}),
+            ...(searchQuery.value.trim() ? { search: searchQuery.value.trim() } : {}),
+        }
+        const result = await OrderService.list(filters)
+        orders.value = result.data
+        apiMeta.value = result.meta
+        statusCounts.value = result.status_counts
+    } finally {
+        isLoading.value = false
     }
 }
 
-const mockItems = [
-    { name: 'Rosa Eterna Carmesi', price: 65.00 },
-    { name: 'Bouquet Aurora', price: 89.00 },
-    { name: 'Peluche Olivia', price: 32.00 },
-    { name: 'Cartera Petalia', price: 78.00 },
+// ── Pagination adapter ────────────────────────────────────────────────────────
+
+// AppPagination expects PaginatedMeta from usePaginated (has from/to fields).
+// The API meta from @/types/api does not have those. We adapt here — the
+// component degrades gracefully when from/to are null (shows total only).
+const paginationMeta = computed<PaginatedMeta | null>(() => {
+    const m = apiMeta.value
+    if (!m) return null
+    return {
+        current_page: m.current_page,
+        last_page: m.last_page,
+        per_page: m.per_page,
+        total: m.total,
+        from: null,
+        to: null,
+    }
+})
+
+// ── Tab total (Todos) ─────────────────────────────────────────────────────────
+
+const totalCount = computed(() =>
+    ALL_STATUSES.reduce((sum, s) => sum + (statusCounts.value[s] ?? 0), 0),
+)
+
+// ── Table columns ─────────────────────────────────────────────────────────────
+
+// AppTable is generic with T extends Record<string, unknown>.
+// We cast domain Order to Row and recover the type in typed helpers.
+type Row = Record<string, unknown>
+
+const columns: TableColumn<Row>[] = [
+    { key: 'order_number', label: 'Pedido', width: '110px' },
+    { key: 'customer', label: 'Cliente' },
+    { key: 'branch', label: 'Sucursal', width: '130px' },
+    { key: 'created_at', label: 'Fecha', width: '140px' },
+    { key: 'source', label: 'Origen', width: '100px', align: 'center' },
+    { key: 'total_cents', label: 'Total', width: '100px', align: 'right' },
+    { key: 'status', label: 'Estado', width: '130px', align: 'center' },
+    { key: 'assignee', label: 'Asignado', width: '130px' },
 ]
+
+const tableRows = computed<Row[]>(() => orders.value as unknown as Row[])
+
+function asOrder(row: Row): Order {
+    return row as unknown as Order
+}
+
+// ── Row click ─────────────────────────────────────────────────────────────────
+
+function onRowClick(row: Row): void {
+    const order = asOrder(row)
+    void router.push({ name: 'admin.orders.detail', params: { id: order.id } })
+}
 </script>
 
 <template>
-    <div class="h-[calc(100vh-120px)] overflow-hidden">
-        <div class="card" style="padding: 20px; height: 100%; display: flex; flex-direction: column">
-            <!-- Filter tabs -->
-            <div class="flex justify-between mb-4 flex-wrap gap-3">
-                <div class="scroll">
-                    <div class="tabs inline-flex">
-                        <button :class="['tab', { active: filter === 'all' }]" @click="filter = 'all'">Todos ({{ orders.length }})</button>
-                        <button v-for="s in ORDER_STATUS" :key="s.id" :class="['tab', { active: filter === s.id }]" @click="filter = s.id">{{ s.label }}</button>
-                    </div>
-                </div>
-                <button class="btn btn-tertiary hidden lg:inline-flex">
-                    <Filter :size="14" class="mr-1.5" /> Filtros
+    <div class="flex flex-col gap-4">
+
+        <!-- Page header -->
+        <div class="mb-1">
+            <p class="label-gilt">Gestión</p>
+            <h1 class="serif text-2xl text-on-surface tracking-tighter">Pedidos</h1>
+        </div>
+
+        <!-- Status tabs -->
+        <div class="overflow-x-auto -mx-1 px-1">
+            <div class="tabs inline-flex min-w-max" role="tablist" aria-label="Filtrar por estado">
+                <button
+                    role="tab"
+                    :aria-selected="activeTab === ''"
+                    :class="['tab', { active: activeTab === '' }]"
+                    @click="activeTab = ''"
+                >
+                    Todos
+                    <span class="ml-1 text-xs opacity-70">({{ totalCount }})</span>
+                </button>
+                <button
+                    v-for="status in ALL_STATUSES"
+                    :key="status"
+                    role="tab"
+                    :aria-selected="activeTab === status"
+                    :class="['tab', { active: activeTab === status }]"
+                    @click="activeTab = status"
+                >
+                    {{ ORDER_STATUS_LABELS[status] }}
+                    <span class="ml-1 text-xs opacity-70">({{ statusCounts[status] ?? 0 }})</span>
                 </button>
             </div>
-
-            <!-- Desktop header -->
-            <div class="orders-header">
-                <div v-for="h in ['Pedido', 'Cliente', 'Fecha', 'Items', 'Origen', 'Estado', 'Total']" :key="h" class="label" style="font-size: 10px">{{ h }}</div>
-            </div>
-
-            <div class="scroll flex-1 min-h-0">
-                <div class="flex flex-col gap-1.5">
-                    <button
-                        v-for="o in shown"
-                        :key="o.id"
-                        class="card-hover rounded-xl p-3.5 text-left w-full block"
-                        style="background: var(--surface-low)"
-                        @click="selected = o"
-                    >
-                        <!-- Mobile -->
-                        <div class="orders-row-mobile">
-                            <div class="flex justify-between mb-1.5">
-                                <span class="serif text-base text-on-surface">{{ o.customer }}</span>
-                                <span class="serif text-primary font-semibold">${{ o.total.toFixed(2) }}</span>
-                            </div>
-                            <div class="flex justify-between text-xs text-on-surface-variant">
-                                <span>{{ o.id }} · {{ o.date }}</span>
-                                <AppBadge :variant="getStatus(o.status).variant" size="sm">{{ getStatus(o.status).label }}</AppBadge>
-                            </div>
-                        </div>
-                        <!-- Desktop -->
-                        <div class="orders-row-desktop text-sm">
-                            <div class="font-semibold">{{ o.id }}</div>
-                            <div>{{ o.customer }}</div>
-                            <div class="text-on-surface-variant">{{ o.date }}</div>
-                            <div class="text-on-surface-variant">{{ o.items }}</div>
-                            <div><AppBadge variant="neutral" size="sm">{{ o.source }}</AppBadge></div>
-                            <div><AppBadge :variant="getStatus(o.status).variant" size="sm">{{ getStatus(o.status).label }}</AppBadge></div>
-                            <div class="text-right font-bold text-primary">${{ o.total.toFixed(2) }}</div>
-                        </div>
-                    </button>
-                </div>
-            </div>
         </div>
+
+        <!-- Filters toolbar -->
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Search -->
+            <div class="relative flex-1 min-w-52">
+                <AppInput
+                    v-model="searchQuery"
+                    placeholder="Buscar número de pedido..."
+                    aria-label="Buscar pedido"
+                >
+                    <template #icon>
+                        <Search :size="14" class="text-on-surface-variant" />
+                    </template>
+                </AppInput>
+            </div>
+
+            <!-- Branch filter -->
+            <select
+                v-model="selectedBranchId"
+                class="px-4 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm
+                       focus:outline-none focus:ring-2 focus:ring-primary/30
+                       dark:bg-surface-mid dark:text-on-surface"
+                aria-label="Filtrar por sucursal"
+            >
+                <option value="">Todas las sucursales</option>
+                <option v-for="branch in branches" :key="branch.id" :value="branch.id">
+                    {{ branch.name }}
+                </option>
+            </select>
+
+            <!-- Date range -->
+            <input
+                v-model="dateFrom"
+                type="date"
+                class="px-3 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm
+                       focus:outline-none focus:ring-2 focus:ring-primary/30
+                       dark:bg-surface-mid dark:text-on-surface"
+                aria-label="Desde"
+            />
+            <input
+                v-model="dateTo"
+                type="date"
+                class="px-3 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm
+                       focus:outline-none focus:ring-2 focus:ring-primary/30
+                       dark:bg-surface-mid dark:text-on-surface"
+                aria-label="Hasta"
+            />
+        </div>
+
+        <!-- Table -->
+        <AppTable
+            :columns="columns"
+            :rows="tableRows"
+            row-key="id"
+            :loading="isLoading"
+            @row-click="onRowClick"
+        >
+            <!-- order_number -->
+            <template #cell-order_number="{ row }">
+                <span class="font-mono text-sm font-semibold text-on-surface">
+                    {{ asOrder(row).order_number }}
+                </span>
+            </template>
+
+            <!-- customer -->
+            <template #cell-customer="{ row }">
+                <span class="text-sm text-on-surface">
+                    {{ asOrder(row).customer?.name ?? '—' }}
+                </span>
+            </template>
+
+            <!-- branch -->
+            <template #cell-branch="{ row }">
+                <span class="text-sm text-on-surface-variant">
+                    {{ asOrder(row).branch?.name ?? '—' }}
+                </span>
+            </template>
+
+            <!-- created_at -->
+            <template #cell-created_at="{ row }">
+                <span class="text-sm text-on-surface-variant whitespace-nowrap">
+                    {{ formatDateTime(asOrder(row).created_at) }}
+                </span>
+            </template>
+
+            <!-- source -->
+            <template #cell-source="{ row }">
+                <AppBadge variant="neutral" size="sm">
+                    {{ SOURCE_LABEL[asOrder(row).source] ?? asOrder(row).source }}
+                </AppBadge>
+            </template>
+
+            <!-- total_cents -->
+            <template #cell-total_cents="{ row }">
+                <span class="text-sm font-bold text-primary">
+                    {{ formatCents(asOrder(row).total_cents) }}
+                </span>
+            </template>
+
+            <!-- status -->
+            <template #cell-status="{ row }">
+                <AppBadge :variant="ORDER_STATUS_VARIANT[asOrder(row).status]" size="sm">
+                    {{ ORDER_STATUS_LABELS[asOrder(row).status] }}
+                </AppBadge>
+            </template>
+
+            <!-- assignee -->
+            <template #cell-assignee="{ row }">
+                <span class="text-sm text-on-surface-variant">
+                    {{ asOrder(row).assignee?.name ?? '—' }}
+                </span>
+            </template>
+
+            <!-- Empty state -->
+            <template #empty>
+                <AppEmptyState
+                    title="Sin pedidos"
+                    :description="activeTab
+                        ? `No hay pedidos en estado '${ORDER_STATUS_LABELS[activeTab as OrderStatus]}'.`
+                        : 'Los pedidos aparecerán aquí una vez que se creen desde el POS, catálogo o reservas.'"
+                >
+                    <template #illustration>
+                        <ShoppingBag :size="40" class="text-on-surface-variant opacity-40" />
+                    </template>
+                </AppEmptyState>
+            </template>
+        </AppTable>
+
+        <!-- Pagination -->
+        <AppPagination
+            v-if="paginationMeta && paginationMeta.last_page > 1"
+            :meta="paginationMeta"
+            @page-change="fetchOrders"
+        />
+
     </div>
-
-    <!-- Order detail slideover -->
-    <AppSlideover
-        :model-value="!!selected"
-        :title="selected?.customer ?? ''"
-        :subtitle="`Pedido ${selected?.id ?? ''}`"
-        @update:model-value="selected = null"
-    >
-        <template v-if="selected">
-            <!-- Timeline -->
-            <div class="flex flex-col gap-2 mb-6">
-                <div
-                    v-for="(s, i) in ORDER_STATUS"
-                    :key="s.id"
-                    class="flex items-center gap-3 p-3.5 rounded-xl"
-                    :class="i === getStatusIdx(selected.status) ? 'bg-primary-container' : 'bg-surface-low'"
-                >
-                    <span
-                        class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold"
-                        :style="{
-                            background: i <= getStatusIdx(selected.status) ? 'var(--primary)' : 'var(--surface-mid)',
-                            color: i <= getStatusIdx(selected.status) ? 'var(--on-primary)' : 'var(--on-surface-variant)',
-                        }"
-                    >
-                        <Check v-if="i < getStatusIdx(selected.status)" :size="12" />
-                        <span v-else>{{ i + 1 }}</span>
-                    </span>
-                    <span class="text-sm" :class="i === getStatusIdx(selected.status) ? 'font-bold text-primary-dim' : 'text-on-surface-variant'">
-                        {{ s.label }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Items -->
-            <p class="label-gilt mb-2.5">Productos</p>
-            <div class="flex flex-col gap-2.5 mb-5">
-                <div
-                    v-for="item in mockItems.slice(0, selected.items)"
-                    :key="item.name"
-                    class="flex items-center gap-3 p-2.5 rounded-xl"
-                    style="background: var(--surface-low)"
-                >
-                    <div class="w-11 h-11 rounded-lg shrink-0" style="background: var(--gradient-soft)" />
-                    <div class="grow">
-                        <p class="text-sm font-semibold">{{ item.name }}</p>
-                        <p class="text-xs text-on-surface-variant">1 × ${{ item.price.toFixed(2) }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Customer info -->
-            <div class="rounded-xl p-4" style="background: var(--surface-low)">
-                <p class="label-gilt mb-3">Cliente</p>
-                <div class="flex flex-col gap-2 text-sm text-on-surface-variant">
-                    <div class="flex items-center gap-2"><Phone :size="14" /> +503 7892-1234</div>
-                    <div class="flex items-center gap-2"><MapPin :size="14" /> Col. Escalon, San Salvador</div>
-                    <div class="flex items-center gap-2"><Clock :size="14" /> Entrega 15 mayo · 11 AM</div>
-                </div>
-            </div>
-
-            <div class="flex justify-between items-center mt-5 pt-4">
-                <span class="font-semibold text-on-surface">Total</span>
-                <span class="serif text-3xl text-primary">${{ selected.total.toFixed(2) }}</span>
-            </div>
-        </template>
-
-        <template #footer>
-            <div class="flex flex-col gap-2.5">
-                <AppButton
-                    v-if="selected && selected.status !== 'entregado'"
-                    class="w-full justify-center"
-                    @click="advance(selected.id)"
-                >
-                    Avanzar a {{ selected ? nextStatusLabel(selected.status) : '' }}
-                </AppButton>
-                <AppButton variant="secondary" class="w-full justify-center">
-                    <MessageCircle :size="14" class="mr-1.5" /> Mensaje al cliente
-                </AppButton>
-            </div>
-        </template>
-    </AppSlideover>
 </template>
-
-<style scoped>
-.orders-header {
-    display: none;
-    grid-template-columns: 100px 1.6fr 1fr 80px 1fr 140px 80px;
-    gap: 16px;
-    padding: 8px 14px;
-    color: var(--on-surface-variant);
-    margin-bottom: 4px;
-}
-.orders-row-mobile { display: block; }
-.orders-row-desktop { display: none; grid-template-columns: 100px 1.6fr 1fr 80px 1fr 140px 80px; gap: 16px; align-items: center; }
-@media (min-width: 1024px) {
-    .orders-header { display: grid; }
-    .orders-row-mobile { display: none; }
-    .orders-row-desktop { display: grid; }
-}
-</style>
