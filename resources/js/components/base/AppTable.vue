@@ -85,7 +85,7 @@ const alignClass: Record<string, string> = {
                     <tr
                         v-for="n in 5"
                         :key="`skeleton-${n}`"
-                        class="border-t border-outline-variant"
+                        class="odd:bg-surface-low/40 dark:odd:bg-surface-mid/30"
                     >
                         <td
                             v-for="col in columns"
@@ -102,7 +102,7 @@ const alignClass: Record<string, string> = {
                     <tr
                         v-for="row in rows"
                         :key="String(row[rowKey])"
-                        class="border-t border-outline-variant hover:bg-surface-low dark:hover:bg-surface-mid transition-colors cursor-pointer"
+                        class="odd:bg-surface-low/40 dark:odd:bg-surface-mid/30 hover:bg-surface-mid dark:hover:bg-surface-high transition-colors cursor-pointer"
                         @click="emit('row-click', row)"
                     >
                         <td

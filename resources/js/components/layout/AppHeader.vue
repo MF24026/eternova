@@ -25,7 +25,7 @@ async function handleLogout() {
 
 <template>
     <header
-        class="sticky top-0 z-30 w-full bg-surface-lowest/80 backdrop-blur-[24px] border-b border-outline-variant dark:bg-surface-low/80"
+        class="sticky top-0 z-30 w-full bg-surface-lowest/80 backdrop-blur-[24px] shadow-[var(--shadow-ambient)] dark:bg-surface-low/80"
     >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
             <router-link
