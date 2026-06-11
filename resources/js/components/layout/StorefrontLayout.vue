@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ShoppingBag, Menu, X, Flower, MessageCircle, Phone, MapPin } from 'lucide-vue-next'
+import { ShoppingBag, Menu, X, Flower, MessageCircle, Phone, MapPin, Sun, Moon } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
 import { useStorefrontBranding } from '@/composables/useStorefrontBranding'
+import { useTheme } from '@/composables/useTheme'
 import { useCartStore } from '@/stores/cart'
 import CartSlideover from '@/components/composite/storefront/CartSlideover.vue'
 import Petal from '@/components/base/Petal.vue'
 
 const store = useStorefrontStore()
 const cart = useCartStore()
+const { isDark, toggle: toggleTheme } = useTheme()
 const mobileMenuOpen = ref(false)
 const cartOpen = ref(false)
 
@@ -142,6 +144,17 @@ function businessNameParts(name: string): [string, string] {
 
                 <!-- Spacer -->
                 <div class="grow" />
+
+                <!-- Dark mode toggle -->
+                <button
+                    type="button"
+                    class="btn-icon"
+                    :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+                    data-testid="storefront-theme-toggle"
+                    @click="toggleTheme"
+                >
+                    <component :is="isDark ? Sun : Moon" :size="18" />
+                </button>
 
                 <!-- Cart icon -->
                 <button
@@ -334,10 +347,10 @@ function businessNameParts(name: string): [string, string] {
                 </div>
             </div>
 
-            <!-- Bottom bar — background shift, no 1px border -->
+            <!-- Bottom bar — background shift separates from the footer grid (No-Line Rule) -->
             <div
                 class="mt-12 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-                style="border-top: 1px solid var(--outline-variant)"
+                style="background: var(--surface-mid); border-radius: var(--r-lg); padding: 16px 20px"
             >
                 <p class="text-xs" style="color: var(--on-surface-variant)">
                     &copy; {{ new Date().getFullYear() }} {{ store.tenant?.business_name ?? 'Tienda' }}

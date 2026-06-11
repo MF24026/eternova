@@ -261,10 +261,11 @@ function toneFromId(id: number): SurrogateTone {
         </div>
 
         <!-- Pagination -->
+        <!-- Pagination — tier background as separator (No-Line Rule) -->
         <div
             v-if="lastPage > 1"
-            class="flex items-center justify-between mt-10 pt-6"
-            style="border-top: 1px solid var(--outline-variant)"
+            class="flex items-center justify-between mt-10"
+            style="background: var(--surface-low); border-radius: var(--r-lg); padding: 14px 20px"
         >
             <p class="text-sm" style="color: var(--on-surface-variant)">
                 Pagina {{ currentPage }} de {{ lastPage }}
