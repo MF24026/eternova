@@ -3,6 +3,16 @@
 
 @import 'tailwindcss';
 
+/*
+ * Class-based dark mode. Tailwind 4 defaults the `dark:` variant to
+ * prefers-color-scheme (media). The app toggles dark mode via a `.dark` class on
+ * <html> (see .dark {} below, which flips the design tokens), so the utility
+ * variant must be class-based too — otherwise every `dark:` utility silently
+ * fails to activate when a light-OS user toggles dark, breaking the dark mirror
+ * on slideovers, tables and cards.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -69,33 +79,43 @@
     --font-serif: 'Noto Serif', 'Cormorant Garamond', Georgia, serif;
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 
-    --color-surface: #fff8f7;
-    --color-surface-lowest: #ffffff;
-    --color-surface-low: #fff0f2;
-    --color-surface-mid: #f9e8eb;
-    --color-surface-high: #f4e1e4;
-    --color-surface-highest: #f4dde0;
+    /*
+     * Tailwind color utilities reference these --color-* tokens. They are mapped
+     * to the runtime --* design tokens (defined in :root and flipped in .dark) so
+     * that every Tailwind color utility (bg-surface-low, text-on-surface, etc.)
+     * follows dark mode automatically. Without this indirection the utilities
+     * would be frozen at their light values while only var(--*)-based component
+     * styles flipped — a broken dark mirror.
+     */
+    --color-surface: var(--surface);
+    --color-surface-lowest: var(--surface-lowest);
+    --color-surface-low: var(--surface-low);
+    --color-surface-mid: var(--surface-mid);
+    --color-surface-high: var(--surface-high);
+    --color-surface-highest: var(--surface-highest);
 
-    --color-primary: #7c545d;
-    --color-primary-dim: #6b454e;
-    --color-primary-container: #f8c4cf;
-    --color-on-primary: #fff7f7;
+    --color-primary: var(--primary);
+    --color-primary-dim: var(--primary-dim);
+    --color-primary-container: var(--primary-container);
+    --color-on-primary: var(--on-primary);
 
-    --color-secondary: #5a4b71;
-    --color-secondary-container: #eddcff;
-    --color-on-secondary-container: #5a4b71;
+    --color-secondary: var(--secondary);
+    --color-secondary-container: var(--secondary-container);
+    --color-on-secondary-container: var(--on-secondary-container);
 
-    --color-on-surface: #3d2f32;
-    --color-on-surface-variant: #5d4a4e;
+    --color-on-surface: var(--on-surface);
+    --color-on-surface-variant: var(--on-surface-variant);
+    --color-outline-variant: var(--outline-variant);
+    --color-outline-soft: var(--outline-soft);
 
-    --color-success: #4a7c5a;
-    --color-success-container: #d8ecdc;
-    --color-warning: #7c6b4a;
-    --color-warning-container: #f0e8d2;
-    --color-error: #7c4a4a;
-    --color-error-container: #f1d6d6;
-    --color-info: #4a5a7c;
-    --color-info-container: #d8def0;
+    --color-success: var(--success);
+    --color-success-container: var(--success-container);
+    --color-warning: var(--warning);
+    --color-warning-container: var(--warning-container);
+    --color-error: var(--error);
+    --color-error-container: var(--error-container);
+    --color-info: var(--info);
+    --color-info-container: var(--info-container);
 
     --shadow-ambient: 0 12px 32px rgba(61, 47, 50, 0.06);
     --shadow-rest: 0 4px 16px rgba(61, 47, 50, 0.04);
