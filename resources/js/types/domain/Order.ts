@@ -52,6 +52,13 @@ export interface Order {
     assignee: OrderAssignee | null
 }
 
+// Full order returned by the show endpoint (GET /api/v1/orders/{id}).
+// Extends the base Order with relations that are only loaded on the detail view.
+export interface OrderDetail extends Order {
+    items: OrderItem[]
+    status_history: OrderStatusHistory[]
+}
+
 // Used on the detail page (E6) — line items. Shape matches OrderItemResource.
 export interface OrderItem {
     id: number

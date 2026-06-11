@@ -11,6 +11,11 @@ import OrderService from '@/services/OrderService'
 import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useFormatDate } from '@/composables/useFormatDate'
+import {
+    ORDER_STATUS_LABELS,
+    ORDER_STATUS_VARIANT,
+    ORDER_SOURCE_LABELS,
+} from '@/constants/orders'
 import type { PaginatedMeta } from '@/composables/usePaginated'
 import type { Order, OrderStatus, OrderListFilters, StatusCounts } from '@/types/domain/Order'
 import type { PaginatedMeta as ApiPaginatedMeta } from '@/types/api'
@@ -24,34 +29,6 @@ const router = useRouter()
 const { branches, loadBranches } = useBranches()
 const { formatCents } = useFormatCurrency()
 const { formatDateTime } = useFormatDate()
-
-// ── Status metadata ───────────────────────────────────────────────────────────
-
-const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-    pending: 'Pendiente',
-    preparing: 'Preparando',
-    ready: 'Listo',
-    dispatched: 'Despachado',
-    delivered: 'Entregado',
-    cancelled: 'Cancelado',
-}
-
-type BadgeVariant = 'warning' | 'info' | 'primary' | 'success' | 'error' | 'neutral'
-
-const ORDER_STATUS_VARIANT: Record<OrderStatus, BadgeVariant> = {
-    pending: 'warning',
-    preparing: 'info',
-    ready: 'primary',
-    dispatched: 'info',
-    delivered: 'success',
-    cancelled: 'error',
-}
-
-const SOURCE_LABEL: Record<string, string> = {
-    pos: 'POS',
-    catalog: 'Catálogo',
-    reservation: 'Reserva',
-}
 
 const ALL_STATUSES: OrderStatus[] = [
     'pending',
@@ -293,7 +270,7 @@ function onRowClick(row: Row): void {
             <!-- source -->
             <template #cell-source="{ row }">
                 <AppBadge variant="neutral" size="sm">
-                    {{ SOURCE_LABEL[asOrder(row).source] ?? asOrder(row).source }}
+                    {{ ORDER_SOURCE_LABELS[asOrder(row).source] ?? asOrder(row).source }}
                 </AppBadge>
             </template>
 
