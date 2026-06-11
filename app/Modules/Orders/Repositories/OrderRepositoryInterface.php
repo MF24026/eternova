@@ -32,6 +32,7 @@ interface OrderRepositoryInterface
      *   - customer_id  int    — customer filter
      *   - date_from    string — ISO date, inclusive lower bound on created_at
      *   - date_to      string — ISO date, inclusive upper bound on created_at
+     *   - search       string — LIKE match on order_number
      *   - per_page     int    — page size, default 20, max 100
      *
      * @param  array<string, mixed>  $filters
@@ -48,4 +49,23 @@ interface OrderRepositoryInterface
      * Format: CC-{year}-{zero-padded-4-digit-seq}  e.g. CC-2026-0001
      */
     public function nextOrderNumber(Tenant $tenant): string;
+
+    /**
+     * Count orders per status for the current tenant, honoring filters EXCEPT status.
+     *
+     * Always returns all six known statuses (zero-filled when no orders exist for
+     * a given status). The status filter is explicitly excluded so that the counts
+     * represent the full distribution regardless of which tab is selected.
+     *
+     * Supported filters (same as paginate, minus status):
+     *   - branch_id    string
+     *   - customer_id  int
+     *   - date_from    string — ISO date
+     *   - date_to      string — ISO date
+     *   - search       string — order_number LIKE
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, int>   status => count
+     */
+    public function statusCounts(array $filters): array;
 }

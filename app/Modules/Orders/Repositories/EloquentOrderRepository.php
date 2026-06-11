@@ -55,6 +55,11 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
             $query->whereDate('created_at', '<=', (string) $filters['date_to']);
         }
 
+        if (isset($filters['search']) && $filters['search'] !== '') {
+            $term = (string) $filters['search'];
+            $query->where('order_number', 'like', "%{$term}%");
+        }
+
         return $query->orderByDesc('created_at')->paginate($perPage);
     }
 
@@ -100,6 +105,68 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         $sequence->update(['last_sequence' => $next]);
 
         return $this->formatOrderNumber($year, $next);
+    }
+
+    /**
+     * Count orders per status for the current tenant, honoring all filters except status.
+     *
+     * A single aggregate query groups by status and returns counts for each.
+     * Zero-filling ensures all six known statuses are always present in the result
+     * even when there are no orders in a given state.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, int>
+     */
+    public function statusCounts(array $filters): array
+    {
+        $zero = [
+            'pending'    => 0,
+            'preparing'  => 0,
+            'ready'      => 0,
+            'dispatched' => 0,
+            'delivered'  => 0,
+            'cancelled'  => 0,
+        ];
+
+        $query = Order::query();
+
+        // Apply the same filters as paginate() but explicitly skip 'status'.
+        if (isset($filters['branch_id']) && $filters['branch_id'] !== '') {
+            $query->where('branch_id', (string) $filters['branch_id']);
+        }
+
+        if (isset($filters['customer_id']) && $filters['customer_id'] !== null) {
+            $query->where('customer_id', (int) $filters['customer_id']);
+        }
+
+        if (isset($filters['date_from']) && $filters['date_from'] !== '') {
+            $query->whereDate('created_at', '>=', (string) $filters['date_from']);
+        }
+
+        if (isset($filters['date_to']) && $filters['date_to'] !== '') {
+            $query->whereDate('created_at', '<=', (string) $filters['date_to']);
+        }
+
+        if (isset($filters['search']) && $filters['search'] !== '') {
+            $term = (string) $filters['search'];
+            $query->where('order_number', 'like', "%{$term}%");
+        }
+
+        // One DB round-trip: select status, count(*) group by status
+        $counts = $query
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->all();
+
+        // Cast to int and zero-fill missing statuses
+        foreach ($counts as $status => $total) {
+            if (array_key_exists($status, $zero)) {
+                $zero[$status] = (int) $total;
+            }
+        }
+
+        return $zero;
     }
 
     /**
