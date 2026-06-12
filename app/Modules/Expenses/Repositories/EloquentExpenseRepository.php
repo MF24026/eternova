@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Expenses\Repositories;
 
 use App\Modules\Expenses\Models\Expense;
+use App\Modules\Expenses\Models\ExpenseCategory;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class EloquentExpenseRepository implements ExpenseRepositoryInterface
@@ -73,5 +74,96 @@ final class EloquentExpenseRepository implements ExpenseRepositoryInterface
         }
 
         return $query->orderByDesc('expense_date')->orderByDesc('id')->paginate($perPage);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{total_cents: int, by_category: list<array{category_id: int|null, category_name: string, category_type: string|null, total_cents: int, count: int}>}
+     */
+    public function monthlyReportByCategory(array $filters): array
+    {
+        $query = Expense::query();
+
+        // month=YYYY-MM takes precedence over an explicit date range.
+        if (isset($filters['month']) && $filters['month'] !== '') {
+            $month = (string) $filters['month'];
+            $query->whereYear('expense_date', (int) substr($month, 0, 4))
+                  ->whereMonth('expense_date', (int) substr($month, 5, 2));
+        } else {
+            if (isset($filters['date_from']) && $filters['date_from'] !== '') {
+                $query->whereDate('expense_date', '>=', (string) $filters['date_from']);
+            }
+
+            if (isset($filters['date_to']) && $filters['date_to'] !== '') {
+                $query->whereDate('expense_date', '<=', (string) $filters['date_to']);
+            }
+        }
+
+        if (! empty($filters['verified_only'])) {
+            $query->where('is_verified', true);
+        }
+
+        // One aggregate query: total + count per category id. Keyed by the integer
+        // category id; uncategorised rows (NULL) are pulled out separately below.
+        $aggRows = $query
+            ->selectRaw('expense_category_id, SUM(amount_cents) as total, COUNT(*) as cnt')
+            ->groupBy('expense_category_id')
+            ->get();
+
+        /** @var array<int, array{total: int, count: int}> $byId */
+        $byId = [];
+        $uncategorised = ['total' => 0, 'count' => 0];
+        $grandTotal = 0;
+
+        foreach ($aggRows as $row) {
+            $total = (int) $row->total;
+            $grandTotal += $total;
+
+            if ($row->expense_category_id === null) {
+                $uncategorised = ['total' => $total, 'count' => (int) $row->cnt];
+
+                continue;
+            }
+
+            $byId[(int) $row->expense_category_id] = ['total' => $total, 'count' => (int) $row->cnt];
+        }
+
+        $rows = [];
+
+        // Include every active category (zero-filled) plus any inactive category
+        // that still has expenses in the period — so retired categories with history
+        // are never silently dropped from the totals.
+        $categories = ExpenseCategory::orderBy('name')->get();
+
+        foreach ($categories as $category) {
+            $agg = $byId[$category->id] ?? null;
+
+            if ($agg === null && ! $category->is_active) {
+                continue; // inactive + no expenses → omit
+            }
+
+            $rows[] = [
+                'category_id' => $category->id,
+                'category_name' => $category->name,
+                'category_type' => $category->type,
+                'total_cents' => $agg['total'] ?? 0,
+                'count' => $agg['count'] ?? 0,
+            ];
+        }
+
+        if ($uncategorised['count'] > 0) {
+            $rows[] = [
+                'category_id' => null,
+                'category_name' => 'Sin categoria',
+                'category_type' => null,
+                'total_cents' => $uncategorised['total'],
+                'count' => $uncategorised['count'],
+            ];
+        }
+
+        return [
+            'total_cents' => $grandTotal,
+            'by_category' => $rows,
+        ];
     }
 }
