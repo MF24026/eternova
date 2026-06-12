@@ -17,6 +17,7 @@ use Database\Seeders\DemoTenantsSeeder;
 use Database\Seeders\Inventory\BranchInventorySeeder;
 use Database\Seeders\Orders\OrdersSeeder;
 use Database\Seeders\PlansSeeder;
+use Database\Seeders\Reservations\ReservationsSeeder;
 use Database\Seeders\ReservedSubdomainsSeeder;
 use Database\Seeders\SuperAdminUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -424,6 +425,272 @@ final class DemoDataIntegrityTest extends TestCase
                 0,
                 DB::table('orders')->where('tenant_id', $tenant->id)->count(),
                 "DatabaseSeeder pipeline must seed orders for tenant {$tenant->slug}",
+            );
+        }
+
+        // ReservationsSeeder: each tenant has reservations seeded.
+        foreach (Tenant::all() as $tenant) {
+            $this->assertGreaterThan(
+                0,
+                DB::table('reservations')->where('tenant_id', $tenant->id)->count(),
+                "DatabaseSeeder pipeline must seed reservations for tenant {$tenant->slug}",
+            );
+        }
+    }
+
+    // ------------------------------------------------------------------ Reservations seeder
+
+    /**
+     * @param  list<string>  $prerequisites
+     */
+    private function seedReservationPrerequisites(): void
+    {
+        $this->seed(PlansSeeder::class);
+        $this->seed(DemoTenantsSeeder::class);
+        $this->seed(CategoriesSeeder::class);
+        $this->seed(TagsSeeder::class);
+        $this->seed(ProductsSeeder::class);
+        $this->seed(BranchInventorySeeder::class);
+        $this->seed(OrdersSeeder::class);
+        $this->seed(ReservationsSeeder::class);
+    }
+
+    public function test_reservations_seeder_creates_reservations_for_each_demo_tenant(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $rosaEterna = Tenant::findBySlug('rosa-eterna');
+        $tatiana    = Tenant::findBySlug('tatiana');
+
+        $this->assertNotNull($rosaEterna);
+        $this->assertNotNull($tatiana);
+
+        $rosaCount    = DB::table('reservations')->where('tenant_id', $rosaEterna->id)->count();
+        $tatianaCount = DB::table('reservations')->where('tenant_id', $tatiana->id)->count();
+
+        $this->assertGreaterThanOrEqual(10, $rosaCount, 'rosa-eterna should have at least 10 reservations');
+        $this->assertGreaterThanOrEqual(10, $tatianaCount, 'tatiana should have at least 10 reservations');
+    }
+
+    public function test_reservations_seeder_covers_all_six_statuses_across_dataset(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $seededStatuses = DB::table('reservations')
+            ->select('status')
+            ->distinct()
+            ->pluck('status')
+            ->sort()
+            ->values()
+            ->all();
+
+        $expectedStatuses = ['cancelled', 'confirmed', 'delivered', 'in_progress', 'inquiry', 'ready'];
+
+        $this->assertSame(
+            $expectedStatuses,
+            $seededStatuses,
+            'All six reservation statuses must be represented across the seeded dataset',
+        );
+    }
+
+    public function test_every_reservation_has_at_least_one_status_history_row_ending_at_current_status(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $reservations = DB::table('reservations')->get();
+
+        $this->assertNotEmpty($reservations, 'There must be at least one reservation');
+
+        foreach ($reservations as $reservation) {
+            $history = DB::table('reservation_status_history')
+                ->where('reservation_id', $reservation->id)
+                ->orderBy('created_at')
+                ->get();
+
+            $this->assertGreaterThanOrEqual(
+                1,
+                $history->count(),
+                "Reservation {$reservation->reservation_number} must have at least 1 status history row",
+            );
+
+            $firstRow = $history->first();
+            $this->assertNull(
+                $firstRow->from_status,
+                "First history row for {$reservation->reservation_number} must have from_status=null",
+            );
+
+            $lastRow = $history->last();
+            $this->assertSame(
+                $reservation->status,
+                $lastRow->to_status,
+                "Last history row for {$reservation->reservation_number} must match its status ({$reservation->status})",
+            );
+        }
+    }
+
+    public function test_deposit_paid_cents_equals_sum_of_payments_for_every_reservation(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $reservations = DB::table('reservations')->get();
+
+        foreach ($reservations as $reservation) {
+            $paymentSum = (int) DB::table('reservation_payments')
+                ->where('reservation_id', $reservation->id)
+                ->sum('amount_cents');
+
+            $this->assertSame(
+                $paymentSum,
+                (int) $reservation->deposit_paid_cents,
+                "deposit_paid_cents ({$reservation->deposit_paid_cents}) must equal sum of payments "
+                . "({$paymentSum}) for reservation {$reservation->reservation_number}",
+            );
+        }
+    }
+
+    public function test_inquiry_and_cancelled_reservations_have_no_payments(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $noPaymentStatuses = ['inquiry', 'cancelled'];
+
+        foreach ($noPaymentStatuses as $status) {
+            $reservations = DB::table('reservations')->where('status', $status)->get();
+
+            foreach ($reservations as $reservation) {
+                $paymentCount = DB::table('reservation_payments')
+                    ->where('reservation_id', $reservation->id)
+                    ->count();
+
+                $this->assertSame(
+                    0,
+                    $paymentCount,
+                    "Reservation {$reservation->reservation_number} (status={$status}) should have 0 payments",
+                );
+
+                $this->assertSame(
+                    0,
+                    (int) $reservation->deposit_paid_cents,
+                    "Reservation {$reservation->reservation_number} (status={$status}) deposit_paid_cents must be 0",
+                );
+            }
+        }
+    }
+
+    public function test_demo_tenants_have_distinct_reservation_deposit_pct_and_occasions(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $rosaEterna = Tenant::findBySlug('rosa-eterna');
+        $tatiana    = Tenant::findBySlug('tatiana');
+
+        $this->assertNotNull($rosaEterna);
+        $this->assertNotNull($tatiana);
+
+        // Deposit percentages must differ (showcase per-tenant config).
+        $this->assertSame(30, $rosaEterna->reservation_deposit_pct, 'rosa-eterna deposit_pct should be 30');
+        $this->assertSame(50, $tatiana->reservation_deposit_pct, 'tatiana deposit_pct should be 50');
+
+        // Both tenants must have a non-null, non-empty occasions list.
+        $this->assertIsArray($rosaEterna->reservation_occasions);
+        $this->assertNotEmpty($rosaEterna->reservation_occasions);
+
+        $this->assertIsArray($tatiana->reservation_occasions);
+        $this->assertNotEmpty($tatiana->reservation_occasions);
+
+        // The two lists must be different (each tenant has their own occasions).
+        $this->assertNotSame(
+            $rosaEterna->reservation_occasions,
+            $tatiana->reservation_occasions,
+            'Each tenant must have a distinct customised occasions list',
+        );
+    }
+
+    public function test_reservation_sequences_advanced_past_seeded_numbers(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $year    = now()->year;
+        $tenants = Tenant::all();
+
+        foreach ($tenants as $tenant) {
+            $maxSeededSeq = DB::table('reservations')
+                ->where('tenant_id', $tenant->id)
+                ->selectRaw("MAX(CAST(SUBSTRING_INDEX(reservation_number, '-', -1) AS UNSIGNED)) as max_seq")
+                ->value('max_seq');
+
+            if ($maxSeededSeq === null) {
+                continue;
+            }
+
+            $lastSequence = DB::table('reservation_sequences')
+                ->where('tenant_id', $tenant->id)
+                ->where('year', $year)
+                ->value('last_sequence');
+
+            $this->assertNotNull(
+                $lastSequence,
+                "reservation_sequences row must exist for tenant {$tenant->slug} year {$year}",
+            );
+
+            $this->assertGreaterThanOrEqual(
+                (int) $maxSeededSeq,
+                (int) $lastSequence,
+                "reservation_sequences.last_sequence ({$lastSequence}) must be >= highest seeded seq "
+                . "({$maxSeededSeq}) for {$tenant->slug}",
+            );
+        }
+    }
+
+    public function test_reservations_seeder_is_idempotent(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $countAfterFirst = DB::table('reservations')->count();
+
+        // Running again must not add more rows.
+        $this->seed(ReservationsSeeder::class);
+
+        $countAfterSecond = DB::table('reservations')->count();
+
+        $this->assertSame(
+            $countAfterFirst,
+            $countAfterSecond,
+            'ReservationsSeeder must be idempotent — running it twice must not double the rows',
+        );
+    }
+
+    public function test_no_cross_tenant_reservation_data_leakage(): void
+    {
+        $this->seedReservationPrerequisites();
+
+        $tenants = Tenant::all();
+
+        foreach ($tenants as $tenant) {
+            // Every reservation_payment row must belong to the same tenant as its reservation.
+            $crossLeakCount = DB::table('reservation_payments')
+                ->join('reservations', 'reservation_payments.reservation_id', '=', 'reservations.id')
+                ->where('reservations.tenant_id', $tenant->id)
+                ->where('reservation_payments.tenant_id', '!=', $tenant->id)
+                ->count();
+
+            $this->assertSame(
+                0,
+                $crossLeakCount,
+                "Cross-tenant payment leak detected for tenant {$tenant->slug}",
+            );
+
+            // Every status history row must match its reservation's tenant.
+            $historyLeakCount = DB::table('reservation_status_history')
+                ->join('reservations', 'reservation_status_history.reservation_id', '=', 'reservations.id')
+                ->where('reservations.tenant_id', $tenant->id)
+                ->where('reservation_status_history.tenant_id', '!=', $tenant->id)
+                ->count();
+
+            $this->assertSame(
+                0,
+                $historyLeakCount,
+                "Cross-tenant history leak detected for tenant {$tenant->slug}",
             );
         }
     }
