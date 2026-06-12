@@ -61,6 +61,10 @@ class Tenant extends Model
         // Locale — extensible JSON (date_format, phone_format, tax_rates_default, etc.)
         'locale_extra',
 
+        // Reservations — per-tenant config (default deposit %, customizable occasion list)
+        'reservation_deposit_pct',
+        'reservation_occasions',
+
         'trial_ends_at',
     ];
 
@@ -70,6 +74,8 @@ class Tenant extends Model
     protected $casts = [
         'brand_extra' => 'array',
         'locale_extra' => 'array',
+        'reservation_deposit_pct' => 'integer',
+        'reservation_occasions' => 'array',
         'trial_ends_at' => 'datetime',
         'status' => 'string',
     ];
