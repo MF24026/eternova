@@ -10,6 +10,7 @@ use App\Modules\Orders\Services\OrderService;
 use App\Modules\Reservations\Models\Reservation;
 use App\Modules\Reservations\Models\ReservationPayment;
 use App\Modules\Reservations\Models\ReservationStatusHistory;
+use App\Modules\Reservations\Repositories\ReservationRepositoryInterface;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use DateTimeInterface;
@@ -50,6 +51,7 @@ final readonly class ReservationService
 {
     public function __construct(
         private OrderService $orderService,
+        private ReservationRepositoryInterface $reservations,
     ) {}
 
     /**
@@ -68,6 +70,87 @@ final readonly class ReservationService
         'delivered'   => [],
         'cancelled'   => [],
     ];
+
+    /**
+     * Capture a new reservation for the current tenant.
+     *
+     * Runs inside a DB transaction so the sequence claim + row insert are atomic.
+     * The reservation starts in 'inquiry' status; recordInitialHistory() writes the
+     * birth entry into reservation_status_history.
+     *
+     * deposit_required_cents handling:
+     *   - If explicitly provided in $data (non-null), that value is used as-is —
+     *     allowing staff to override the per-reservation deposit amount at capture time.
+     *   - If not provided (null / absent), computeDepositRequired() derives the default
+     *     from the tenant's reservation_deposit_pct.
+     *
+     * @param  array<string, mixed>  $data  Validated payload from StoreReservationRequest
+     *
+     * @throws DomainException When no tenant context can be resolved
+     */
+    public function capture(array $data, ?User $actor = null): Reservation
+    {
+        $tenant = $this->resolveTenant();
+
+        return DB::transaction(function () use ($data, $actor, $tenant): Reservation {
+            $number = $this->reservations->nextReservationNumber($tenant);
+
+            // Use the explicit override when provided, otherwise apply the tenant default.
+            $depositRequired = isset($data['deposit_required_cents'])
+                ? (int) $data['deposit_required_cents']
+                : $this->computeDepositRequired((int) ($data['total_cents'] ?? 0), $tenant);
+
+            $reservation = $this->reservations->create([
+                'tenant_id'              => $tenant->id,
+                'branch_id'              => $data['branch_id'] ?? null,
+                'customer_id'            => $data['customer_id'] ?? null,
+                'reservation_number'     => $number,
+                'description'            => $data['description'],
+                'occasion'               => $data['occasion'] ?? null,
+                'event_date'             => $data['event_date'] ?? null,
+                'total_cents'            => (int) ($data['total_cents'] ?? 0),
+                'deposit_required_cents' => $depositRequired,
+                'deposit_paid_cents'     => 0,
+                'status'                 => 'inquiry',
+                'special_instructions'   => $data['special_instructions'] ?? null,
+                'admin_notes'            => $data['admin_notes'] ?? null,
+                'created_by'             => $actor?->id,
+            ]);
+
+            $this->recordInitialHistory($reservation, $actor);
+
+            Log::info('Reservation captured', [
+                'reservation_id'         => $reservation->id,
+                'reservation_number'     => $reservation->reservation_number,
+                'tenant_id'              => $reservation->tenant_id,
+                'total_cents'            => $reservation->total_cents,
+                'deposit_required_cents' => $reservation->deposit_required_cents,
+                'actor_id'               => $actor?->id,
+            ]);
+
+            return $reservation;
+        });
+    }
+
+    /**
+     * Resolve the current tenant from the service container.
+     *
+     * Prefers the container-bound currentTenant (HTTP context). Falls back to a
+     * direct find via the Auth facade for queue / CLI context.
+     *
+     * @throws DomainException When no tenant context can be resolved
+     */
+    private function resolveTenant(): Tenant
+    {
+        /** @var Tenant|null $current */
+        $current = app()->bound('currentTenant') ? app('currentTenant') : null;
+
+        if ($current instanceof Tenant) {
+            return $current;
+        }
+
+        throw new DomainException('No active tenant context found. Cannot capture reservation.');
+    }
 
     /**
      * Advance the reservation to a new status, recording the transition in the history.
@@ -357,6 +440,7 @@ final readonly class ReservationService
         Reservation $reservation,
         ?User $actor = null,
         bool $force = false,
+        ?string $note = null,
     ): Reservation {
         // Auto-set the default deposit requirement when none was overridden.
         if ($reservation->deposit_required_cents === 0) {
@@ -380,6 +464,7 @@ final readonly class ReservationService
             reservation: $reservation,
             toStatus: 'confirmed',
             actor: $actor,
+            note: $note,
         );
     }
 
@@ -440,12 +525,21 @@ final readonly class ReservationService
             $reservation->update(['converted_order_id' => $order->id]);
 
             if ($reservation->status !== 'delivered') {
-                $this->transitionTo(
-                    reservation: $reservation->fresh(),
-                    toStatus: 'delivered',
-                    actor: $actor,
-                    note: 'Entregada y convertida a pedido',
-                );
+                // Bypass the normal state machine — converting to an Order IS the delivery
+                // event. The state machine guards incremental transitions; this orchestrated
+                // action delivers the reservation atomically regardless of which step it was
+                // in (confirmed, in_progress, ready, etc.). The history row captures the jump.
+                $fromStatus = $reservation->status;
+                $reservation->update(['status' => 'delivered']);
+
+                ReservationStatusHistory::create([
+                    'tenant_id'      => $reservation->tenant_id,
+                    'reservation_id' => $reservation->id,
+                    'from_status'    => $fromStatus,
+                    'to_status'      => 'delivered',
+                    'user_id'        => $actor?->id,
+                    'note'           => 'Entregada y convertida a pedido',
+                ]);
             }
 
             Log::info('Reservation converted to order', [
