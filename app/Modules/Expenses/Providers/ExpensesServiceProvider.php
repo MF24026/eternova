@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Expenses\Providers;
 
+use App\Modules\Expenses\Models\Expense;
 use App\Modules\Expenses\Ocr\OcrDriverInterface;
 use App\Modules\Expenses\Ocr\OcrException;
+use App\Modules\Expenses\Policies\ExpensePolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -16,11 +19,18 @@ use Illuminate\Support\ServiceProvider;
  *     The binding is deferred via a closure so that config('ocr.*') is
  *     not read until the interface is actually resolved (avoids boot-time
  *     config-cache issues in tests that swap the config).
- *   - E4 will extend boot() with Gate::policy bindings when the
- *     ExpensePolicy and repository bindings are added.
+ *   - Register Gate::policy(Expense::class, ExpensePolicy::class) so that
+ *     $this->authorize('create', Expense::class) in controllers resolves
+ *     to ExpensePolicy::create().
+ *   - E4 will add repository bindings when the full expense CRUD ships.
  */
 final class ExpensesServiceProvider extends ServiceProvider
 {
+    public function boot(): void
+    {
+        Gate::policy(Expense::class, ExpensePolicy::class);
+    }
+
     public function register(): void
     {
         $this->app->bind(OcrDriverInterface::class, function (): OcrDriverInterface {
