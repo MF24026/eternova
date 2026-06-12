@@ -156,6 +156,21 @@ final class Reservation extends Model
     }
 
     /**
+     * How much of the REQUIRED deposit is still unpaid.
+     *
+     * Returns a non-negative integer (centavos). Zero means the deposit
+     * obligation is fully covered; a positive value means staff should
+     * collect more before confirming (or an admin override is needed).
+     *
+     * Distinct from remainingBalanceCents(): this measures against the
+     * deposit_required threshold, not the full reservation total.
+     */
+    public function depositOutstandingCents(): int
+    {
+        return max(0, $this->deposit_required_cents - $this->deposit_paid_cents);
+    }
+
+    /**
      * How much the customer still owes after their partial payments.
      *
      * Returns a non-negative integer (centavos). A negative result would imply
