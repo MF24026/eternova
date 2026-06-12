@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Reservations\Services;
 
 use App\Models\User;
+use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Services\OrderService;
 use App\Modules\Reservations\Models\Reservation;
 use App\Modules\Reservations\Models\ReservationPayment;
 use App\Modules\Reservations\Models\ReservationStatusHistory;
+use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use DateTimeInterface;
 use DomainException;
@@ -45,6 +48,10 @@ use InvalidArgumentException;
  */
 final readonly class ReservationService
 {
+    public function __construct(
+        private OrderService $orderService,
+    ) {}
+
     /**
      * Valid next statuses for each status.
      *
@@ -374,6 +381,137 @@ final readonly class ReservationService
             toStatus: 'confirmed',
             actor: $actor,
         );
+    }
+
+    /**
+     * Convert a delivered (or ready-to-deliver) reservation into an Order.
+     *
+     * Idempotent: if converted_order_id is already set, throw — the conversion
+     * already happened and duplicating it would corrupt financial reports.
+     *
+     * Module boundary: this method passes only Order-domain primitives to
+     * OrderService::createFromReservation(). The Orders module never sees a
+     * Reservation type — the dependency flows one way (Reservations → Orders).
+     *
+     * payment_status derivation (cents-level arithmetic):
+     *   - paid    : deposit_paid_cents >= total_cents AND total_cents > 0
+     *   - partial : deposit_paid_cents > 0 (but not fully paid)
+     *   - pending : deposit_paid_cents == 0 (or total_cents == 0)
+     *
+     * Branch resolution: uses $reservation->branch if set; falls back to the
+     * tenant's main branch. A reservation with no branch and no main branch in
+     * the tenant is a data-integrity error — throw rather than guess.
+     *
+     * @throws DomainException When the reservation was already converted
+     * @throws DomainException When the reservation is cancelled
+     * @throws DomainException When no branch is available to hold the order
+     */
+    public function convertToOrder(Reservation $reservation, ?User $actor = null): Order
+    {
+        if ($reservation->converted_order_id !== null) {
+            throw new DomainException(
+                "Reservation #{$reservation->reservation_number} has already been converted to an order."
+            );
+        }
+
+        if ($reservation->status === 'cancelled') {
+            throw new DomainException(
+                "Cannot convert reservation #{$reservation->reservation_number} to an order — it is cancelled."
+            );
+        }
+
+        $branch = $this->resolveBranchForReservation($reservation);
+
+        $paymentStatus = $this->derivePaymentStatus(
+            totalCents: $reservation->total_cents,
+            depositPaidCents: $reservation->deposit_paid_cents,
+        );
+
+        return DB::transaction(function () use ($reservation, $branch, $paymentStatus, $actor): Order {
+            $order = $this->orderService->createFromReservation(
+                branch: $branch,
+                totalCents: $reservation->total_cents,
+                customer: $reservation->customer,
+                paymentStatus: $paymentStatus,
+                user: $actor,
+                notes: "Converted from reservation {$reservation->reservation_number}",
+            );
+
+            $reservation->update(['converted_order_id' => $order->id]);
+
+            if ($reservation->status !== 'delivered') {
+                $this->transitionTo(
+                    reservation: $reservation->fresh(),
+                    toStatus: 'delivered',
+                    actor: $actor,
+                    note: 'Entregada y convertida a pedido',
+                );
+            }
+
+            Log::info('Reservation converted to order', [
+                'reservation_id'     => $reservation->id,
+                'reservation_number' => $reservation->reservation_number,
+                'tenant_id'          => $reservation->tenant_id,
+                'order_id'           => $order->id,
+                'order_number'       => $order->order_number,
+                'payment_status'     => $paymentStatus,
+                'actor_id'           => $actor?->id,
+            ]);
+
+            return $order;
+        });
+    }
+
+    /**
+     * Derive the Order payment_status from what the customer already paid on the reservation.
+     *
+     * Returns 'paid' when the full amount was collected, 'partial' when something
+     * was paid but not everything, and 'pending' when no payment was recorded at all.
+     * A zero-total reservation is always 'pending' — there is nothing to mark as paid.
+     */
+    private function derivePaymentStatus(int $totalCents, int $depositPaidCents): string
+    {
+        if ($totalCents > 0 && $depositPaidCents >= $totalCents) {
+            return 'paid';
+        }
+
+        if ($depositPaidCents > 0) {
+            return 'partial';
+        }
+
+        return 'pending';
+    }
+
+    /**
+     * Resolve the branch for a reservation, falling back to the tenant's main branch.
+     *
+     * @throws DomainException When neither the reservation's branch nor a main branch exists
+     */
+    private function resolveBranchForReservation(Reservation $reservation): Branch
+    {
+        if ($reservation->branch_id !== null) {
+            // Always load fresh in case the relation was not eager-loaded
+            $branch = $reservation->branch;
+
+            if ($branch !== null) {
+                return $branch;
+            }
+        }
+
+        // Fall back to the tenant's main branch — covers reservations captured
+        // before branch assignment was made mandatory, or single-branch tenants.
+        $mainBranch = Branch::where('tenant_id', $reservation->tenant_id)
+            ->where('is_main', true)
+            ->first();
+
+        if ($mainBranch === null) {
+            throw new DomainException(
+                "No branch available to convert reservation #{$reservation->reservation_number}. "
+                .'Assign a branch to the reservation or configure a main branch for the tenant.'
+            );
+        }
+
+        return $mainBranch;
     }
 
     /**

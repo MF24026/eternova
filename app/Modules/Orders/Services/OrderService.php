@@ -175,6 +175,98 @@ final readonly class OrderService
     }
 
     /**
+     * Create an Order that represents the delivery of a custom reservation.
+     *
+     * This is the Orders-side half of the reservation-to-order conversion flow.
+     * The method deliberately accepts ONLY Order-domain primitives — Branch, ints,
+     * Customer, User, strings — so the Orders module has zero knowledge of the
+     * Reservations module. The calling orchestrator (ReservationService) passes
+     * the derived values across the module boundary.
+     *
+     * Key differences from createFromPos():
+     *   - No OrderItems: a custom reservation has no catalog ProductVariant, and
+     *     OrderItem.product_variant_id is a NOT NULL FK. The order is a financial
+     *     record of the completed delivery, not a line-item receipt.
+     *   - No inventory deduction: the materials were consumed when the reservation
+     *     was fulfilled, not at conversion time.
+     *   - Status starts as 'delivered': the reservation is handed over at conversion,
+     *     so the order is already in its terminal delivered state.
+     *   - source = 'reservation': distinguishes this in reports from POS / catalog sales.
+     *   - payment_method = null: the actual payment(s) were recorded on the reservation
+     *     side; the order only carries the derived payment_status.
+     *
+     * @throws InvalidArgumentException When $paymentStatus is not pending|partial|paid
+     */
+    public function createFromReservation(
+        Branch $branch,
+        int $totalCents,
+        ?Customer $customer,
+        string $paymentStatus,
+        ?User $user = null,
+        ?string $notes = null,
+    ): Order {
+        $validPaymentStatuses = ['pending', 'partial', 'paid'];
+
+        if (! in_array($paymentStatus, $validPaymentStatuses, strict: true)) {
+            throw new InvalidArgumentException(
+                "Invalid payment_status '{$paymentStatus}'. Must be one of: "
+                .implode(', ', $validPaymentStatuses).'.'
+            );
+        }
+
+        $tenant = $this->resolveTenant($branch);
+
+        return DB::transaction(function () use (
+            $branch, $totalCents, $customer, $paymentStatus, $user, $notes, $tenant
+        ): Order {
+            $orderNumber = $this->orders->nextOrderNumber($tenant);
+
+            // Tax v1: always zero for reservation-derived orders.
+            // TODO(#80): derive from tenant Settings tax_rate when that module ships.
+            $order = $this->orders->create([
+                'tenant_id'      => $tenant->id,
+                'branch_id'      => $branch->id,
+                'customer_id'    => $customer?->id,
+                'order_number'   => $orderNumber,
+                'tracking_token' => $this->generateTrackingToken(),
+                'status'         => 'delivered',
+                'source'         => 'reservation',
+                'subtotal_cents' => $totalCents,
+                'tax_cents'      => 0,
+                'discount_cents' => 0,
+                'total_cents'    => $totalCents,
+                'payment_method' => null,
+                'payment_status' => $paymentStatus,
+                'notes'          => $notes,
+                'user_id'        => $user?->id,
+            ]);
+
+            // Write the initial history entry. from_status=null signals this is the
+            // birth of the order into its initial status, not a transition from prior state.
+            OrderStatusHistory::create([
+                'tenant_id'   => $tenant->id,
+                'order_id'    => $order->id,
+                'from_status' => null,
+                'to_status'   => 'delivered',
+                'user_id'     => $user?->id,
+                'note'        => 'Created from reservation',
+            ]);
+
+            Log::info('Reservation order created', [
+                'order_id'       => $order->id,
+                'order_number'   => $order->order_number,
+                'tenant_id'      => $tenant->id,
+                'branch_id'      => $branch->id,
+                'total_cents'    => $totalCents,
+                'payment_status' => $paymentStatus,
+                'user_id'        => $user?->id,
+            ]);
+
+            return $order;
+        });
+    }
+
+    /**
      * Cancel an order.
      *
      * v1: sets status to 'cancelled' only — does NOT restock inventory.
