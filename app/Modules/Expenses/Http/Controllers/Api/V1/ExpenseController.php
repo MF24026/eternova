@@ -82,6 +82,50 @@ final class ExpenseController extends Controller
     }
 
     /**
+     * Monthly expense report: totals grouped by category for a period.
+     *
+     * Query params:
+     *   ?month=YYYY-MM        — the period (defaults to the current month if omitted)
+     *   ?date_from= &date_to= — explicit range (used when month is absent)
+     *   ?verified_only=       — true to count only confirmed expenses (default: all)
+     *
+     * Returns { period, total_cents, by_category[] }. Every active category is
+     * zero-filled so the chart in S6-E8 has a stable set of slices.
+     */
+    public function report(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Expense::class);
+
+        $month = (string) ($request->query('month') ?? now()->format('Y-m'));
+
+        $filters = [
+            'month'         => $request->query('month') ? $month : null,
+            'date_from'     => $request->query('date_from'),
+            'date_to'       => $request->query('date_to'),
+            'verified_only' => filter_var($request->query('verified_only', false), FILTER_VALIDATE_BOOL),
+        ];
+
+        // Default to the current month when neither month nor an explicit range is given.
+        if ($filters['month'] === null && ! $filters['date_from'] && ! $filters['date_to']) {
+            $filters['month'] = $month;
+        }
+
+        $report = $this->expenses->monthlyReportByCategory($filters);
+
+        return response()->json([
+            'data' => [
+                'period' => [
+                    'month'     => $filters['month'],
+                    'date_from' => $filters['date_from'],
+                    'date_to'   => $filters['date_to'],
+                ],
+                'total_cents' => $report['total_cents'],
+                'by_category' => $report['by_category'],
+            ],
+        ]);
+    }
+
+    /**
      * Full expense detail including category, branch, and creator.
      */
     public function show(Expense $expense): ExpenseResource

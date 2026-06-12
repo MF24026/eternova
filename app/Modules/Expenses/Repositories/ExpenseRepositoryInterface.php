@@ -40,4 +40,21 @@ interface ExpenseRepositoryInterface
      * @return LengthAwarePaginator<Expense>
      */
     public function paginate(array $filters): LengthAwarePaginator;
+
+    /**
+     * Aggregate expense totals grouped by category for a period, scoped to the
+     * current tenant. Every active tenant category is zero-filled so the report
+     * is stable even for categories with no expenses; uncategorised expenses are
+     * collapsed into a "Sin categoria" bucket (category_id null).
+     *
+     * Supported filters:
+     *   - month          string — YYYY-MM (takes precedence over date_from/date_to)
+     *   - date_from      string — ISO date, inclusive lower bound on expense_date
+     *   - date_to        string — ISO date, inclusive upper bound on expense_date
+     *   - verified_only  bool   — when true, only is_verified=true expenses count
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{total_cents: int, by_category: list<array{category_id: int|null, category_name: string, category_type: string|null, total_cents: int, count: int}>}
+     */
+    public function monthlyReportByCategory(array $filters): array;
 }

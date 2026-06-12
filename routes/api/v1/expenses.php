@@ -53,6 +53,10 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('expenses')->group(static 
     Route::delete('/categories/{category}', [ExpenseCategoryController::class, 'destroy'])
         ->name('api.v1.expenses.categories.destroy');
 
+    // E5: monthly report by category (static — before the {expense} wildcard)
+    Route::get('/report', [ExpenseController::class, 'report'])
+        ->name('api.v1.expenses.report');
+
     // ── Collection + manual creation ────────────────────────────────────────
     Route::get('/', [ExpenseController::class, 'index'])
         ->name('api.v1.expenses.index');
