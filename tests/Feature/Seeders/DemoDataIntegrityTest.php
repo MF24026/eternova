@@ -17,6 +17,8 @@ use Database\Seeders\DemoTenantsSeeder;
 use Database\Seeders\Inventory\BranchInventorySeeder;
 use Database\Seeders\Orders\OrdersSeeder;
 use Database\Seeders\PlansSeeder;
+use Database\Seeders\Expenses\ExpenseCategoriesSeeder;
+use Database\Seeders\Expenses\ExpensesSeeder;
 use Database\Seeders\Reservations\ReservationsSeeder;
 use Database\Seeders\ReservedSubdomainsSeeder;
 use Database\Seeders\SuperAdminUserSeeder;
@@ -691,6 +693,240 @@ final class DemoDataIntegrityTest extends TestCase
                 0,
                 $historyLeakCount,
                 "Cross-tenant history leak detected for tenant {$tenant->slug}",
+            );
+        }
+    }
+
+    // ------------------------------------------------------------------ Expenses seeder
+
+    /**
+     * Seed all prerequisites for the expenses seeder tests.
+     * Categories must exist before expenses are seeded.
+     */
+    private function seedExpensePrerequisites(): void
+    {
+        $this->seed(PlansSeeder::class);
+        $this->seed(DemoTenantsSeeder::class);
+        $this->seed(CategoriesSeeder::class);
+        $this->seed(TagsSeeder::class);
+        $this->seed(ProductsSeeder::class);
+        $this->seed(BranchInventorySeeder::class);
+        $this->seed(OrdersSeeder::class);
+        $this->seed(ReservationsSeeder::class);
+        $this->seed(ExpenseCategoriesSeeder::class);
+        $this->seed(ExpensesSeeder::class);
+    }
+
+    public function test_expenses_seeder_creates_expenses_for_each_demo_tenant(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        $rosaEterna = Tenant::findBySlug('rosa-eterna');
+        $tatiana    = Tenant::findBySlug('tatiana');
+
+        $this->assertNotNull($rosaEterna);
+        $this->assertNotNull($tatiana);
+
+        $rosaCount    = DB::table('expenses')->where('tenant_id', $rosaEterna->id)->count();
+        $tatianaCount = DB::table('expenses')->where('tenant_id', $tatiana->id)->count();
+
+        $this->assertGreaterThanOrEqual(25, $rosaCount, 'rosa-eterna should have at least 25 expenses');
+        $this->assertGreaterThanOrEqual(25, $tatianaCount, 'tatiana should have at least 25 expenses');
+    }
+
+    public function test_expenses_seeder_covers_at_least_three_distinct_months_per_tenant(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        foreach (Tenant::all() as $tenant) {
+            $distinctMonths = DB::table('expenses')
+                ->where('tenant_id', $tenant->id)
+                ->selectRaw("DATE_FORMAT(expense_date, '%Y-%m') as ym")
+                ->distinct()
+                ->pluck('ym');
+
+            $this->assertGreaterThanOrEqual(
+                3,
+                $distinctMonths->count(),
+                "Tenant {$tenant->slug} must have expenses spanning at least 3 distinct months "
+                . "(got {$distinctMonths->count()}: {$distinctMonths->implode(', ')})",
+            );
+        }
+    }
+
+    public function test_expenses_seeder_uses_all_five_categories_and_has_uncategorised_rows(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        foreach (Tenant::all() as $tenant) {
+            // All 5 category types must appear (resolved by joining to expense_categories.type).
+            $usedTypes = DB::table('expenses')
+                ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+                ->where('expenses.tenant_id', $tenant->id)
+                ->select('expense_categories.type')
+                ->distinct()
+                ->pluck('type')
+                ->sort()
+                ->values()
+                ->all();
+
+            $expectedTypes = ['operating', 'other', 'payroll', 'products', 'rent'];
+
+            $this->assertSame(
+                $expectedTypes,
+                $usedTypes,
+                "Tenant {$tenant->slug} must use all 5 category types (got: " . implode(', ', $usedTypes) . ")",
+            );
+
+            // At least one uncategorised expense must exist per tenant.
+            $uncategorisedCount = DB::table('expenses')
+                ->where('tenant_id', $tenant->id)
+                ->whereNull('expense_category_id')
+                ->count();
+
+            $this->assertGreaterThanOrEqual(
+                1,
+                $uncategorisedCount,
+                "Tenant {$tenant->slug} must have at least 1 uncategorised expense (expense_category_id=null)",
+            );
+        }
+    }
+
+    public function test_expenses_seeder_includes_ocr_done_verified_and_ocr_draft_rows(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        foreach (Tenant::all() as $tenant) {
+            // At least one OCR-done + verified row (receipt uploaded, staff confirmed).
+            $ocrVerifiedCount = DB::table('expenses')
+                ->where('tenant_id', $tenant->id)
+                ->where('ocr_status', 'done')
+                ->where('is_verified', true)
+                ->count();
+
+            $this->assertGreaterThanOrEqual(
+                1,
+                $ocrVerifiedCount,
+                "Tenant {$tenant->slug} must have at least 1 OCR-done+verified expense",
+            );
+
+            // At least one OCR draft (done but not yet confirmed) per tenant.
+            $ocrDraftCount = DB::table('expenses')
+                ->where('tenant_id', $tenant->id)
+                ->where('ocr_status', 'done')
+                ->where('is_verified', false)
+                ->count();
+
+            $this->assertGreaterThanOrEqual(
+                1,
+                $ocrDraftCount,
+                "Tenant {$tenant->slug} must have at least 1 OCR-done draft (is_verified=false) "
+                . "for the E7 verification queue",
+            );
+        }
+    }
+
+    public function test_ocr_done_expenses_have_receipt_path_and_ocr_data(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        $ocrDoneExpenses = DB::table('expenses')
+            ->where('ocr_status', 'done')
+            ->get();
+
+        $this->assertNotEmpty($ocrDoneExpenses, 'There must be at least one ocr_status=done expense');
+
+        foreach ($ocrDoneExpenses as $expense) {
+            $this->assertNotNull(
+                $expense->receipt_path,
+                "Expense id={$expense->id} with ocr_status=done must have a receipt_path",
+            );
+
+            $this->assertNotNull(
+                $expense->ocr_data,
+                "Expense id={$expense->id} with ocr_status=done must have ocr_data",
+            );
+
+            // ocr_data must decode to a valid JSON object with the expected keys.
+            $decoded = json_decode((string) $expense->ocr_data, associative: true, flags: JSON_THROW_ON_ERROR);
+
+            $this->assertArrayHasKey('vendor', $decoded, "ocr_data must contain 'vendor'");
+            $this->assertArrayHasKey('amount_cents', $decoded, "ocr_data must contain 'amount_cents'");
+            $this->assertArrayHasKey('date', $decoded, "ocr_data must contain 'date'");
+            $this->assertArrayHasKey('raw_text', $decoded, "ocr_data must contain 'raw_text'");
+            $this->assertArrayHasKey('confidence', $decoded, "ocr_data must contain 'confidence'");
+
+            $this->assertIsInt($decoded['amount_cents'], "ocr_data.amount_cents must be an integer");
+            $this->assertGreaterThan(0, $decoded['amount_cents'], "ocr_data.amount_cents must be positive");
+        }
+    }
+
+    public function test_all_expense_amounts_are_positive_integers(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        $expenses = DB::table('expenses')->get();
+
+        $this->assertNotEmpty($expenses, 'There must be at least one expense');
+
+        foreach ($expenses as $expense) {
+            $this->assertGreaterThan(
+                0,
+                (int) $expense->amount_cents,
+                "Expense id={$expense->id} must have amount_cents > 0 (got {$expense->amount_cents})",
+            );
+        }
+    }
+
+    public function test_no_cross_tenant_expense_data_leakage(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        foreach (Tenant::all() as $tenant) {
+            // Every expense's category (when set) must belong to the same tenant.
+            $crossLeakCount = DB::table('expenses')
+                ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+                ->where('expenses.tenant_id', $tenant->id)
+                ->where('expense_categories.tenant_id', '!=', $tenant->id)
+                ->count();
+
+            $this->assertSame(
+                0,
+                $crossLeakCount,
+                "Cross-tenant category leak detected for tenant {$tenant->slug}: "
+                . "an expense references a category from another tenant",
+            );
+        }
+    }
+
+    public function test_expenses_seeder_is_idempotent(): void
+    {
+        $this->seedExpensePrerequisites();
+
+        $countAfterFirst = DB::table('expenses')->count();
+
+        // Running again must not add more rows.
+        $this->seed(ExpensesSeeder::class);
+
+        $countAfterSecond = DB::table('expenses')->count();
+
+        $this->assertSame(
+            $countAfterFirst,
+            $countAfterSecond,
+            'ExpensesSeeder must be idempotent — running it twice must not double the rows',
+        );
+    }
+
+    public function test_database_seeder_pipeline_includes_expenses(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        // Each demo tenant must have expenses after the full seed pipeline.
+        foreach (Tenant::all() as $tenant) {
+            $this->assertGreaterThan(
+                0,
+                DB::table('expenses')->where('tenant_id', $tenant->id)->count(),
+                "DatabaseSeeder pipeline must seed expenses for tenant {$tenant->slug}",
             );
         }
     }
