@@ -120,6 +120,14 @@ const router = createRouter({
             meta: { requiresAuth: true, layout: 'admin' },
         },
         {
+            path: '/admin/reservations/:id',
+            name: 'admin.reservations.detail',
+            // Stub in place so row/card clicks navigate without 404.
+            // Full detail page is built in S5-E7.
+            component: () => import('@/pages/Admin/ReservationDetailPage.vue'),
+            meta: { requiresAuth: true, layout: 'admin' },
+        },
+        {
             path: '/admin/expenses',
             name: 'admin.expenses',
             component: () => import('@/pages/Admin/ExpensesPage.vue'),
