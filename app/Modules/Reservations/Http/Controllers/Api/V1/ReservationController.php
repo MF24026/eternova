@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Reservations\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Orders\Http\Resources\OrderResource;
 use App\Modules\Reservations\Http\Requests\RecordPaymentRequest;
 use App\Modules\Reservations\Http\Requests\StoreReservationRequest;
@@ -284,9 +285,9 @@ final class ReservationController extends Controller
      * PATCH /api/v1/reservations/{reservation}/assignee
      * Body: { assigned_to: int|null }
      *
-     * Passing null un-assigns the current assignee. The assignee must be a
-     * member of the same tenant — validated via the users.id foreign key within
-     * tenant scope. Returns the full ReservationResource after update.
+     * Passing null un-assigns the current assignee. The ReservationService enforces
+     * that the assignee belongs to the same tenant — a cross-tenant user is rejected
+     * with 422. Returns the full ReservationResource after update.
      */
     public function assign(Request $request, Reservation $reservation): ReservationResource|JsonResponse
     {
@@ -296,11 +297,32 @@ final class ReservationController extends Controller
             'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        $reservation->update(['assigned_to' => $validated['assigned_to'] ?? null]);
+        $assignee = isset($validated['assigned_to'])
+            ? User::find((int) $validated['assigned_to'])
+            : null;
 
-        $reservation->load(['branch', 'customer', 'assignee', 'statusHistory.user', 'payments.recorder']);
+        try {
+            $updated = $this->reservationService->assign(
+                reservation: $reservation,
+                assignee: $assignee,
+                actor: $request->user(),
+            );
+        } catch (DomainException $e) {
+            Log::warning('Reservation assignment rejected', [
+                'reservation_id' => $reservation->id,
+                'assigned_to' => $validated['assigned_to'] ?? null,
+                'message' => $e->getMessage(),
+            ]);
 
-        return new ReservationResource($reservation);
+            return response()->json([
+                'message' => $e->getMessage(),
+                'error_code' => 'reservations.invalid_assignment',
+            ], 422);
+        }
+
+        $updated->load(['branch', 'customer', 'assignee', 'statusHistory.user', 'payments.recorder']);
+
+        return new ReservationResource($updated);
     }
 
     /**

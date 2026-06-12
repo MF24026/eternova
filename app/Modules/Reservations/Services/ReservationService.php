@@ -246,6 +246,62 @@ final readonly class ReservationService
     }
 
     /**
+     * Assign (or un-assign) a staff member to a reservation.
+     *
+     * Passing null for $assignee clears the assignment. When a user is given, it
+     * MUST belong to the same tenant as the reservation — assigning a user from
+     * another tenant is rejected. Mirrors OrderService::assign(): the assignment
+     * is recorded in the timeline as a same-status history row so the activity log
+     * stays complete.
+     *
+     * @throws DomainException When the assignee belongs to a different tenant
+     */
+    public function assign(Reservation $reservation, ?User $assignee, ?User $actor = null): Reservation
+    {
+        if ($assignee !== null) {
+            $this->assertAssigneeBelongsToReservationTenant($reservation, $assignee);
+        }
+
+        $note = $assignee !== null
+            ? "Assigned to {$assignee->name}"
+            : 'Unassigned';
+
+        DB::transaction(function () use ($reservation, $assignee, $actor, $note): void {
+            $reservation->update(['assigned_to' => $assignee?->id]);
+
+            ReservationStatusHistory::create([
+                'tenant_id' => $reservation->tenant_id,
+                'reservation_id' => $reservation->id,
+                'from_status' => $reservation->status,
+                'to_status' => $reservation->status,
+                'user_id' => $actor?->id,
+                'note' => $note,
+            ]);
+        });
+
+        Log::info('Reservation assignment updated', [
+            'reservation_id' => $reservation->id,
+            'reservation_number' => $reservation->reservation_number,
+            'tenant_id' => $reservation->tenant_id,
+            'assigned_to' => $assignee?->id,
+            'actor_id' => $actor?->id,
+        ]);
+
+        return $reservation->fresh()->load('assignee');
+    }
+
+    private function assertAssigneeBelongsToReservationTenant(Reservation $reservation, User $assignee): void
+    {
+        $tenant = Tenant::find($reservation->tenant_id);
+
+        if ($tenant === null || ! $assignee->belongsToTenant($tenant)) {
+            throw new DomainException(
+                "Cannot assign reservation #{$reservation->reservation_number} to a user from another tenant."
+            );
+        }
+    }
+
+    /**
      * Write the initial history row when a reservation is first created.
      *
      * Called by the store endpoint (E5) immediately after persisting the new
