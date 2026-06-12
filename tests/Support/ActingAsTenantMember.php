@@ -69,6 +69,17 @@ trait ActingAsTenantMember
     }
 
     /**
+     * Perform a PUT request scoped to the given tenant.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $headers
+     */
+    protected function tenantPutJson(Tenant $tenant, User $user, string $uri, array $data = [], array $headers = []): TestResponse
+    {
+        return $this->actingAs($user)->putJson($this->tenantUrl($tenant, $uri), $data, $headers);
+    }
+
+    /**
      * Perform a DELETE request scoped to the given tenant.
      *
      * @param  array<string, mixed>  $headers
