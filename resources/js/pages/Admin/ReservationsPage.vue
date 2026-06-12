@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Calendar, List, LayoutDashboard, Search, CalendarX } from 'lucide-vue-next'
+import { Calendar, List, LayoutDashboard, Search, CalendarX, Plus, Settings } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
+import AppButton from '@/components/base/AppButton.vue'
 import AppTable, { type TableColumn } from '@/components/base/AppTable.vue'
 import AppPagination from '@/components/base/AppPagination.vue'
 import AppEmptyState from '@/components/base/AppEmptyState.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
+import ReservationCaptureSlideover from '@/components/Admin/Reservations/ReservationCaptureSlideover.vue'
+import ReservationSettingsSlideover from '@/components/Admin/Reservations/ReservationSettingsSlideover.vue'
 import ReservationService from '@/services/ReservationService'
 import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useFormatDate } from '@/composables/useFormatDate'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import {
     RESERVATION_STATUS_LABELS,
     RESERVATION_STATUS_VARIANT,
@@ -27,6 +31,29 @@ import type {
     ReservationStatusCounts,
 } from '@/types/domain/Reservation'
 import type { PaginatedMeta as ApiPaginatedMeta } from '@/types/api'
+
+// ── Slideover visibility ──────────────────────────────────────────────────────
+
+const captureSlideoverOpen = ref(false)
+const settingsSlideoverOpen = ref(false)
+
+// Determine if the current user can edit settings (owner/admin only).
+// Role lives on the tenant membership — find the one marked is_current.
+// If no is_current match exists (e.g. single-tenant with no flag), default to
+// showing the editable UI and let the backend return 403 when needed.
+const { currentUser } = useAuth()
+const canEditSettings = computed<boolean>(() => {
+    const user = currentUser.value
+    if (!user) return true // not yet loaded — show editable, backend guards
+    const currentMembership = user.tenants.find((t) => t.is_current)
+    if (!currentMembership) return true // no match — show editable, backend guards
+    return currentMembership.role === 'owner' || currentMembership.role === 'admin'
+})
+
+function onCaptureSuccess(): void {
+    // Refresh the list after a new reservation is created
+    void fetchReservations()
+}
 
 // ── View toggle ───────────────────────────────────────────────────────────────
 
@@ -409,10 +436,43 @@ const cancelledCollapsed = ref(true)
 <template>
     <div class="flex flex-col gap-4">
 
+        <!-- Slideoveres -->
+        <ReservationCaptureSlideover
+            v-model="captureSlideoverOpen"
+            @success="onCaptureSuccess"
+        />
+        <ReservationSettingsSlideover
+            v-model="settingsSlideoverOpen"
+            :can-edit="canEditSettings"
+        />
+
         <!-- Page header -->
-        <div class="mb-1">
-            <p class="label-gilt">Gestión</p>
-            <h1 class="serif text-2xl text-on-surface tracking-tighter">Reservas</h1>
+        <div class="mb-1 flex items-start justify-between gap-4">
+            <div>
+                <p class="label-gilt">Gestión</p>
+                <h1 class="serif text-2xl text-on-surface tracking-tighter">Reservas</h1>
+            </div>
+            <!-- Header action buttons -->
+            <div class="flex items-center gap-2 shrink-0 pt-1">
+                <AppButton
+                    variant="secondary"
+                    size="sm"
+                    :icon="Settings"
+                    aria-label="Configuración de reservas"
+                    @click="settingsSlideoverOpen = true"
+                >
+                    Configuración
+                </AppButton>
+                <AppButton
+                    variant="primary"
+                    size="sm"
+                    :icon="Plus"
+                    data-testid="btn-nueva-reserva"
+                    @click="captureSlideoverOpen = true"
+                >
+                    Nueva reserva
+                </AppButton>
+            </div>
         </div>
 
         <!-- View toggle + filters row -->

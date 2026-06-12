@@ -26,6 +26,12 @@ export interface ReservationSettings {
     occasions: string[]
 }
 
+// Result returned by POST /api/v1/reservations/{id}/convert.
+export interface ConvertReservationResult {
+    order_id: string
+    order_number: string
+}
+
 function buildParams(
     filters: Record<string, string | number | boolean | undefined>,
 ): Record<string, string | number | boolean> {
@@ -109,12 +115,26 @@ const ReservationService = {
     },
 
     /**
+     * Assign (or un-assign) a team member to the reservation.
+     * PATCH /api/v1/reservations/{id}/assignee
+     * Pass null to un-assign.
+     */
+    async assign(id: number | string, assignedTo: number | null): Promise<ReservationDetail> {
+        const response = await api.patch<Resource<ReservationDetail>>(
+            `/reservations/${id}/assignee`,
+            { assigned_to: assignedTo },
+        )
+        return response.data.data
+    },
+
+    /**
      * Convert a delivered reservation to an Order.
      * POST /api/v1/reservations/{id}/convert
-     * Idempotent — guard on backend via converted_order_id.
+     * Returns { order_id, order_number } — NOT a ReservationDetail.
+     * The caller navigates to the new order after this call.
      */
-    async convert(id: number | string): Promise<ReservationDetail> {
-        const response = await api.post<Resource<ReservationDetail>>(
+    async convert(id: number | string): Promise<ConvertReservationResult> {
+        const response = await api.post<{ data: ConvertReservationResult }>(
             `/reservations/${id}/convert`,
         )
         return response.data.data

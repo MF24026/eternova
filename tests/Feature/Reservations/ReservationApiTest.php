@@ -749,4 +749,53 @@ final class ReservationApiTest extends TestCase
         );
         $this->assertContains($response->status(), [403, 404]);
     }
+
+    // ── assignee ───────────────────────────────────────────────────────────────
+
+    public function test_assign_endpoint_assigns_a_tenant_member(): void
+    {
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
+        $staff = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $reservation = $this->captureReservation($tenant, $owner);
+
+        $this->tenantPatchJson(
+            $tenant, $owner,
+            "/api/v1/reservations/{$reservation->id}/assignee",
+            ['assigned_to' => $staff->id],
+        )->assertOk()->assertJsonPath('data.assignee.id', $staff->id);
+
+        $this->assertSame($staff->id, $reservation->fresh()->assigned_to);
+    }
+
+    public function test_assign_endpoint_can_unassign(): void
+    {
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
+        $staff = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $reservation = $this->captureReservation($tenant, $owner);
+        $reservation->update(['assigned_to' => $staff->id]);
+
+        $this->tenantPatchJson(
+            $tenant, $owner,
+            "/api/v1/reservations/{$reservation->id}/assignee",
+            ['assigned_to' => null],
+        )->assertOk();
+
+        $this->assertNull($reservation->fresh()->assigned_to);
+    }
+
+    public function test_assign_endpoint_rejects_cross_tenant_assignee(): void
+    {
+        ['tenant' => $tenantA, 'owner' => $ownerA] = $this->setupTenant();
+        ['tenant' => $tenantB, 'owner' => $ownerB] = $this->setupTenant();
+        $reservation = $this->captureReservation($tenantA, $ownerA);
+
+        // ownerB belongs to tenant B — assigning them to tenant A's reservation must 422.
+        $this->tenantPatchJson(
+            $tenantA, $ownerA,
+            "/api/v1/reservations/{$reservation->id}/assignee",
+            ['assigned_to' => $ownerB->id],
+        )->assertStatus(422)->assertJsonPath('error_code', 'reservations.invalid_assignment');
+
+        $this->assertNull($reservation->fresh()->assigned_to);
+    }
 }
