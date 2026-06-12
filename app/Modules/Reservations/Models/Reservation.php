@@ -110,6 +110,18 @@ final class Reservation extends Model
     }
 
     /**
+     * Full audit trail of every status transition, oldest-first.
+     *
+     * Call ->latest('created_at') at the query level if you need reverse order.
+     *
+     * @return HasMany<ReservationStatusHistory, $this>
+     */
+    public function statusHistory(): HasMany
+    {
+        return $this->hasMany(ReservationStatusHistory::class)->oldest('created_at');
+    }
+
+    /**
      * The staff member responsible for fulfilling this reservation.
      *
      * Null when the reservation has not been assigned to anyone.
