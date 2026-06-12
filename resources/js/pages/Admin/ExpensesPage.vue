@@ -1,198 +1,486 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Plus, Receipt, Upload, Sparkles } from 'lucide-vue-next'
-import AppSlideover from '@/components/base/AppSlideover.vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Plus, Settings, Receipt, Search } from 'lucide-vue-next'
+import AppInput from '@/components/base/AppInput.vue'
+import AppTable, { type TableColumn } from '@/components/base/AppTable.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
 import AppButton from '@/components/base/AppButton.vue'
+import AppPagination from '@/components/base/AppPagination.vue'
+import AppEmptyState from '@/components/base/AppEmptyState.vue'
+import ExpenseFormSlideover from '@/components/Admin/Expenses/ExpenseFormSlideover.vue'
+import ExpenseCategoriesSlideover from '@/components/Admin/Expenses/ExpenseCategoriesSlideover.vue'
+import ExpenseService from '@/services/ExpenseService'
+import { useBranches } from '@/composables/useBranches'
+import { useFormatCurrency } from '@/composables/useFormatCurrency'
+import { useFormatDate } from '@/composables/useFormatDate'
+import { useToast } from '@/composables/useToast'
+import {
+    EXPENSE_CATEGORY_TYPE_VARIANT,
+    EXPENSE_OCR_STATUS_LABELS,
+    EXPENSE_OCR_STATUS_VARIANT,
+    EXPENSE_PAYMENT_METHOD_LABELS,
+} from '@/constants/expenses'
+import type { PaginatedMeta } from '@/composables/usePaginated'
+import type { Expense, ExpenseCategory, ExpenseListFilters } from '@/types/domain/Expense'
+import type { PaginatedMeta as ApiPaginatedMeta } from '@/types/api'
 
-onMounted(() => { document.title = 'Gastos — Eternova' })
+onMounted(() => {
+    document.title = 'Gastos — Eternova'
+    void Promise.all([loadBranches(), loadCategories(), fetchExpenses()])
+})
 
-interface Expense { id: number; vendor: string; cat: string; date: string; total: number }
-type OcrPhase = 'upload' | 'scanning' | 'review'
+const { branches, loadBranches } = useBranches()
+const { formatCents } = useFormatCurrency()
+const { formatDate } = useFormatDate()
+const toast = useToast()
 
-const categories: Record<string, { name: string; variant: 'info' | 'primary' | 'warning' | 'error' }> = {
-    operativos: { name: 'Operativos', variant: 'info' },
-    productos: { name: 'Productos', variant: 'primary' },
-    planilla: { name: 'Planilla', variant: 'warning' },
-    alquiler: { name: 'Alquiler', variant: 'error' },
+// ── Slideoveres ────────────────────────────────────────────────────────────────
+
+const formSlideoverOpen = ref(false)
+const editingExpense = ref<Expense | null>(null)
+const categoriesSlideoverOpen = ref(false)
+
+function openCreateForm(): void {
+    editingExpense.value = null
+    formSlideoverOpen.value = true
 }
 
-const expenses = ref<Expense[]>([
-    { id: 1, vendor: 'Floristeria La Roca', cat: 'productos', date: '14 mayo', total: 124.50 },
-    { id: 2, vendor: 'Disney+ Streaming', cat: 'operativos', date: '13 mayo', total: 12.99 },
-    { id: 3, vendor: 'Carolina (sueldo)', cat: 'planilla', date: '10 mayo', total: 800.00 },
-    { id: 4, vendor: 'Tigo internet', cat: 'operativos', date: '8 mayo', total: 45.00 },
-    { id: 5, vendor: 'Alquiler atelier', cat: 'alquiler', date: '1 mayo', total: 650.00 },
-    { id: 6, vendor: 'Papel kraft + cintas', cat: 'productos', date: '29 abril', total: 78.20 },
-    { id: 7, vendor: 'Adobe Creative Cloud', cat: 'operativos', date: '28 abril', total: 54.99 },
-    { id: 8, vendor: 'Maria Lopez (sueldo)', cat: 'planilla', date: '27 abril', total: 600.00 },
-])
-
-const filter = ref('all')
-const slideoverOpen = ref(false)
-const ocrPhase = ref<OcrPhase>('upload')
-
-const shown = computed(() => filter.value === 'all' ? expenses.value : expenses.value.filter(e => e.cat === filter.value))
-const totalMonth = computed(() => expenses.value.reduce((s, e) => s + e.total, 0))
-const budget = 4200
-
-const catTotals = computed(() =>
-    Object.entries(categories).map(([k, v]) => {
-        const sum = expenses.value.filter(e => e.cat === k).reduce((s, e) => s + e.total, 0)
-        return { key: k, ...v, sum, pct: totalMonth.value ? (sum / totalMonth.value) * 100 : 0 }
-    })
-)
-
-function openOCR() { slideoverOpen.value = true; ocrPhase.value = 'upload' }
-function startScan() {
-    ocrPhase.value = 'scanning'
-    setTimeout(() => { ocrPhase.value = 'review' }, 1800)
+function openEditForm(expense: Expense): void {
+    editingExpense.value = expense
+    formSlideoverOpen.value = true
 }
-function confirmExpense() {
-    expenses.value.unshift({ id: Date.now(), vendor: 'Floristeria La Roca', cat: 'productos', date: 'Hoy', total: 87.50 })
-    slideoverOpen.value = false
+
+function onFormSuccess(): void {
+    void fetchExpenses()
+}
+
+function onCategoriesChanged(): void {
+    // Reload category select options whenever categories change
+    void loadCategories()
+}
+
+// ── Categories (for the filter select) ───────────────────────────────────────
+
+const categories = ref<ExpenseCategory[]>([])
+
+async function loadCategories(): Promise<void> {
+    try {
+        categories.value = await ExpenseService.listCategories()
+    } catch {
+        categories.value = []
+    }
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+
+// Default to the current month (YYYY-MM)
+function currentMonthValue(): string {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+const selectedMonth = ref(currentMonthValue())
+const selectedCategoryId = ref<number | ''>('')
+const selectedBranchId = ref('')
+const verifiedFilter = ref<'all' | 'verified' | 'draft'>('all')
+const searchQuery = ref('')
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(searchQuery, () => {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => { void fetchExpenses() }, 300)
+})
+
+watch([selectedMonth, selectedCategoryId, selectedBranchId, verifiedFilter], () => {
+    void fetchExpenses()
+})
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const expenses = ref<Expense[]>([])
+const periodTotalCents = ref(0)
+const isLoading = ref(false)
+const apiMeta = ref<ApiPaginatedMeta | null>(null)
+
+async function fetchExpenses(page = 1): Promise<void> {
+    isLoading.value = true
+    try {
+        const filters: ExpenseListFilters = {
+            per_page: 20,
+            page,
+            ...(selectedMonth.value ? { month: selectedMonth.value } : {}),
+            ...(selectedCategoryId.value !== '' ? { expense_category_id: selectedCategoryId.value } : {}),
+            ...(selectedBranchId.value ? { branch_id: selectedBranchId.value } : {}),
+            ...(verifiedFilter.value === 'verified' ? { is_verified: 1 as const } : {}),
+            ...(verifiedFilter.value === 'draft' ? { is_verified: 0 as const } : {}),
+            ...(searchQuery.value.trim() ? { search: searchQuery.value.trim() } : {}),
+        }
+        const result = await ExpenseService.list(filters)
+        expenses.value = result.data
+        apiMeta.value = result.meta
+        periodTotalCents.value = result.period_total_cents
+    } finally {
+        isLoading.value = false
+    }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+
+async function deleteExpense(expense: Expense): Promise<void> {
+    const confirmed = window.confirm(
+        `¿Eliminar el gasto "${expense.description}"? Esta acción no se puede deshacer.`,
+    )
+    if (!confirmed) return
+
+    try {
+        await ExpenseService.remove(expense.id)
+        toast.success('Gasto eliminado.')
+        void fetchExpenses()
+    } catch (err: unknown) {
+        const apiErr = err as { response?: { data?: { message?: string } } }
+        const msg = apiErr.response?.data?.message ?? 'No se pudo eliminar el gasto.'
+        toast.error(msg)
+    }
+}
+
+// ── Pagination adapter ────────────────────────────────────────────────────────
+
+// AppPagination expects PaginatedMeta from usePaginated (has from/to fields).
+// The API meta from @/types/api does not — adapt here (same pattern as OrdersPage).
+const paginationMeta = computed<PaginatedMeta | null>(() => {
+    const m = apiMeta.value
+    if (!m) return null
+    return {
+        current_page: m.current_page,
+        last_page: m.last_page,
+        per_page: m.per_page,
+        total: m.total,
+        from: null,
+        to: null,
+    }
+})
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+
+// AppTable is generic with T extends Record<string, unknown>.
+// Cast Expense → Row and recover type in typed cell helpers (same pattern as OrdersPage).
+type Row = Record<string, unknown>
+
+const columns: TableColumn<Row>[] = [
+    { key: 'expense_date', label: 'Fecha', width: '110px' },
+    { key: 'description', label: 'Descripción' },
+    { key: 'vendor', label: 'Proveedor', width: '160px' },
+    { key: 'category', label: 'Categoría', width: '140px', align: 'center' },
+    { key: 'amount_cents', label: 'Monto', width: '110px', align: 'right' },
+    { key: 'payment_method', label: 'Pago', width: '110px', align: 'center' },
+    { key: 'status', label: 'Estado', width: '130px', align: 'center' },
+    { key: 'actions', label: '', width: '80px', align: 'center' },
+]
+
+const tableRows = computed<Row[]>(() => expenses.value as unknown as Row[])
+
+function asExpense(row: Row): Expense {
+    return row as unknown as Expense
 }
 </script>
 
 <template>
-    <div class="exp-shell">
-        <!-- Expenses list -->
-        <div class="card" style="padding: 20px; display: flex; flex-direction: column; overflow: hidden">
-            <div class="flex flex-wrap gap-3 mb-4">
-                <div class="scroll">
-                    <div class="tabs inline-flex">
-                        <button :class="['tab', { active: filter === 'all' }]" @click="filter = 'all'">Todos</button>
-                        <button v-for="[k, v] in Object.entries(categories)" :key="k" :class="['tab', { active: filter === k }]" @click="filter = k">{{ v.name }}</button>
-                    </div>
-                </div>
-                <div class="grow" />
-                <AppButton :icon="Plus" @click="openOCR">Nuevo gasto</AppButton>
+    <div class="flex flex-col gap-4">
+
+        <!-- Slideoveres -->
+        <ExpenseFormSlideover
+            v-model="formSlideoverOpen"
+            :expense="editingExpense"
+            @success="onFormSuccess"
+        />
+        <ExpenseCategoriesSlideover
+            v-model="categoriesSlideoverOpen"
+            @changed="onCategoriesChanged"
+        />
+
+        <!-- Page header -->
+        <div class="mb-1 flex items-start justify-between gap-4">
+            <div>
+                <p class="label-gilt">Gestión</p>
+                <h1 class="serif text-2xl text-on-surface tracking-tighter">Gastos</h1>
             </div>
 
-            <div class="scroll flex flex-col gap-1.5 flex-1 min-h-0">
-                <div v-for="e in shown" :key="e.id" class="flex items-center gap-3 p-3.5 rounded-xl" style="background: var(--surface-low)">
-                    <span class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" :style="{ background: `var(--${categories[e.cat].variant === 'primary' ? 'primary' : categories[e.cat].variant}-container)`, color: `var(--${categories[e.cat].variant === 'primary' ? 'primary' : categories[e.cat].variant})` }">
-                        <Receipt :size="14" />
+            <!-- Header action buttons -->
+            <div class="flex items-center gap-2 shrink-0 pt-1">
+                <!-- E7 will add "Subir factura" button here -->
+                <AppButton
+                    variant="secondary"
+                    size="sm"
+                    :icon="Settings"
+                    aria-label="Gestionar categorías de gastos"
+                    data-testid="btn-categorias"
+                    @click="categoriesSlideoverOpen = true"
+                >
+                    Categorías
+                </AppButton>
+                <AppButton
+                    variant="primary"
+                    size="sm"
+                    :icon="Plus"
+                    data-testid="btn-nuevo-gasto"
+                    @click="openCreateForm"
+                >
+                    Nuevo gasto
+                </AppButton>
+            </div>
+        </div>
+
+        <!-- Period total -->
+        <div
+            class="flex items-center gap-3 px-5 py-4 rounded-xl
+                   bg-surface-low dark:bg-surface-mid"
+            data-testid="period-total"
+        >
+            <div class="flex-1">
+                <p class="label-gilt">Total del periodo</p>
+                <p class="serif text-2xl text-primary tracking-tighter leading-none mt-0.5">
+                    {{ formatCents(periodTotalCents) }}
+                </p>
+            </div>
+            <p
+                v-if="selectedMonth"
+                class="text-xs text-on-surface-variant text-right"
+            >
+                {{ selectedMonth }}
+            </p>
+        </div>
+
+        <!-- Filters bar -->
+        <div class="flex flex-wrap items-center gap-3">
+
+            <!-- Month picker -->
+            <input
+                v-model="selectedMonth"
+                type="month"
+                class="px-3 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm
+                       focus:outline-none focus:ring-2 focus:ring-primary/30
+                       dark:bg-surface-mid dark:text-on-surface"
+                aria-label="Filtrar por mes"
+            />
+
+            <!-- Category filter -->
+            <select
+                v-model="selectedCategoryId"
+                class="px-4 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm
+                       focus:outline-none focus:ring-2 focus:ring-primary/30
+                       dark:bg-surface-mid dark:text-on-surface"
+                aria-label="Filtrar por categoría"
+            >
+                <option value="">Todas las categorías</option>
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                    {{ cat.name }}
+                </option>
+            </select>
+
+            <!-- Branch filter -->
+            <select
+                v-if="branches.length > 0"
+                v-model="selectedBranchId"
+                class="px-4 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm
+                       focus:outline-none focus:ring-2 focus:ring-primary/30
+                       dark:bg-surface-mid dark:text-on-surface"
+                aria-label="Filtrar por sucursal"
+            >
+                <option value="">Todas las sucursales</option>
+                <option v-for="branch in branches" :key="branch.id" :value="branch.id">
+                    {{ branch.name }}
+                </option>
+            </select>
+
+            <!-- Verified toggle (tabs-style pill group) -->
+            <div
+                class="inline-flex rounded-xl bg-surface-low dark:bg-surface-mid p-1 gap-0.5"
+                role="group"
+                aria-label="Filtrar por estado de verificación"
+            >
+                <button
+                    :class="[
+                        'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                        verifiedFilter === 'all'
+                            ? 'bg-surface-lowest dark:bg-surface-high text-on-surface shadow-[var(--shadow-ambient)]'
+                            : 'text-on-surface-variant hover:text-on-surface',
+                    ]"
+                    :aria-pressed="verifiedFilter === 'all'"
+                    @click="verifiedFilter = 'all'"
+                >
+                    Todos
+                </button>
+                <button
+                    :class="[
+                        'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                        verifiedFilter === 'verified'
+                            ? 'bg-surface-lowest dark:bg-surface-high text-on-surface shadow-[var(--shadow-ambient)]'
+                            : 'text-on-surface-variant hover:text-on-surface',
+                    ]"
+                    :aria-pressed="verifiedFilter === 'verified'"
+                    @click="verifiedFilter = 'verified'"
+                >
+                    Verificados
+                </button>
+                <button
+                    :class="[
+                        'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                        verifiedFilter === 'draft'
+                            ? 'bg-surface-lowest dark:bg-surface-high text-on-surface shadow-[var(--shadow-ambient)]'
+                            : 'text-on-surface-variant hover:text-on-surface',
+                    ]"
+                    :aria-pressed="verifiedFilter === 'draft'"
+                    @click="verifiedFilter = 'draft'"
+                >
+                    Borradores
+                </button>
+            </div>
+
+            <!-- Search -->
+            <div class="relative flex-1 min-w-48">
+                <AppInput
+                    v-model="searchQuery"
+                    placeholder="Buscar proveedor o descripción..."
+                    aria-label="Buscar gasto"
+                >
+                    <template #icon>
+                        <Search :size="14" class="text-on-surface-variant" />
+                    </template>
+                </AppInput>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <AppTable
+            :columns="columns"
+            :rows="tableRows"
+            row-key="id"
+            :loading="isLoading"
+        >
+            <!-- expense_date -->
+            <template #cell-expense_date="{ row }">
+                <span class="text-sm text-on-surface-variant whitespace-nowrap">
+                    {{ formatDate(asExpense(row).expense_date) }}
+                </span>
+            </template>
+
+            <!-- description -->
+            <template #cell-description="{ row }">
+                <div class="flex flex-col gap-0.5">
+                    <span class="text-sm text-on-surface">
+                        {{ asExpense(row).description }}
                     </span>
-                    <div class="grow min-w-0">
-                        <p class="serif text-base text-on-surface">{{ e.vendor }}</p>
-                        <p class="text-xs text-on-surface-variant">{{ e.date }}</p>
-                    </div>
-                    <AppBadge :variant="categories[e.cat].variant" size="sm" class="hidden lg:inline-flex">{{ categories[e.cat].name }}</AppBadge>
-                    <span class="font-bold text-primary text-sm shrink-0">${{ e.total.toFixed(2) }}</span>
+                    <span
+                        v-if="asExpense(row).notes"
+                        class="text-xs text-on-surface-variant truncate max-w-xs"
+                    >
+                        {{ asExpense(row).notes }}
+                    </span>
                 </div>
-            </div>
-        </div>
+            </template>
 
-        <!-- Summary panel -->
-        <div class="flex flex-col gap-4">
-            <div class="card p-5" style="background: var(--surface-low)">
-                <p class="label-gilt mb-1.5">Total del mes</p>
-                <p class="serif text-4xl text-primary leading-none">${{ totalMonth.toFixed(2) }}</p>
-                <p class="text-xs text-on-surface-variant mt-1.5">{{ Math.round((totalMonth / budget) * 100) }}% del presupuesto</p>
-                <div class="mt-3.5 h-1.5 rounded-full overflow-hidden" style="background: var(--surface-highest)">
-                    <div :style="{ width: `${Math.min(100, (totalMonth / budget) * 100)}%`, height: '100%', background: 'var(--gradient)' }" />
+            <!-- vendor -->
+            <template #cell-vendor="{ row }">
+                <span class="text-sm text-on-surface-variant">
+                    {{ asExpense(row).vendor ?? '—' }}
+                </span>
+            </template>
+
+            <!-- category -->
+            <template #cell-category="{ row }">
+                <AppBadge
+                    v-if="asExpense(row).category"
+                    :variant="EXPENSE_CATEGORY_TYPE_VARIANT[asExpense(row).category!.type]"
+                    size="sm"
+                >
+                    {{ asExpense(row).category!.name }}
+                </AppBadge>
+                <span v-else class="text-sm text-on-surface-variant">—</span>
+            </template>
+
+            <!-- amount_cents -->
+            <template #cell-amount_cents="{ row }">
+                <span class="text-sm font-bold text-primary">
+                    {{ formatCents(asExpense(row).amount_cents) }}
+                </span>
+            </template>
+
+            <!-- payment_method -->
+            <template #cell-payment_method="{ row }">
+                <span
+                    v-if="asExpense(row).payment_method"
+                    class="text-sm text-on-surface-variant"
+                >
+                    {{ EXPENSE_PAYMENT_METHOD_LABELS[asExpense(row).payment_method!] }}
+                </span>
+                <span v-else class="text-sm text-on-surface-variant">—</span>
+            </template>
+
+            <!-- status: verified + ocr_status -->
+            <template #cell-status="{ row }">
+                <div class="flex flex-col items-center gap-1">
+                    <!-- Verified / draft badge -->
+                    <AppBadge
+                        :variant="asExpense(row).is_verified ? 'success' : 'neutral'"
+                        size="sm"
+                        :data-testid="asExpense(row).is_verified ? 'badge-verified' : 'badge-draft'"
+                    >
+                        {{ asExpense(row).is_verified ? 'Verificado' : 'Borrador' }}
+                    </AppBadge>
+
+                    <!-- OCR status badge (only when not 'none') -->
+                    <AppBadge
+                        v-if="asExpense(row).ocr_status !== 'none'"
+                        :variant="EXPENSE_OCR_STATUS_VARIANT[asExpense(row).ocr_status]"
+                        size="sm"
+                    >
+                        {{ EXPENSE_OCR_STATUS_LABELS[asExpense(row).ocr_status] }}
+                    </AppBadge>
                 </div>
-            </div>
-            <div class="card p-5 flex-1" style="background: var(--surface-low)">
-                <p class="label-gilt mb-3">Por categoria</p>
-                <div class="flex flex-col gap-3">
-                    <div v-for="cat in catTotals" :key="cat.key">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-on-surface">{{ cat.name }}</span>
-                            <span class="font-semibold">${{ cat.sum.toFixed(2) }}</span>
-                        </div>
-                        <div class="h-1 rounded-full overflow-hidden" style="background: var(--surface-highest)">
-                            <div :style="{ width: `${cat.pct}%`, height: '100%', background: `var(--${cat.variant === 'primary' ? 'primary' : cat.variant})` }" />
-                        </div>
-                    </div>
+            </template>
+
+            <!-- actions -->
+            <template #cell-actions="{ row }">
+                <div class="flex items-center justify-center gap-1">
+                    <button
+                        type="button"
+                        class="btn-icon"
+                        :aria-label="`Editar gasto ${asExpense(row).description}`"
+                        @click.stop="openEditForm(asExpense(row))"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-icon text-error hover:bg-error/10"
+                        :aria-label="`Eliminar gasto ${asExpense(row).description}`"
+                        @click.stop="deleteExpense(asExpense(row))"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
                 </div>
-            </div>
-        </div>
+            </template>
+
+            <!-- Empty state -->
+            <template #empty>
+                <AppEmptyState
+                    title="Sin gastos"
+                    description="Los gastos aparecerán aquí una vez que los registres o subas una factura."
+                >
+                    <template #illustration>
+                        <Receipt :size="40" class="text-on-surface-variant opacity-40" />
+                    </template>
+                </AppEmptyState>
+            </template>
+        </AppTable>
+
+        <!-- Pagination -->
+        <AppPagination
+            v-if="paginationMeta && paginationMeta.last_page > 1"
+            :meta="paginationMeta"
+            @page-change="fetchExpenses"
+        />
+
     </div>
-
-    <!-- OCR Slideover -->
-    <AppSlideover
-        :model-value="slideoverOpen"
-        title="Nuevo gasto"
-        subtitle="Captura inteligente"
-        @update:model-value="slideoverOpen = false"
-    >
-        <!-- Upload phase -->
-        <div v-if="ocrPhase === 'upload'" class="flex flex-col gap-4 pt-4">
-            <button class="p-10 rounded-2xl flex flex-col items-center gap-4 text-on-surface-variant w-full transition-colors hover:opacity-90" style="background: var(--surface-low)" @click="startScan">
-                <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background: var(--primary-container); color: var(--primary-dim)"><Upload :size="24" /></div>
-                <div class="text-center">
-                    <p class="serif text-lg text-on-surface mb-1">Subir factura</p>
-                    <p class="text-sm">Toma una foto o arrastra una imagen</p>
-                </div>
-            </button>
-            <AppButton variant="secondary" class="w-full justify-center">Capturar manualmente</AppButton>
-        </div>
-
-        <!-- Scanning phase -->
-        <div v-else-if="ocrPhase === 'scanning'" class="text-center py-16">
-            <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background: var(--primary-container); color: var(--primary-dim)"><Sparkles :size="32" /></div>
-            <p class="serif text-2xl mb-2">Leyendo factura...</p>
-            <p class="text-sm text-on-surface-variant">Identificando proveedor, monto y categoria</p>
-            <div class="w-48 h-1 mx-auto mt-8 rounded-full overflow-hidden" style="background: var(--surface-mid)">
-                <div class="scan-bar" />
-            </div>
-        </div>
-
-        <!-- Review phase -->
-        <div v-else class="flex flex-col gap-4">
-            <div class="flex items-center gap-2.5 p-3.5 rounded-xl text-sm font-medium" style="background: var(--primary-container); color: var(--primary-dim)">
-                <Sparkles :size="16" /> Datos extraidos. Revisa y ajusta antes de guardar.
-            </div>
-            <div>
-                <label class="field-label">Proveedor</label>
-                <input class="field mt-1.5" value="Floristeria La Roca" />
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div><label class="field-label">Monto</label><input class="field mt-1.5" value="$87.50" /></div>
-                <div><label class="field-label">Fecha</label><input class="field mt-1.5" value="15/05/2026" /></div>
-            </div>
-            <div>
-                <label class="field-label">Categoria</label>
-                <select class="field mt-1.5">
-                    <option v-for="[k, v] in Object.entries(categories)" :key="k" :value="k">{{ v.name }}</option>
-                </select>
-            </div>
-            <div>
-                <label class="field-label">Nota</label>
-                <textarea class="field mt-1.5" rows="3">Rosas frescas para preservacion</textarea>
-            </div>
-        </div>
-
-        <template #footer>
-            <div v-if="ocrPhase === 'review'" class="flex gap-2.5">
-                <AppButton variant="secondary" class="flex-1 justify-center" @click="slideoverOpen = false">Cancelar</AppButton>
-                <AppButton class="flex-1 justify-center" @click="confirmExpense">Guardar gasto</AppButton>
-            </div>
-        </template>
-    </AppSlideover>
 </template>
-
-<style scoped>
-.exp-shell {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    height: calc(100vh - 120px);
-    overflow: hidden;
-}
-.scan-bar {
-    width: 70%;
-    height: 100%;
-    background: var(--gradient);
-    animation: scan-anim 1.5s ease-in-out infinite alternate;
-}
-@keyframes scan-anim {
-    from { width: 30%; margin-left: 0 }
-    to { width: 70%; margin-left: 30% }
-}
-@media (min-width: 1024px) {
-    .exp-shell { grid-template-columns: 1fr 280px; }
-}
-</style>
