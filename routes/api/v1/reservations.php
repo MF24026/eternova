@@ -38,6 +38,9 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('reservations')->group(sta
     Route::patch('/{reservation}/status', [ReservationController::class, 'transition'])
         ->name('api.v1.reservations.transition');
 
+    Route::patch('/{reservation}/assignee', [ReservationController::class, 'assign'])
+        ->name('api.v1.reservations.assignee');
+
     Route::post('/{reservation}/payments', [ReservationController::class, 'recordPayment'])
         ->name('api.v1.reservations.payments.record');
 

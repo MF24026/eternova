@@ -279,6 +279,31 @@ final class ReservationController extends Controller
     }
 
     /**
+     * Assign (or un-assign) a team member to the reservation.
+     *
+     * PATCH /api/v1/reservations/{reservation}/assignee
+     * Body: { assigned_to: int|null }
+     *
+     * Passing null un-assigns the current assignee. The assignee must be a
+     * member of the same tenant — validated via the users.id foreign key within
+     * tenant scope. Returns the full ReservationResource after update.
+     */
+    public function assign(Request $request, Reservation $reservation): ReservationResource|JsonResponse
+    {
+        $this->authorize('update', $reservation);
+
+        $validated = $request->validate([
+            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        $reservation->update(['assigned_to' => $validated['assigned_to'] ?? null]);
+
+        $reservation->load(['branch', 'customer', 'assignee', 'statusHistory.user', 'payments.recorder']);
+
+        return new ReservationResource($reservation);
+    }
+
+    /**
      * Cancel the reservation.
      *
      * Delivered and already-cancelled reservations throw DomainException from
