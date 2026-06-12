@@ -33,20 +33,21 @@ export interface ExpenseReportParams {
     month?: string          // YYYY-MM
     date_from?: string
     date_to?: string
-    expense_category_id?: number | string
-    branch_id?: string
+    verified_only?: boolean
 }
 
 export interface ExpenseCategoryReport {
     category_id: number | null
     category_name: string
-    type: string
+    // The API serialises the column as `category_type` (not `type`).
+    category_type: string | null
     total_cents: number
     count: number
 }
 
 export interface ExpenseReport {
-    period: { from: string; to: string }
+    // The API returns { month, date_from, date_to } — not { from, to }.
+    period: { month: string; date_from: string | null; date_to: string | null }
     total_cents: number
     by_category: ExpenseCategoryReport[]
 }

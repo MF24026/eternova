@@ -134,6 +134,12 @@ const router = createRouter({
             meta: { requiresAuth: true, layout: 'admin' },
         },
         {
+            path: '/admin/expenses/report',
+            name: 'admin.expenses.report',
+            component: () => import('@/pages/Admin/ExpenseReportPage.vue'),
+            meta: { requiresAuth: true, layout: 'admin' },
+        },
+        {
             path: '/admin/quotations',
             name: 'admin.quotations',
             component: () => import('@/pages/Admin/QuotationsPage.vue'),

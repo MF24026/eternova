@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, Settings, Receipt, Search, Upload, CheckCircle } from 'lucide-vue-next'
+import { Plus, Settings, Receipt, Search, Upload, CheckCircle, BarChart2 } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
 import AppTable, { type TableColumn } from '@/components/base/AppTable.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
@@ -245,6 +245,15 @@ function asExpense(row: Row): Expense {
 
             <!-- Header action buttons -->
             <div class="flex items-center gap-2 shrink-0 pt-1">
+                <AppButton
+                    variant="secondary"
+                    size="sm"
+                    :icon="BarChart2"
+                    to="/admin/expenses/report"
+                    data-testid="btn-reporte"
+                >
+                    Reporte
+                </AppButton>
                 <AppButton
                     variant="secondary"
                     size="sm"
