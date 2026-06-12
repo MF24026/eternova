@@ -4,52 +4,76 @@ declare(strict_types=1);
 
 namespace App\Modules\Expenses\Http\Resources;
 
+use App\Http\Resources\Api\V1\BaseResource;
 use App\Modules\Expenses\Models\Expense;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Transforms an Expense model to a JSON response.
+ * Transforms a single Expense for API output.
  *
- * E3 minimal shape: fields needed by the upload response and the OCR status
- * polling endpoint. E4 will extend this with the full expense detail shape
- * (category, notes, payment_method, creator, etc.) when the CRUD module ships.
+ * amount_cents is exposed as a raw centavo integer — formatting for display
+ * (currency symbol, decimal places, locale) is the frontend's responsibility.
  *
- * receipt_url:
- *   A public-access URL resolved via Storage::url(). null when no receipt has
- *   been attached (manual entry). Consumers should not store this URL — it can
- *   change if the storage disk or path strategy changes. Always re-fetch.
+ * receipt_url is resolved at serialisation time via Storage::url(). Consumers
+ * must not cache this URL — always re-fetch from the resource.
  *
- * amount_cents:
- *   Integer centavos. Clients must format for display (divide by 100, apply
- *   locale-specific currency formatting). Never divide server-side.
+ * Nested relations (category, branch, creator) are conditionally included only
+ * when explicitly loaded to prevent accidental N+1.
  *
- * @mixin Expense
+ * @property Expense $resource
  */
-final class ExpenseResource extends JsonResource
+final class ExpenseResource extends BaseResource
 {
     /**
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toResourceArray(Request $request): array
     {
         /** @var Expense $expense */
         $expense = $this->resource;
 
         return [
-            'id'           => $expense->id,
-            'ocr_status'   => $expense->ocr_status,
-            'is_verified'  => $expense->is_verified,
-            'amount_cents' => $expense->amount_cents,
-            'expense_date' => $expense->expense_date?->toDateString(),
-            'description'  => $expense->description,
-            'vendor'       => $expense->vendor,
-            'receipt_url'  => $expense->receipt_path
+            'id'            => $expense->id,
+            'description'   => $expense->description,
+            'amount_cents'  => $expense->amount_cents,
+            'expense_date'  => $expense->expense_date?->toDateString(),
+            'vendor'        => $expense->vendor,
+            'payment_method' => $expense->payment_method,
+            'ocr_status'    => $expense->ocr_status,
+            'is_verified'   => $expense->is_verified,
+            'ocr_data'      => $expense->ocr_data,
+            'receipt_url'   => $expense->receipt_path
                 ? Storage::disk(config('expenses.receipt_disk'))->url($expense->receipt_path)
                 : null,
-            'ocr_data'     => $expense->ocr_data,
-            'created_at'   => $expense->created_at?->toIso8601String(),
+            'notes'         => $expense->notes,
+            'created_at'    => $expense->created_at?->toIso8601String(),
+            'updated_at'    => $expense->updated_at?->toIso8601String(),
+
+            'category' => $this->when(
+                $expense->relationLoaded('category') && $expense->category !== null,
+                static fn () => [
+                    'id'   => $expense->category?->id,
+                    'name' => $expense->category?->name,
+                    'type' => $expense->category?->type,
+                ],
+            ),
+
+            'branch' => $this->when(
+                $expense->relationLoaded('branch') && $expense->branch !== null,
+                static fn () => [
+                    'id'   => $expense->branch?->id,
+                    'name' => $expense->branch?->name,
+                ],
+            ),
+
+            'creator' => $this->when(
+                $expense->relationLoaded('creator') && $expense->creator !== null,
+                static fn () => [
+                    'id'   => $expense->creator?->id,
+                    'name' => $expense->creator?->name,
+                ],
+            ),
         ];
     }
 }
