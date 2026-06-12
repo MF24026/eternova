@@ -10,6 +10,7 @@ use Database\Seeders\Catalog\TagsSeeder;
 use Database\Seeders\Inventory\BranchInventorySeeder;
 use Database\Seeders\Inventory\InventoryMovementsSeeder;
 use Database\Seeders\Orders\OrdersSeeder;
+use Database\Seeders\Reservations\ReservationsSeeder;
 use Illuminate\Database\Seeder;
 
 final class DatabaseSeeder extends Seeder
@@ -28,6 +29,7 @@ final class DatabaseSeeder extends Seeder
      *   8. Inventory\BranchInventorySeeder   — initial stock snapshot per variant/branch
      *   9. Inventory\InventoryMovementsSeeder — historical movement ledger (last 30 days)
      *  10. Orders\OrdersSeeder               — demo orders with items + status timelines
+     *  11. Reservations\ReservationsSeeder   — demo reservations with payments + timelines
      */
     public function run(): void
     {
@@ -42,6 +44,7 @@ final class DatabaseSeeder extends Seeder
             BranchInventorySeeder::class,
             InventoryMovementsSeeder::class,
             OrdersSeeder::class,
+            ReservationsSeeder::class,
         ]);
     }
 }
