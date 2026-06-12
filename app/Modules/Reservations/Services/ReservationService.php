@@ -6,22 +6,30 @@ namespace App\Modules\Reservations\Services;
 
 use App\Models\User;
 use App\Modules\Reservations\Models\Reservation;
+use App\Modules\Reservations\Models\ReservationPayment;
 use App\Modules\Reservations\Models\ReservationStatusHistory;
+use App\Modules\Tenancy\Models\Tenant;
+use DateTimeInterface;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 /**
- * Orchestrates the reservation status state machine and history timeline.
+ * Orchestrates the reservation status state machine, history timeline, and
+ * the flexible deposit / partial-payment lifecycle.
  *
  * This service owns the transition rules. All status changes MUST go through
  * transitionTo() — direct $reservation->update(['status' => ...]) calls bypass
  * the history log and break the audit trail.
  *
- * The service intentionally has no constructor dependencies in E2: it writes to
- * the Reservation and ReservationStatusHistory models directly. Heavier
- * dependencies (OrderService for conversion, sequences for numbering) will be
- * injected in later epics (E4, E5) when this service grows.
+ * Payment invariants (E3):
+ *   - deposit_paid_cents is always recomputed as SUM(reservation_payments.amount_cents)
+ *     after every recordPayment() call; it is never blindly incremented. This prevents
+ *     drift if payments are deleted or corrected outside the normal flow.
+ *   - Payments may not push deposit_paid_cents above total_cents (overpayment guard).
+ *   - confirm() is the deposit-aware wrapper around transitionTo('confirmed'). Plain
+ *     transitionTo() remains available for callers that don't need the deposit rule.
  *
  * State machine transitions:
  *   inquiry     → confirmed | cancelled
@@ -175,6 +183,224 @@ final readonly class ReservationService
             'initial_status' => $reservation->status,
             'actor_id' => $actor?->id,
         ]);
+    }
+
+    /**
+     * Compute the default deposit amount for a given total and tenant configuration.
+     *
+     * Pure calculation — no side-effects, no DB writes. Used as the DEFAULT when
+     * a reservation is confirmed and no explicit per-reservation override was set.
+     *
+     * Result is rounded to the nearest centavo (integer). The tenant's
+     * reservation_deposit_pct is expected to be an integer percentage (e.g. 30 = 30%).
+     */
+    public function computeDepositRequired(int $totalCents, Tenant $tenant): int
+    {
+        return (int) round($totalCents * $tenant->reservation_deposit_pct / 100);
+    }
+
+    /**
+     * Record a partial payment against a reservation and recompute the running deposit total.
+     *
+     * deposit_paid_cents is always authoritative-recomputed as the SUM of all payments
+     * for the reservation after each insert — never incremented from the previous value.
+     * This prevents drift if rows are corrected or deleted outside the normal flow.
+     *
+     * @throws InvalidArgumentException When $amountCents is not positive
+     * @throws InvalidArgumentException When $paymentMethod is not one of cash|card|transfer|other
+     * @throws DomainException          When the new total paid would exceed the reservation total
+     */
+    public function recordPayment(
+        Reservation $reservation,
+        int $amountCents,
+        string $paymentMethod,
+        ?User $actor = null,
+        ?string $reference = null,
+        ?DateTimeInterface $paidAt = null,
+    ): ReservationPayment {
+        if ($amountCents <= 0) {
+            throw new InvalidArgumentException(
+                "Payment amount must be greater than zero, got {$amountCents} centavos."
+            );
+        }
+
+        $validMethods = ['cash', 'card', 'transfer', 'other'];
+
+        if (! in_array($paymentMethod, $validMethods, strict: true)) {
+            throw new InvalidArgumentException(
+                "Invalid payment method '{$paymentMethod}'. Must be one of: "
+                .implode(', ', $validMethods).'.'
+            );
+        }
+
+        // Use the authoritative SUM from the DB rather than the cached column value.
+        // The cached deposit_paid_cents can be out of sync (e.g. a manual correction),
+        // and the overpayment guard must agree with what recordPayment() will compute
+        // after the insert. This ensures the guard and the recompute are consistent.
+        $currentPaidSum = (int) ReservationPayment::where('reservation_id', $reservation->id)
+            ->sum('amount_cents');
+
+        $projectedPaid = $currentPaidSum + $amountCents;
+
+        if ($projectedPaid > $reservation->total_cents) {
+            $outstanding = $reservation->total_cents - $currentPaidSum;
+
+            throw new DomainException(
+                "Payment of {$amountCents} would exceed the reservation total. "
+                ."Outstanding balance is {$outstanding}."
+            );
+        }
+
+        return DB::transaction(function () use (
+            $reservation, $amountCents, $paymentMethod, $actor, $reference, $paidAt
+        ): ReservationPayment {
+            $payment = ReservationPayment::create([
+                'tenant_id'      => $reservation->tenant_id,
+                'reservation_id' => $reservation->id,
+                'amount_cents'   => $amountCents,
+                'payment_method' => $paymentMethod,
+                'reference'      => $reference,
+                'recorded_by'    => $actor?->id,
+                'paid_at'        => $paidAt ?? now(),
+            ]);
+
+            // Authoritative recompute — sum all payments rather than incrementing
+            // the previous value. Guards against drift from external corrections.
+            $sumPaid = ReservationPayment::where('reservation_id', $reservation->id)->sum('amount_cents');
+
+            $reservation->update(['deposit_paid_cents' => (int) $sumPaid]);
+
+            Log::info('Reservation payment recorded', [
+                'reservation_id'       => $reservation->id,
+                'reservation_number'   => $reservation->reservation_number,
+                'tenant_id'            => $reservation->tenant_id,
+                'payment_id'           => $payment->id,
+                'amount_cents'         => $amountCents,
+                'payment_method'       => $paymentMethod,
+                'deposit_paid_cents'   => (int) $sumPaid,
+                'total_cents'          => $reservation->total_cents,
+                'actor_id'             => $actor?->id,
+            ]);
+
+            return $payment;
+        });
+    }
+
+    /**
+     * Override the required deposit amount for a specific reservation.
+     *
+     * Staff may lower or raise the deposit threshold case-by-case (e.g. a small
+     * flower arrangement needs only 10% while a large wedding requires 50%).
+     * The new value must be in [0, total_cents] — requiring more than the full
+     * reservation total does not make business sense.
+     *
+     * @throws InvalidArgumentException When $depositRequiredCents is negative
+     * @throws DomainException          When $depositRequiredCents exceeds total_cents
+     */
+    public function setDepositRequired(
+        Reservation $reservation,
+        int $depositRequiredCents,
+        ?User $actor = null,
+    ): Reservation {
+        if ($depositRequiredCents < 0) {
+            throw new InvalidArgumentException(
+                "Required deposit cannot be negative, got {$depositRequiredCents}."
+            );
+        }
+
+        if ($depositRequiredCents > $reservation->total_cents) {
+            throw new DomainException(
+                "Required deposit ({$depositRequiredCents}) cannot exceed the reservation total "
+                ."({$reservation->total_cents}) for reservation #{$reservation->reservation_number}."
+            );
+        }
+
+        $reservation->update(['deposit_required_cents' => $depositRequiredCents]);
+
+        Log::info('Reservation deposit requirement updated', [
+            'reservation_id'         => $reservation->id,
+            'reservation_number'     => $reservation->reservation_number,
+            'tenant_id'              => $reservation->tenant_id,
+            'deposit_required_cents' => $depositRequiredCents,
+            'actor_id'               => $actor?->id,
+        ]);
+
+        return $reservation->fresh();
+    }
+
+    /**
+     * Confirm a reservation, enforcing the deposit-coverage business rule.
+     *
+     * This is the deposit-aware wrapper around transitionTo('confirmed'). Plain
+     * transitionTo($reservation, 'confirmed') remains available for callers that
+     * bypass the deposit rule intentionally (e.g. admin bulk-confirm scripts).
+     *
+     * Behaviour:
+     *   - If deposit_required_cents is 0 (not yet set), it is auto-populated via
+     *     computeDepositRequired() before the coverage check runs — so confirming
+     *     a fresh reservation always applies the tenant's default percentage.
+     *   - If deposit_paid_cents < deposit_required_cents the transition is blocked
+     *     and a DomainException is thrown, UNLESS $force = true (admin override).
+     *   - Delegates to transitionTo() for the actual status change + history write.
+     *
+     * @throws DomainException When deposit is not covered and $force is false
+     * @throws DomainException When the underlying transitionTo() rejects the transition
+     */
+    public function confirm(
+        Reservation $reservation,
+        ?User $actor = null,
+        bool $force = false,
+    ): Reservation {
+        // Auto-set the default deposit requirement when none was overridden.
+        if ($reservation->deposit_required_cents === 0) {
+            $tenant = $this->resolveTenantForReservation($reservation);
+            $defaultDeposit = $this->computeDepositRequired($reservation->total_cents, $tenant);
+            $reservation->update(['deposit_required_cents' => $defaultDeposit]);
+            $reservation->refresh();
+        }
+
+        if (! $force && $reservation->deposit_paid_cents < $reservation->deposit_required_cents) {
+            $required = $reservation->deposit_required_cents;
+            $paid     = $reservation->deposit_paid_cents;
+
+            throw new DomainException(
+                "Reservation #{$reservation->reservation_number} cannot be confirmed: "
+                ."deposit of {$required} required, only {$paid} paid. Override to force."
+            );
+        }
+
+        return $this->transitionTo(
+            reservation: $reservation,
+            toStatus: 'confirmed',
+            actor: $actor,
+        );
+    }
+
+    /**
+     * Resolve the Tenant for a reservation.
+     *
+     * Prefers the container-bound currentTenant (HTTP context). Falls back to a
+     * direct find by tenant_id for CLI / queue context — same pattern as
+     * OrderService::resolveTenant().
+     */
+    private function resolveTenantForReservation(Reservation $reservation): Tenant
+    {
+        /** @var Tenant|null $current */
+        $current = app()->bound('currentTenant') ? app('currentTenant') : null;
+
+        if ($current instanceof Tenant) {
+            return $current;
+        }
+
+        $tenant = Tenant::find($reservation->tenant_id);
+
+        if ($tenant === null) {
+            throw new DomainException(
+                "Cannot resolve tenant for reservation #{$reservation->reservation_number}."
+            );
+        }
+
+        return $tenant;
     }
 
     /**
