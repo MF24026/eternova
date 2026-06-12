@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, Settings, Receipt, Search } from 'lucide-vue-next'
+import { Plus, Settings, Receipt, Search, Upload, CheckCircle } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
 import AppTable, { type TableColumn } from '@/components/base/AppTable.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
@@ -9,6 +9,8 @@ import AppPagination from '@/components/base/AppPagination.vue'
 import AppEmptyState from '@/components/base/AppEmptyState.vue'
 import ExpenseFormSlideover from '@/components/Admin/Expenses/ExpenseFormSlideover.vue'
 import ExpenseCategoriesSlideover from '@/components/Admin/Expenses/ExpenseCategoriesSlideover.vue'
+import ReceiptUploadSlideover from '@/components/Admin/Expenses/ReceiptUploadSlideover.vue'
+import ReceiptVerificationSlideover from '@/components/Admin/Expenses/ReceiptVerificationSlideover.vue'
 import ExpenseService from '@/services/ExpenseService'
 import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
@@ -40,6 +42,11 @@ const formSlideoverOpen = ref(false)
 const editingExpense = ref<Expense | null>(null)
 const categoriesSlideoverOpen = ref(false)
 
+// Receipt upload + verification slideoveres (S6-E7)
+const uploadSlideoverOpen = ref(false)
+const verificationSlideoverOpen = ref(false)
+const verifyingExpense = ref<Expense | null>(null)
+
 function openCreateForm(): void {
     editingExpense.value = null
     formSlideoverOpen.value = true
@@ -48,6 +55,27 @@ function openCreateForm(): void {
 function openEditForm(expense: Expense): void {
     editingExpense.value = expense
     formSlideoverOpen.value = true
+}
+
+function openUploadSlideover(): void {
+    uploadSlideoverOpen.value = true
+}
+
+/** Called when the upload flow has a draft ready for OCR verification. */
+function onReadyToVerify(expense: Expense): void {
+    verifyingExpense.value = expense
+    verificationSlideoverOpen.value = true
+}
+
+/** Called from a draft row's "Verificar" action button. */
+function openVerifyDraft(expense: Expense): void {
+    verifyingExpense.value = expense
+    verificationSlideoverOpen.value = true
+}
+
+function onVerified(): void {
+    verifyingExpense.value = null
+    void fetchExpenses()
 }
 
 function onFormSuccess(): void {
@@ -198,6 +226,15 @@ function asExpense(row: Row): Expense {
             v-model="categoriesSlideoverOpen"
             @changed="onCategoriesChanged"
         />
+        <ReceiptUploadSlideover
+            v-model="uploadSlideoverOpen"
+            @ready-to-verify="onReadyToVerify"
+        />
+        <ReceiptVerificationSlideover
+            v-model="verificationSlideoverOpen"
+            :expense="verifyingExpense"
+            @verified="onVerified"
+        />
 
         <!-- Page header -->
         <div class="mb-1 flex items-start justify-between gap-4">
@@ -208,7 +245,6 @@ function asExpense(row: Row): Expense {
 
             <!-- Header action buttons -->
             <div class="flex items-center gap-2 shrink-0 pt-1">
-                <!-- E7 will add "Subir factura" button here -->
                 <AppButton
                     variant="secondary"
                     size="sm"
@@ -218,6 +254,15 @@ function asExpense(row: Row): Expense {
                     @click="categoriesSlideoverOpen = true"
                 >
                     Categorías
+                </AppButton>
+                <AppButton
+                    variant="secondary"
+                    size="sm"
+                    :icon="Upload"
+                    data-testid="btn-subir-factura"
+                    @click="openUploadSlideover"
+                >
+                    Subir factura
                 </AppButton>
                 <AppButton
                     variant="primary"
@@ -443,6 +488,17 @@ function asExpense(row: Row): Expense {
             <!-- actions -->
             <template #cell-actions="{ row }">
                 <div class="flex items-center justify-center gap-1">
+                    <!-- Verificar (only on draft expenses with a receipt) -->
+                    <button
+                        v-if="!asExpense(row).is_verified"
+                        type="button"
+                        class="btn-icon text-primary hover:bg-primary/10"
+                        :aria-label="`Verificar gasto ${asExpense(row).description}`"
+                        data-testid="btn-verificar-draft"
+                        @click.stop="openVerifyDraft(asExpense(row))"
+                    >
+                        <CheckCircle :size="14" />
+                    </button>
                     <button
                         type="button"
                         class="btn-icon"
