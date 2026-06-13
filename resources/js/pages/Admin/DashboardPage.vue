@@ -1,69 +1,94 @@
 <script setup lang="ts">
+/**
+ * DashboardPage (S9-E2) — real KPIs + Chart.js sales chart, wired to
+ * GET /api/v1/dashboard. Replaces the previous static mock.
+ */
 import { ref, computed, onMounted } from 'vue'
-import { TrendingUp, ClipboardList, Package, Receipt, ShoppingCart, Calendar, Check } from 'lucide-vue-next'
+import {
+    TrendingUp, ClipboardList, Package, Receipt, ShoppingCart, AlertTriangle,
+} from 'lucide-vue-next'
 import KpiCard from '@/components/composite/KpiCard.vue'
+import SalesLineChart from '@/components/composite/SalesLineChart.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
-import AppAvatar from '@/components/base/AppAvatar.vue'
+import AppSpinner from '@/components/base/AppSpinner.vue'
+import AppButton from '@/components/base/AppButton.vue'
+import DashboardService from '@/services/DashboardService'
+import { useFormatCurrency } from '@/composables/useFormatCurrency'
+import { useFormatDate } from '@/composables/useFormatDate'
+import type { DashboardSummary, DashboardRange } from '@/types/domain/Dashboard'
 
-onMounted(() => { document.title = 'Panel — Eternova' })
+const { formatCents } = useFormatCurrency()
+const { formatDateTime } = useFormatDate()
 
-// KPI mock data
-const kpis = [
-    { label: 'Ventas hoy', value: '$1,248.50', trend: '+12% vs ayer', trendPositive: true as const, variant: 'primary' as const, icon: TrendingUp },
-    { label: 'Pedidos pendientes', value: '7', trend: '3 vencen hoy', trendPositive: null, variant: 'warning' as const, icon: ClipboardList },
-    { label: 'Stock bajo', value: '4 articulos', trend: 'Rosas marfil agotandose', trendPositive: false as const, variant: 'error' as const, icon: Package },
-    { label: 'Gastos del mes', value: '$3,420.00', trend: '82% del presupuesto', trendPositive: null, variant: 'info' as const, icon: Receipt },
-]
+onMounted(() => {
+    document.title = 'Panel — Eternova'
+    void load()
+})
 
-// Sales chart (SVG)
-const chartData = [12, 18, 14, 22, 19, 26, 24, 32, 28, 36, 30, 42, 38, 48]
-const w = 600
-const h = 200
-const maxVal = Math.max(...chartData) * 1.1
-const pts = computed(() =>
-    chartData.map((v, i) => [i * (w / (chartData.length - 1)), h - (v / maxVal) * h])
+const pageState = ref<'loading' | 'loaded' | 'error'>('loading')
+const summary = ref<DashboardSummary | null>(null)
+const range = ref<DashboardRange>(14)
+
+async function load(): Promise<void> {
+    pageState.value = 'loading'
+    try {
+        summary.value = await DashboardService.get(range.value)
+        pageState.value = 'loaded'
+    } catch {
+        pageState.value = 'error'
+    }
+}
+
+function setRange(r: DashboardRange): void {
+    if (range.value === r) return
+    range.value = r
+    void load()
+}
+
+const kpis = computed(() => {
+    const k = summary.value?.kpis
+    if (!k) return []
+    return [
+        { label: 'Ventas hoy', value: formatCents(k.today_sales_cents), trend: 'al día de hoy', variant: 'primary' as const, icon: TrendingUp },
+        { label: 'Pedidos pendientes', value: String(k.pending_orders), trend: 'activos', variant: 'warning' as const, icon: ClipboardList },
+        { label: 'Stock bajo', value: `${k.low_stock_count} ${k.low_stock_count === 1 ? 'artículo' : 'artículos'}`, trend: 'bajo el mínimo', variant: 'error' as const, icon: Package },
+        { label: 'Gastos del mes', value: formatCents(k.month_expenses_cents), trend: 'mes actual', variant: 'info' as const, icon: Receipt },
+    ]
+})
+
+const salesTotal = computed(() =>
+    (summary.value?.sales_series ?? []).reduce((acc, p) => acc + p.total_cents, 0),
 )
-const linePath = computed(() =>
-    'M ' + pts.value.map(p => p.map(n => n.toFixed(1)).join(' ')).join(' L ')
+
+const maxUnits = computed(() =>
+    Math.max(1, ...(summary.value?.top_products ?? []).map((p) => p.units)),
 )
-const fillPath = computed(() =>
-    linePath.value + ` L ${w} ${h} L 0 ${h} Z`
-)
-const chartTab = ref<'7d' | '14d' | '30d'>('14d')
 
-// Today's deliveries
-const deliveries = [
-    { name: 'Maria G.', time: '11:00 AM', area: 'Colonia Escalon', status: 'ready' },
-    { name: 'Ana L.', time: '2:30 PM', area: 'Santa Tecla', status: 'prep' },
-    { name: 'Sofia R.', time: '4:00 PM', area: 'Antiguo Cuscatlan', status: 'prep' },
-    { name: 'Lucia P.', time: '5:30 PM', area: 'San Benito', status: 'pending' },
-]
+const orderStatusVariant = (s: string): 'primary' | 'success' | 'warning' | 'info' | 'neutral' =>
+    (({ pending: 'warning', preparing: 'info', ready: 'info', dispatched: 'primary', delivered: 'success', cancelled: 'neutral' } as const)[s] ?? 'neutral')
 
-// Top products mock
-const topProducts = [
-    { name: 'Rosa Eterna Carmesi', count: 38 },
-    { name: 'Cartera Petalia', count: 24 },
-    { name: 'Llavero Camelia', count: 19 },
-    { name: 'Bouquet Aurora', count: 14 },
-]
-
-// Recent activity
-const activity = [
-    { icon: ShoppingCart, text: 'Nuevo pedido #CC-0143 por $89.00', when: 'hace 12 min', colorVar: 'var(--primary)' },
-    { icon: Calendar, text: 'Reserva confirmada — boda Sofia R.', when: 'hace 1 h', colorVar: 'var(--secondary)' },
-    { icon: Receipt, text: 'Gasto agregado: rosas naturales $124', when: 'hace 3 h', colorVar: 'var(--warning)' },
-    { icon: Package, text: 'Stock bajo: Rosa Eterna Marfil', when: 'hace 5 h', colorVar: 'var(--error)' },
-    { icon: Check, text: 'Pedido #CC-0140 entregado', when: 'hace 8 h', colorVar: 'var(--success)' },
-]
-
-const statusBadgeVariant = (s: string): 'primary' | 'success' | 'warning' | 'info' | 'neutral' =>
-    ({ ready: 'success' as const, prep: 'info' as const, pending: 'warning' as const }[s] ?? 'neutral')
-const statusLabel = (s: string): string =>
-    ({ ready: 'Listo', prep: 'Preparando', pending: 'Pendiente' }[s] ?? s)
+const orderStatusLabel = (s: string): string =>
+    (({ pending: 'Pendiente', preparing: 'Preparando', ready: 'Listo', dispatched: 'Despachado', delivered: 'Entregado', cancelled: 'Cancelado' } as const)[s] ?? s)
 </script>
 
 <template>
-    <div style="padding-bottom: 32px">
+    <!-- Loading -->
+    <div v-if="pageState === 'loading'" class="flex flex-col items-center justify-center py-32 gap-4" aria-busy="true">
+        <AppSpinner size="lg" />
+        <p class="text-sm text-on-surface-variant">Cargando panel…</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="pageState === 'error'" class="flex flex-col items-center justify-center py-32 gap-5 text-center">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center bg-error-container">
+            <AlertTriangle :size="28" class="text-error" aria-hidden="true" />
+        </div>
+        <p class="serif text-2xl text-on-surface tracking-tighter">No se pudo cargar el panel</p>
+        <AppButton variant="secondary" @click="load">Reintentar</AppButton>
+    </div>
+
+    <!-- Loaded -->
+    <div v-else-if="summary" style="padding-bottom: 32px" data-testid="dashboard-root">
         <!-- KPI grid -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <KpiCard
@@ -72,9 +97,9 @@ const statusLabel = (s: string): string =>
                 :title="kpi.label"
                 :value="kpi.value"
                 :trend="kpi.trend"
-                :trend-positive="kpi.trendPositive"
                 :variant="kpi.variant"
                 class="fade-in"
+                data-testid="kpi-card"
                 :style="{ animationDelay: `${i * 60}ms` }"
             >
                 <template #icon>
@@ -83,108 +108,65 @@ const statusLabel = (s: string): string =>
             </KpiCard>
         </div>
 
-        <!-- Chart + deliveries row -->
+        <!-- Chart + top products row -->
         <div class="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 mb-6">
             <!-- Sales chart -->
-            <div class="card" style="padding: 24px">
+            <div class="card" style="padding: 24px" data-testid="sales-chart">
                 <div class="flex justify-between items-start mb-6 flex-wrap gap-3">
                     <div>
-                        <p class="label-gilt mb-1">Ventas · ultimos 14 dias</p>
-                        <p class="serif text-2xl text-on-surface">
-                            $8,420
-                            <span class="text-success text-sm font-sans ml-1"> +18%</span>
-                        </p>
+                        <p class="label-gilt mb-1">Ventas · últimos {{ summary.range_days }} días</p>
+                        <p class="serif text-2xl text-on-surface">{{ formatCents(salesTotal) }}</p>
                     </div>
                     <div class="tabs">
-                        <button :class="['tab', { active: chartTab === '7d' }]" @click="chartTab = '7d'">7d</button>
-                        <button :class="['tab', { active: chartTab === '14d' }]" @click="chartTab = '14d'">14d</button>
-                        <button :class="['tab', { active: chartTab === '30d' }]" @click="chartTab = '30d'">30d</button>
+                        <button :class="['tab', { active: range === 7 }]" data-testid="range-7" @click="setRange(7)">7d</button>
+                        <button :class="['tab', { active: range === 14 }]" data-testid="range-14" @click="setRange(14)">14d</button>
+                        <button :class="['tab', { active: range === 30 }]" data-testid="range-30" @click="setRange(30)">30d</button>
                     </div>
                 </div>
-                <svg :viewBox="`0 0 ${w} ${h}`" style="width:100%;height:180px" preserveAspectRatio="none" aria-hidden="true">
-                    <defs>
-                        <linearGradient id="dash-chart-fill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="var(--primary)" stop-opacity=".25" />
-                            <stop offset="100%" stop-color="var(--primary)" stop-opacity="0" />
-                        </linearGradient>
-                    </defs>
-                    <line v-for="pct in [0.25, 0.5, 0.75]" :key="pct" x1="0" :y1="h * pct" :x2="w" :y2="h * pct" class="chart-grid" />
-                    <path :d="fillPath" class="chart-fill" />
-                    <path :d="linePath" class="chart-area" />
-                    <circle :cx="pts[pts.length - 1][0]" :cy="pts[pts.length - 1][1]" r="5" fill="var(--primary)" />
-                </svg>
+                <SalesLineChart :points="summary.sales_series" :format="formatCents" />
             </div>
 
-            <!-- Today's deliveries -->
-            <div class="card" style="padding: 24px; background: var(--surface-low)">
-                <p class="label-gilt mb-4">Entregas de hoy</p>
-                <div class="flex flex-col gap-2.5">
-                    <div
-                        v-for="d in deliveries"
-                        :key="d.name"
-                        class="flex items-center gap-3 rounded-xl p-2.5"
-                        style="background: var(--surface-lowest)"
-                    >
-                        <AppAvatar :name="d.name" size="sm" />
+            <!-- Top products -->
+            <div class="card" style="padding: 24px; background: var(--surface-low)" data-testid="top-products">
+                <p class="label-gilt mb-4">Más vendidos del mes</p>
+                <div v-if="summary.top_products.length === 0" class="text-sm text-on-surface-variant text-center py-8">
+                    Sin ventas registradas este mes.
+                </div>
+                <div v-else class="flex flex-col gap-3">
+                    <div v-for="p in summary.top_products" :key="p.name" class="flex items-center gap-4">
                         <div class="grow min-w-0">
-                            <p class="text-sm font-semibold text-on-surface">{{ d.name }}</p>
-                            <p class="text-xs text-on-surface-variant truncate">{{ d.area }}</p>
+                            <p class="serif text-base text-on-surface truncate">{{ p.name }}</p>
+                            <p class="text-xs text-on-surface-variant">{{ p.units }} unidades</p>
                         </div>
-                        <div class="flex flex-col items-end gap-1 shrink-0">
-                            <span class="text-xs text-on-surface-variant">{{ d.time }}</span>
-                            <AppBadge :variant="statusBadgeVariant(d.status)" size="sm">
-                                {{ statusLabel(d.status) }}
-                            </AppBadge>
+                        <div class="w-20 h-1.5 rounded-full overflow-hidden shrink-0" style="background: var(--surface-mid)">
+                            <div :style="{ width: `${(p.units / maxUnits) * 100}%`, background: 'var(--gradient)' }" class="h-full rounded-full" />
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Top products + activity -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Top products -->
-            <div class="card" style="padding: 24px">
-                <p class="label-gilt mb-4">Mas vendidos del mes</p>
-                <div class="flex flex-col">
-                    <div
-                        v-for="p in topProducts"
-                        :key="p.name"
-                        class="flex items-center gap-4 py-3 border-b border-outline-variant last:border-0"
-                    >
-                        <div class="grow">
-                            <p class="serif text-base text-on-surface">{{ p.name }}</p>
-                            <p class="text-xs text-on-surface-variant">{{ p.count }} unidades</p>
-                        </div>
-                        <div class="w-20 h-1.5 rounded-full overflow-hidden shrink-0" style="background: var(--surface-mid)">
-                            <div
-                                :style="{ width: `${(p.count / 40) * 100}%`, background: 'var(--gradient)' }"
-                                class="h-full rounded-full"
-                            />
-                        </div>
-                    </div>
-                </div>
+        <!-- Recent orders -->
+        <div class="card" style="padding: 24px" data-testid="recent-orders">
+            <p class="label-gilt mb-4">Actividad reciente</p>
+            <div v-if="summary.recent_orders.length === 0" class="text-sm text-on-surface-variant text-center py-8">
+                Aún no hay pedidos.
             </div>
-
-            <!-- Recent activity -->
-            <div class="card" style="padding: 24px">
-                <p class="label-gilt mb-4">Actividad reciente</p>
-                <div class="flex flex-col gap-4">
-                    <div
-                        v-for="(a, i) in activity"
-                        :key="i"
-                        class="flex items-start gap-3"
-                    >
-                        <span
-                            class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                            :style="{ background: 'var(--surface-low)', color: a.colorVar }"
-                        >
-                            <component :is="a.icon" :size="14" />
-                        </span>
-                        <div class="grow min-w-0">
-                            <p class="text-sm text-on-surface">{{ a.text }}</p>
-                            <p class="text-xs text-on-surface-variant mt-0.5">{{ a.when }}</p>
-                        </div>
+            <div v-else class="flex flex-col gap-3">
+                <div v-for="o in summary.recent_orders" :key="o.id" class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style="background: var(--surface-low); color: var(--primary)">
+                        <ShoppingCart :size="14" />
+                    </span>
+                    <div class="grow min-w-0">
+                        <p class="text-sm text-on-surface truncate">
+                            {{ o.order_number }}
+                            <span class="text-on-surface-variant">· {{ o.customer_name ?? 'Cliente de mostrador' }}</span>
+                        </p>
+                        <p class="text-xs text-on-surface-variant mt-0.5">{{ o.created_at ? formatDateTime(o.created_at) : '' }}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-1 shrink-0">
+                        <span class="text-sm font-semibold text-on-surface tabular-nums">{{ formatCents(o.total_cents) }}</span>
+                        <AppBadge :variant="orderStatusVariant(o.status)" size="sm">{{ orderStatusLabel(o.status) }}</AppBadge>
                     </div>
                 </div>
             </div>
