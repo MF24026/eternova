@@ -146,6 +146,14 @@ const router = createRouter({
             meta: { requiresAuth: true, layout: 'admin' },
         },
         {
+            path: '/admin/quotations/:id',
+            name: 'admin.quotations.detail',
+            // Stub in place so row/card clicks navigate without 404.
+            // Full detail page is built in S7-E8.
+            component: () => import('@/pages/Admin/QuotationDetailPage.vue'),
+            meta: { requiresAuth: true, layout: 'admin' },
+        },
+        {
             path: '/admin/customers',
             name: 'admin.customers',
             component: () => import('@/pages/Admin/CustomersPage.vue'),
