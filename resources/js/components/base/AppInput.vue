@@ -2,7 +2,10 @@
 import { computed, useSlots } from 'vue'
 
 interface Props {
-    modelValue: string
+    // Accepts number/null so forms can bind numeric or nullable fields directly;
+    // the component always emits a string (use the .number v-model modifier to
+    // coerce back to a number on the parent side).
+    modelValue: string | number | null
     type?: string
     label?: string
     placeholder?: string
