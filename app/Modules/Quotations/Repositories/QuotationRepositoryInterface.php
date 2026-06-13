@@ -6,6 +6,7 @@ namespace App\Modules\Quotations\Repositories;
 
 use App\Modules\Quotations\Models\Quotation;
 use App\Modules\Tenancy\Models\Tenant;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface QuotationRepositoryInterface
 {
@@ -29,6 +30,32 @@ interface QuotationRepositoryInterface
      * Returns null when not found (caller decides whether to 404 or handle gracefully).
      */
     public function find(int $id): ?Quotation;
+
+    /**
+     * Soft-delete the quotation.
+     */
+    public function delete(Quotation $quotation): void;
+
+    /**
+     * Return a paginated list of quotations for the current tenant, applying filters.
+     *
+     * Supported filter keys:
+     *   status, customer_id, date_from, date_to (on issue_date), search, per_page.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<Quotation>
+     */
+    public function paginate(array $filters): LengthAwarePaginator;
+
+    /**
+     * Count quotations per status for the current tenant, honoring all filters except status.
+     *
+     * Zero-fills all five known statuses so the result always has the same shape.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, int>
+     */
+    public function statusCounts(array $filters): array;
 
     /**
      * Generate and claim the next quotation number for a tenant in the current year.
