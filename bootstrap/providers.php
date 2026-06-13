@@ -8,6 +8,7 @@ use App\Modules\POS\Providers\PosServiceProvider;
 use App\Modules\Expenses\Providers\ExpensesServiceProvider;
 use App\Modules\Quotations\Providers\QuotationsServiceProvider;
 use App\Modules\Reservations\Providers\ReservationsServiceProvider;
+use App\Modules\Settings\Providers\SettingsServiceProvider;
 use App\Modules\Tenancy\Providers\TenancyServiceProvider;
 use App\Providers\AppServiceProvider;
 
@@ -22,4 +23,5 @@ return [
     CustomersServiceProvider::class,
     PosServiceProvider::class,
     QuotationsServiceProvider::class,
+    SettingsServiceProvider::class,
 ];
