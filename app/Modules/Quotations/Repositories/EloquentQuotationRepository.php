@@ -8,6 +8,7 @@ use App\Modules\Quotations\Models\Quotation;
 use App\Modules\Quotations\Models\QuotationSequence;
 use App\Modules\Tenancy\Models\Tenant;
 use App\Modules\Tenancy\Scopes\TenantScope;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class EloquentQuotationRepository implements QuotationRepositoryInterface
 {
@@ -33,6 +34,105 @@ final class EloquentQuotationRepository implements QuotationRepositoryInterface
     {
         return Quotation::with(['branch', 'customer', 'assignee', 'creator', 'items'])
             ->find($id);
+    }
+
+    public function delete(Quotation $quotation): void
+    {
+        $quotation->delete();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<Quotation>
+     */
+    public function paginate(array $filters): LengthAwarePaginator
+    {
+        $perPage = max(1, min(100, (int) ($filters['per_page'] ?? 20)));
+
+        $query = Quotation::query();
+
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $query->where('status', (string) $filters['status']);
+        }
+
+        if (isset($filters['customer_id']) && $filters['customer_id'] !== null && $filters['customer_id'] !== '') {
+            $query->where('customer_id', (int) $filters['customer_id']);
+        }
+
+        if (isset($filters['date_from']) && $filters['date_from'] !== '') {
+            $query->whereDate('issue_date', '>=', (string) $filters['date_from']);
+        }
+
+        if (isset($filters['date_to']) && $filters['date_to'] !== '') {
+            $query->whereDate('issue_date', '<=', (string) $filters['date_to']);
+        }
+
+        if (isset($filters['search']) && $filters['search'] !== '') {
+            $term = (string) $filters['search'];
+            $query->where(static function ($q) use ($term): void {
+                $q->where('quotation_number', 'like', "%{$term}%")
+                  ->orWhereHas('customer', static function ($cq) use ($term): void {
+                      $cq->where('name', 'like', "%{$term}%");
+                  });
+            });
+        }
+
+        return $query->orderByDesc('created_at')->paginate($perPage);
+    }
+
+    /**
+     * Count quotations per status, honoring all filters except status.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, int>
+     */
+    public function statusCounts(array $filters): array
+    {
+        $zero = [
+            'draft'    => 0,
+            'sent'     => 0,
+            'accepted' => 0,
+            'rejected' => 0,
+            'expired'  => 0,
+        ];
+
+        $query = Quotation::query();
+
+        if (isset($filters['customer_id']) && $filters['customer_id'] !== null && $filters['customer_id'] !== '') {
+            $query->where('customer_id', (int) $filters['customer_id']);
+        }
+
+        if (isset($filters['date_from']) && $filters['date_from'] !== '') {
+            $query->whereDate('issue_date', '>=', (string) $filters['date_from']);
+        }
+
+        if (isset($filters['date_to']) && $filters['date_to'] !== '') {
+            $query->whereDate('issue_date', '<=', (string) $filters['date_to']);
+        }
+
+        if (isset($filters['search']) && $filters['search'] !== '') {
+            $term = (string) $filters['search'];
+            $query->where(static function ($q) use ($term): void {
+                $q->where('quotation_number', 'like', "%{$term}%")
+                  ->orWhereHas('customer', static function ($cq) use ($term): void {
+                      $cq->where('name', 'like', "%{$term}%");
+                  });
+            });
+        }
+
+        $counts = $query
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->all();
+
+        foreach ($counts as $status => $total) {
+            if (array_key_exists($status, $zero)) {
+                $zero[$status] = (int) $total;
+            }
+        }
+
+        return $zero;
     }
 
     /**
