@@ -267,6 +267,91 @@ final readonly class OrderService
     }
 
     /**
+     * Create an Order that represents the acceptance of a quotation.
+     *
+     * This is the Orders-side half of the quotation-to-order conversion flow.
+     * The method accepts ONLY Order-domain primitives — Branch, ints, Customer,
+     * User, strings — so the Orders module has zero knowledge of the Quotations
+     * module. The calling orchestrator (QuotationService) passes the derived
+     * values across the module boundary.
+     *
+     * Key differences from createFromReservation():
+     *   - subtotal_cents, tax_cents, discount_cents are passed through from the
+     *     quotation's own breakdown (a quote already has a proper tax breakdown,
+     *     unlike reservations which always pass tax_cents = 0).
+     *   - Status starts as 'pending': an accepted quote is fresh work to fulfill —
+     *     NOT 'delivered' like reservations (which are already handed over).
+     *   - payment_status = 'pending': nothing has been paid on a quote.
+     *   - source = 'quotation': distinguishes this in reports.
+     *   - No OrderItems: quotation lines reference products/free-text, not
+     *     ProductVariants. OrderItem.product_variant_id is NOT NULL, so itemless
+     *     financial-summary orders are the correct representation here.
+     *   - No inventory deduction: the work has not been started yet.
+     */
+    public function createFromQuotation(
+        Branch $branch,
+        int $subtotalCents,
+        int $taxCents,
+        int $discountCents,
+        int $totalCents,
+        ?Customer $customer,
+        ?User $user = null,
+        ?string $notes = null,
+    ): Order {
+        $tenant = $this->resolveTenant($branch);
+
+        return DB::transaction(function () use (
+            $branch, $subtotalCents, $taxCents, $discountCents, $totalCents,
+            $customer, $user, $notes, $tenant
+        ): Order {
+            $orderNumber = $this->orders->nextOrderNumber($tenant);
+
+            $order = $this->orders->create([
+                'tenant_id'      => $tenant->id,
+                'branch_id'      => $branch->id,
+                'customer_id'    => $customer?->id,
+                'order_number'   => $orderNumber,
+                'tracking_token' => $this->generateTrackingToken(),
+                'status'         => 'pending',
+                'source'         => 'quotation',
+                'subtotal_cents' => $subtotalCents,
+                'tax_cents'      => $taxCents,
+                'discount_cents' => $discountCents,
+                'total_cents'    => $totalCents,
+                'payment_method' => null,
+                'payment_status' => 'pending',
+                'notes'          => $notes,
+                'user_id'        => $user?->id,
+            ]);
+
+            // Write the initial history entry. from_status=null signals this is the
+            // birth of the order into its initial status, not a transition from prior state.
+            OrderStatusHistory::create([
+                'tenant_id'   => $tenant->id,
+                'order_id'    => $order->id,
+                'from_status' => null,
+                'to_status'   => 'pending',
+                'user_id'     => $user?->id,
+                'note'        => 'Created from quotation',
+            ]);
+
+            Log::info('Quotation order created', [
+                'order_id'       => $order->id,
+                'order_number'   => $order->order_number,
+                'tenant_id'      => $tenant->id,
+                'branch_id'      => $branch->id,
+                'subtotal_cents' => $subtotalCents,
+                'tax_cents'      => $taxCents,
+                'discount_cents' => $discountCents,
+                'total_cents'    => $totalCents,
+                'user_id'        => $user?->id,
+            ]);
+
+            return $order;
+        });
+    }
+
+    /**
      * Cancel an order.
      *
      * v1: sets status to 'cancelled' only — does NOT restock inventory.
