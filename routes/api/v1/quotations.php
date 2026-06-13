@@ -35,6 +35,10 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('quotations')->group(stati
     Route::post('/{quotation}/reject', [QuotationController::class, 'reject'])
         ->name('api.v1.quotations.reject');
 
+    // PDF download — static suffix, declared before the bare {quotation} GET route.
+    Route::get('/{quotation}/pdf', [QuotationController::class, 'pdf'])
+        ->name('api.v1.quotations.pdf');
+
     // ── Single-resource CRUD — declared after sub-action routes ──────────────
     Route::get('/{quotation}', [QuotationController::class, 'show'])
         ->name('api.v1.quotations.show');

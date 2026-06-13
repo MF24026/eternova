@@ -11,6 +11,7 @@ use App\Modules\Quotations\Http\Requests\UpdateQuotationRequest;
 use App\Modules\Quotations\Http\Resources\QuotationCollection;
 use App\Modules\Quotations\Http\Resources\QuotationResource;
 use App\Modules\Quotations\Models\Quotation;
+use App\Modules\Quotations\Pdf\QuotationPdfRenderer;
 use App\Modules\Quotations\Repositories\QuotationRepositoryInterface;
 use App\Modules\Quotations\Services\QuotationService;
 use DomainException;
@@ -18,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
  * Quotation management REST endpoints.
@@ -41,6 +43,7 @@ final class QuotationController extends Controller
     public function __construct(
         private readonly QuotationService $quotationService,
         private readonly QuotationRepositoryInterface $quotations,
+        private readonly QuotationPdfRenderer $pdfRenderer,
     ) {}
 
     /**
@@ -179,6 +182,32 @@ final class QuotationController extends Controller
         ]);
 
         return response()->noContent();
+    }
+
+    /**
+     * Render and stream the quotation as a PDF document.
+     *
+     * The PDF is rendered on-demand (no disk cache in v1 — cheap to regenerate).
+     * Content-Disposition: inline so the browser opens the PDF in a new tab
+     * without forcing a download dialog — the E8 "preview" button depends on this.
+     *
+     * Filename: cotizacion-{quotation_number}.pdf (hyphens, lowercase, safe for any OS).
+     *
+     * Authorization: requires 'view' on the quotation — same gate as show().
+     * Cross-tenant ids are already 404 via BelongsToTenant route-model binding.
+     */
+    public function pdf(Quotation $quotation): SymfonyResponse
+    {
+        $this->authorize('view', $quotation);
+
+        $bytes    = $this->pdfRenderer->render($quotation);
+        $filename = 'cotizacion-' . str_replace('/', '-', $quotation->quotation_number) . '.pdf';
+
+        return response($bytes, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Content-Length'      => strlen($bytes),
+        ]);
     }
 
     /**
