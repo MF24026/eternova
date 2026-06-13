@@ -251,18 +251,24 @@ final class QuotationController extends Controller
     /**
      * Accept the quotation (draft|sent → accepted).
      *
-     * Invalid transitions (e.g. already-accepted, or rejected) return 422.
+     * When convert_to_order: true is passed in the body, the acceptance and order
+     * creation are executed in a single transaction. The response will include
+     * converted_order_id populated. Invalid transitions or already-converted
+     * quotations return 422 with the DomainException message.
      */
     public function accept(TransitionQuotationRequest $request, Quotation $quotation): QuotationResource|JsonResponse
     {
         $this->authorize('update', $quotation);
 
-        $note = $request->validated()['note'] ?? null;
+        $validated      = $request->validated();
+        $note           = $validated['note'] ?? null;
+        $convertToOrder = (bool) ($validated['convert_to_order'] ?? false);
 
         try {
             $updated = $this->quotationService->accept(
                 quotation: $quotation,
                 actor: $request->user(),
+                convertToOrder: $convertToOrder,
                 note: $note,
             );
         } catch (DomainException $e) {
@@ -270,6 +276,7 @@ final class QuotationController extends Controller
                 'quotation_id'     => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
                 'current_status'   => $quotation->status,
+                'convert_to_order' => $convertToOrder,
                 'message'          => $e->getMessage(),
             ]);
 

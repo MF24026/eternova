@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Quotations\Services;
 
 use App\Models\User;
+use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Services\OrderService;
 use App\Modules\Quotations\Models\Quotation;
 use App\Modules\Quotations\Models\QuotationItem;
 use App\Modules\Quotations\Models\QuotationStatusHistory;
 use App\Modules\Quotations\Repositories\QuotationRepositoryInterface;
+use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use DomainException;
 use Illuminate\Support\Carbon;
@@ -49,6 +52,7 @@ final readonly class QuotationService
 {
     public function __construct(
         private QuotationRepositoryInterface $quotations,
+        private OrderService $orderService,
     ) {}
 
     /**
@@ -344,16 +348,37 @@ final readonly class QuotationService
     }
 
     /**
-     * Accept the quotation.
+     * Accept the quotation, optionally converting it to an Order in the same transaction.
      *
-     * This is a plain status transition. Order conversion (E5) is intentionally
-     * NOT implemented here — accept() will be extended in Sprint 7-E5 to optionally
-     * call OrderService when convertToOrder: true is passed.
+     * When convertToOrder is false: plain status transition to 'accepted' (same as before).
      *
-     * @throws DomainException When the current status does not allow an 'accepted' transition
+     * When convertToOrder is true, inside a single DB transaction this method:
+     *   (a) Transitions the quotation to 'accepted' via transitionTo() so the history row
+     *       is written correctly.
+     *   (b) Resolves the branch to attach the order to (quotation.branch if set, else the
+     *       tenant's main branch). Throws if neither exists.
+     *   (c) Calls OrderService::createFromQuotation() with the quotation's full cents
+     *       breakdown, customer, and actor.
+     *   (d) Sets quotation.converted_order_id = order.id.
+     *
+     * Idempotency guard: if converted_order_id is already set, the quotation has already
+     * been converted — calling this again would create a duplicate order. A DomainException
+     * is thrown instead. The transition guard in transitionTo() also blocks conversion of
+     * terminal states (accepted/rejected/expired), but we surface an explicit message here
+     * so callers get a meaningful error rather than a state-machine message.
+     *
+     * @throws DomainException When the transition is not allowed, or already converted
      */
-    public function accept(Quotation $quotation, ?User $actor = null, ?string $note = null): Quotation
-    {
+    public function accept(
+        Quotation $quotation,
+        ?User $actor = null,
+        bool $convertToOrder = false,
+        ?string $note = null,
+    ): Quotation {
+        if ($convertToOrder) {
+            return $this->acceptAndConvert(quotation: $quotation, actor: $actor, note: $note);
+        }
+
         return $this->transitionTo(
             quotation: $quotation,
             toStatus: 'accepted',
@@ -407,6 +432,105 @@ final readonly class QuotationService
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Accept the quotation and convert it to an Order atomically.
+     *
+     * Extracted from accept() to keep the public API clean. All logic runs inside
+     * a single DB::transaction so that a failure mid-way (e.g. branch lookup, order
+     * creation) leaves the quotation untouched — no partially-accepted rows.
+     *
+     * @throws DomainException When already converted, transition blocked, or no branch found
+     */
+    private function acceptAndConvert(Quotation $quotation, ?User $actor, ?string $note): Quotation
+    {
+        // Idempotency guard: a second conversion would create a duplicate order.
+        // This check runs before the transaction so the error message is clear.
+        if ($quotation->converted_order_id !== null) {
+            throw new DomainException(
+                "Quotation #{$quotation->quotation_number} has already been converted to order "
+                ."#{$quotation->converted_order_id}. Cannot convert again."
+            );
+        }
+
+        return DB::transaction(function () use ($quotation, $actor, $note): Quotation {
+            // (a) Transition to 'accepted' — transitionTo() validates the state machine
+            //     and writes the history row. DomainException propagates for terminal states.
+            $this->transitionTo(
+                quotation: $quotation,
+                toStatus: 'accepted',
+                actor: $actor,
+                note: $note,
+            );
+
+            // Refresh so we have the updated status on the model before branch resolution.
+            $quotation->refresh();
+
+            // (b) Resolve the branch for the new order.
+            $branch = $this->resolveBranchForQuotation($quotation);
+
+            // (c) Create the order via OrderService (crossing the module boundary
+            //     with only Order-domain primitives — no Quotation type is passed).
+            $order = $this->orderService->createFromQuotation(
+                branch: $branch,
+                subtotalCents: $quotation->subtotal_cents,
+                taxCents: $quotation->tax_cents,
+                discountCents: $quotation->discount_cents,
+                totalCents: $quotation->total_cents,
+                customer: $quotation->customer_id !== null ? $quotation->customer : null,
+                user: $actor,
+                notes: "Convertido desde cotizacion {$quotation->quotation_number}",
+            );
+
+            // (d) Link the converted order back to the quotation.
+            $quotation->update(['converted_order_id' => $order->id]);
+
+            Log::info('Quotation converted to order', [
+                'quotation_id'     => $quotation->id,
+                'quotation_number' => $quotation->quotation_number,
+                'tenant_id'        => $quotation->tenant_id,
+                'order_id'         => $order->id,
+                'order_number'     => $order->order_number,
+                'total_cents'      => $quotation->total_cents,
+                'actor_id'         => $actor?->id,
+            ]);
+
+            return $quotation->fresh()->load('statusHistory');
+        });
+    }
+
+    /**
+     * Resolve the branch for a quotation, falling back to the tenant's main branch.
+     *
+     * Mirrors ReservationService::resolveBranchForReservation() exactly.
+     *
+     * @throws DomainException When neither the quotation's branch nor a main branch exists
+     */
+    private function resolveBranchForQuotation(Quotation $quotation): Branch
+    {
+        if ($quotation->branch_id !== null) {
+            $branch = $quotation->branch;
+
+            if ($branch !== null) {
+                return $branch;
+            }
+        }
+
+        // Fall back to the tenant's main branch — covers quotations created before
+        // branch assignment was introduced, or single-branch tenants.
+        $mainBranch = Branch::where('tenant_id', $quotation->tenant_id)
+            ->where('is_main', true)
+            ->first();
+
+        if ($mainBranch === null) {
+            throw new DomainException(
+                "No branch available to convert quotation #{$quotation->quotation_number}. "
+                .'Assign a branch to the quotation or configure a main branch for the tenant.'
+            );
+        }
+
+        return $mainBranch;
+    }
 
     /**
      * Resolve the current tenant from the service container.
