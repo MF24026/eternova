@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, FileText, Search, Calendar } from 'lucide-vue-next'
+import { Plus, FileText, Search, Calendar, Pencil } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
 import AppTable, { type TableColumn } from '@/components/base/AppTable.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppPagination from '@/components/base/AppPagination.vue'
 import AppEmptyState from '@/components/base/AppEmptyState.vue'
+import QuotationBuilderSlideover from '@/components/Admin/Quotations/QuotationBuilderSlideover.vue'
 import QuotationService from '@/services/QuotationService'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useFormatDate } from '@/composables/useFormatDate'
@@ -128,6 +129,7 @@ const columns: TableColumn<Row>[] = [
     { key: 'valid_until', label: 'Válida hasta', width: '120px' },
     { key: 'total_cents', label: 'Total', width: '120px', align: 'right' },
     { key: 'status', label: 'Estado', width: '130px', align: 'center' },
+    { key: '_actions', label: '', width: '48px', align: 'center' },
 ]
 
 const tableRows = computed<Row[]>(() => quotations.value as unknown as Row[])
@@ -140,21 +142,41 @@ function navigateToDetail(quotation: Quotation): void {
     void router.push({ name: 'admin.quotations.detail', params: { id: quotation.id } })
 }
 
-// ── "Nueva cotización" — TODO(S7-E7) ──────────────────────────────────────────
-// The builder slideover is implemented in S7-E7. This flag and handler are the
-// hook that E7 will activate: replace `newQuotationOpen` with a real slideover
-// import and set it to true here.
-const newQuotationOpen = ref(false)
+// ── Builder slideover ─────────────────────────────────────────────────────────
+
+const builderOpen = ref(false)
+const builderQuotation = ref<Quotation | null>(null)
 
 function openNewQuotation(): void {
-    // TODO(S7-E7): replace with the QuotationBuilderSlideover open call.
-    // For now we guard against dead clicks until E7 wires the builder.
-    newQuotationOpen.value = true
+    builderQuotation.value = null
+    builderOpen.value = true
+}
+
+function openEditDraft(quotation: Quotation): void {
+    builderQuotation.value = quotation
+    builderOpen.value = true
+}
+
+function onBuilderSaved(saved: Quotation): void {
+    // Refresh the list so the newly created/updated quotation appears.
+    void fetchQuotations()
+    // Also update the local row if we edited a draft — avoids a full reload lag.
+    const idx = quotations.value.findIndex((q) => q.id === saved.id)
+    if (idx !== -1) {
+        quotations.value[idx] = saved
+    }
 }
 </script>
 
 <template>
     <div class="flex flex-col gap-4">
+
+        <!-- Builder slideover -->
+        <QuotationBuilderSlideover
+            v-model="builderOpen"
+            :quotation="builderQuotation"
+            @saved="onBuilderSaved"
+        />
 
         <!-- Page header -->
         <div class="mb-1 flex items-start justify-between gap-4">
@@ -164,12 +186,10 @@ function openNewQuotation(): void {
             </div>
 
             <div class="flex items-center gap-2 shrink-0 pt-1">
-                <!-- TODO(S7-E7): Remove :disabled once the QuotationBuilderSlideover is wired. -->
                 <AppButton
                     variant="primary"
                     size="sm"
                     :icon="Plus"
-                    :disabled="true"
                     data-testid="btn-nueva-cotizacion"
                     @click="openNewQuotation"
                 >
@@ -362,6 +382,20 @@ function openNewQuotation(): void {
                     </AppBadge>
                 </template>
 
+                <!-- actions (edit draft only) -->
+                <template #cell-_actions="{ row }">
+                    <button
+                        v-if="asQuotation(row).status === 'draft'"
+                        type="button"
+                        class="btn-icon"
+                        :aria-label="`Editar cotización ${asQuotation(row).quotation_number}`"
+                        :data-testid="`btn-edit-draft-${asQuotation(row).id}`"
+                        @click.stop="openEditDraft(asQuotation(row))"
+                    >
+                        <Pencil :size="14" />
+                    </button>
+                </template>
+
                 <!-- Empty state -->
                 <template #empty>
                     <AppEmptyState
@@ -399,60 +433,80 @@ function openNewQuotation(): void {
             </div>
 
             <!-- Quotation cards -->
-            <button
-                v-else
-                v-for="q in quotations"
-                :key="q.id"
-                type="button"
-                class="rounded-xl p-4 text-left w-full bg-surface-low
-                       hover:bg-surface-mid active:bg-surface-mid transition-colors
-                       dark:bg-surface-mid dark:hover:bg-surface-high"
-                :aria-label="`Ver cotización ${q.quotation_number}`"
-                :data-testid="`quotation-card-${q.id}`"
-                @click="navigateToDetail(q)"
-            >
-                <div class="flex items-center gap-3">
-                    <!-- Icon -->
-                    <div
-                        class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                        style="background: var(--primary-container); color: var(--primary)"
+            <template v-else>
+                <div
+                    v-for="q in quotations"
+                    :key="q.id"
+                    class="rounded-xl p-4 w-full bg-surface-low transition-colors
+                           dark:bg-surface-mid"
+                    :data-testid="`quotation-card-${q.id}`"
+                >
+                    <!-- Clickable row area -->
+                    <button
+                        type="button"
+                        class="w-full text-left flex items-center gap-3
+                               hover:bg-surface-mid active:bg-surface-mid transition-colors rounded-lg
+                               dark:hover:bg-surface-high"
+                        :aria-label="`Ver cotización ${q.quotation_number}`"
+                        @click="navigateToDetail(q)"
                     >
-                        <FileText :size="16" aria-hidden="true" />
-                    </div>
-
-                    <!-- Main content -->
-                    <div class="grow min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-sm font-mono text-on-surface">
-                                {{ q.quotation_number }}
-                            </span>
-                            <AppBadge
-                                :variant="QUOTATION_STATUS_VARIANT[q.status]"
-                                size="sm"
-                            >
-                                {{ QUOTATION_STATUS_LABELS[q.status] }}
-                            </AppBadge>
+                        <!-- Icon -->
+                        <div
+                            class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                            style="background: var(--primary-container); color: var(--primary)"
+                        >
+                            <FileText :size="16" aria-hidden="true" />
                         </div>
-                        <p class="text-xs text-on-surface-variant truncate">
-                            {{ q.customer?.name ?? 'Sin cliente' }}
-                        </p>
-                        <p class="text-xs text-on-surface-variant">
-                            <Calendar :size="10" class="inline mr-0.5" aria-hidden="true" />
-                            {{ formatDate(q.issue_date) }}
-                            <template v-if="q.valid_until">
-                                · Válida hasta {{ formatDate(q.valid_until) }}
-                            </template>
-                        </p>
-                    </div>
 
-                    <!-- Total -->
-                    <div class="text-right shrink-0">
-                        <p class="text-sm font-bold text-primary">
-                            {{ formatCents(q.total_cents) }}
-                        </p>
+                        <!-- Main content -->
+                        <div class="grow min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-sm font-mono text-on-surface">
+                                    {{ q.quotation_number }}
+                                </span>
+                                <AppBadge
+                                    :variant="QUOTATION_STATUS_VARIANT[q.status]"
+                                    size="sm"
+                                >
+                                    {{ QUOTATION_STATUS_LABELS[q.status] }}
+                                </AppBadge>
+                            </div>
+                            <p class="text-xs text-on-surface-variant truncate">
+                                {{ q.customer?.name ?? 'Sin cliente' }}
+                            </p>
+                            <p class="text-xs text-on-surface-variant">
+                                <Calendar :size="10" class="inline mr-0.5" aria-hidden="true" />
+                                {{ formatDate(q.issue_date) }}
+                                <template v-if="q.valid_until">
+                                    · Válida hasta {{ formatDate(q.valid_until) }}
+                                </template>
+                            </p>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="text-right shrink-0">
+                            <p class="text-sm font-bold text-primary">
+                                {{ formatCents(q.total_cents) }}
+                            </p>
+                        </div>
+                    </button>
+
+                    <!-- Edit affordance for drafts (below the row so tap target stays large) -->
+                    <div v-if="q.status === 'draft'" class="mt-2 flex justify-end">
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+                                   bg-surface-high text-on-surface-variant hover:text-on-surface transition-colors"
+                            :aria-label="`Editar borrador ${q.quotation_number}`"
+                            :data-testid="`btn-edit-draft-mobile-${q.id}`"
+                            @click="openEditDraft(q)"
+                        >
+                            <Pencil :size="12" aria-hidden="true" />
+                            Editar borrador
+                        </button>
                     </div>
                 </div>
-            </button>
+            </template>
         </div>
 
         <!-- Pagination -->
