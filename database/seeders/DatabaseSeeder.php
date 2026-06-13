@@ -12,6 +12,7 @@ use Database\Seeders\Inventory\InventoryMovementsSeeder;
 use Database\Seeders\Orders\OrdersSeeder;
 use Database\Seeders\Expenses\ExpenseCategoriesSeeder;
 use Database\Seeders\Expenses\ExpensesSeeder;
+use Database\Seeders\Quotations\QuotationsSeeder;
 use Database\Seeders\Reservations\ReservationsSeeder;
 use Illuminate\Database\Seeder;
 
@@ -34,6 +35,7 @@ final class DatabaseSeeder extends Seeder
      *  11. Reservations\ReservationsSeeder   — demo reservations with payments + timelines
      *  12. Expenses\ExpenseCategoriesSeeder  — 5 default categories per demo tenant
      *  13. Expenses\ExpensesSeeder           — ~30 demo expenses per tenant (OCR states, 5 months)
+     *  14. Quotations\QuotationsSeeder       — ~10 demo quotations per tenant (all five statuses, line items, timelines)
      */
     public function run(): void
     {
@@ -51,6 +53,7 @@ final class DatabaseSeeder extends Seeder
             ReservationsSeeder::class,
             ExpenseCategoriesSeeder::class,
             ExpensesSeeder::class,
+            QuotationsSeeder::class,
         ]);
     }
 }
