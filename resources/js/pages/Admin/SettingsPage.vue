@@ -17,13 +17,20 @@ import {
 import AppInput from '@/components/base/AppInput.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
+import UpgradeLock from '@/components/composite/UpgradeLock.vue'
 import SettingsService from '@/services/SettingsService'
 import { useToast } from '@/composables/useToast'
+import { usePlanGate } from '@/composables/usePlanGate'
 import type {
     TenantSettings, SettingsCatalog, SettingsGroup,
 } from '@/types/domain/Settings'
 
 const toast = useToast()
+const planGate = usePlanGate()
+
+function onUpgrade(): void {
+    toast.info('La gestión de plan estará disponible pronto.')
+}
 
 onMounted(() => {
     document.title = 'Ajustes — Eternova'
@@ -298,6 +305,20 @@ const notificationLabels: { key: keyof TenantSettings['notifications']; label: s
                         </div>
                         <AppInput v-model="settings.locale.timezone" label="Zona horaria" :error="errors.locale?.timezone" data-testid="input-timezone" />
                     </div>
+                </div>
+
+                <!-- Custom domain — plan-gated (Enterprise) -->
+                <div class="card" style="padding: 24px" data-testid="panel-custom-domain">
+                    <p class="font-semibold text-on-surface mb-1">Dominio personalizado</p>
+                    <p class="text-xs text-on-surface-variant mb-4">Usa tu propio dominio (ej. tienda.tunegocio.com) en el catálogo público.</p>
+                    <UpgradeLock
+                        :locked="!planGate.allows('custom_domain')"
+                        title="Dominio personalizado"
+                        required-plan="Enterprise"
+                        @upgrade="onUpgrade"
+                    >
+                        <AppInput model-value="" label="Tu dominio" placeholder="tienda.tunegocio.com" data-testid="input-custom-domain" @update:model-value="() => {}" />
+                    </UpgradeLock>
                 </div>
             </template>
 

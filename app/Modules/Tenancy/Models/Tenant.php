@@ -7,6 +7,7 @@ namespace App\Modules\Tenancy\Models;
 use App\Models\User;
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\Subscription;
+use App\Modules\Plans\Models\Plan;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -137,5 +138,21 @@ class Tenant extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * The plan backing the tenant's current (active or trialing) subscription.
+     *
+     * Returns null when the tenant has no in-access subscription — callers should
+     * treat that as "no entitlements" (the most restrictive default).
+     */
+    public function currentPlan(): ?Plan
+    {
+        return $this->subscriptions()
+            ->whereIn('status', ['active', 'trialing'])
+            ->latest()
+            ->with('plan')
+            ->first()
+            ?->plan;
     }
 }
