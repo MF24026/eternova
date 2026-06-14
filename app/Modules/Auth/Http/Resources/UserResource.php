@@ -25,6 +25,7 @@ final class UserResource extends BaseResource
     public function toResourceArray(Request $request): array
     {
         $currentTenant = current_tenant();
+        $plan = $currentTenant?->currentPlan();
 
         return [
             'id' => $this->resource->id,
@@ -33,6 +34,14 @@ final class UserResource extends BaseResource
             'avatar_url' => $this->resource->avatar_url,
             'email_verified_at' => $this->resource->email_verified_at?->toIso8601String(),
             'is_super_admin' => $this->resource->is_super_admin,
+            // Current tenant's plan entitlements — drives the frontend plan-gating UI.
+            // null when there is no active/trialing subscription (treat as no entitlements).
+            'plan' => $plan === null ? null : [
+                'slug'     => $plan->slug,
+                'name'     => $plan->name,
+                'features' => $plan->features ?? [],
+                'limits'   => $plan->limits ?? [],
+            ],
             'tenants' => $this->resource->tenants->map(static function ($tenant) use ($currentTenant) {
                 return [
                     'id' => $tenant->id,
