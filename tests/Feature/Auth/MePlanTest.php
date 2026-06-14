@@ -35,7 +35,6 @@ final class MePlanTest extends TestCase
             'plan_id'   => $plan->id,
         ]);
         $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
-        app()->instance('currentTenant', $tenant);
 
         $response = $this->tenantGetJson($tenant, $owner, '/api/v1/me');
 
@@ -56,7 +55,6 @@ final class MePlanTest extends TestCase
             'plan_id'   => $plan->id,
         ]);
         $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
-        app()->instance('currentTenant', $tenant);
 
         $response = $this->tenantGetJson($tenant, $owner, '/api/v1/me');
 
@@ -76,12 +74,10 @@ final class MePlanTest extends TestCase
         Subscription::factory()->active()->create(['tenant_id' => $tenantB->id, 'plan_id' => $entPlan->id]);
         $ownerB = User::factory()->forTenant($tenantB, role: 'owner')->create();
 
-        app()->instance('currentTenant', $tenantA);
         $this->tenantGetJson($tenantA, $ownerA, '/api/v1/me')
             ->assertJsonPath('data.plan.slug', 'pro')
             ->assertJsonPath('data.plan.limits.custom_domain', false);
 
-        app()->instance('currentTenant', $tenantB);
         $this->tenantGetJson($tenantB, $ownerB, '/api/v1/me')
             ->assertJsonPath('data.plan.slug', 'enterprise')
             ->assertJsonPath('data.plan.limits.custom_domain', true);

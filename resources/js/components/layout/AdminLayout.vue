@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import {
     LayoutDashboard,
@@ -25,6 +25,7 @@ import {
 import { useAuth } from '@/composables/useAuth'
 import { useTheme } from '@/composables/useTheme'
 import AppSpinner from '@/components/base/AppSpinner.vue'
+import OnboardingTour from '@/components/composite/OnboardingTour.vue'
 import { useRouter } from 'vue-router'
 
 interface NavItem {
@@ -99,6 +100,39 @@ function handleClickOutsideUserMenu(e: MouseEvent) {
 
 onMounted(() => document.addEventListener('click', handleClickOutsideUserMenu))
 onUnmounted(() => document.removeEventListener('click', handleClickOutsideUserMenu))
+
+// ── Onboarding tour: shown once per tenant on the owner's first visit ───────────
+const showTour = ref(false)
+
+const currentMembership = computed(() =>
+    currentUser.value?.tenants.find((t) => t.is_current) ?? null,
+)
+const tourStorageKey = computed(() =>
+    currentMembership.value ? `eternova_onboarding_seen_${currentMembership.value.id}` : null,
+)
+
+function maybeStartTour(): void {
+    const key = tourStorageKey.value
+    if (key === null) return
+    // Suppress the tour under browser automation (e2e) so it never blocks other
+    // specs — unless a test explicitly opts in via the force flag. In production
+    // navigator.webdriver is false, so the tour behaves normally.
+    if (navigator.webdriver === true && localStorage.getItem('eternova_force_tour') !== '1') return
+    // Only the owner gets the first-run tour, and only if they haven't seen it.
+    if (currentMembership.value?.role !== 'owner') return
+    if (localStorage.getItem(key) === '1') return
+    showTour.value = true
+}
+
+function onTourFinish(): void {
+    const key = tourStorageKey.value
+    if (key !== null) localStorage.setItem(key, '1')
+}
+
+// Start the tour once the current user (and tenant context) is known.
+watch(currentMembership, (membership) => {
+    if (membership) maybeStartTour()
+}, { immediate: true })
 </script>
 
 <template>
@@ -302,6 +336,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutsideUserMe
                 <slot />
             </main>
         </div>
+
+        <!-- First-login onboarding tour (owner, once per tenant) -->
+        <OnboardingTour v-model="showTour" @finish="onTourFinish" />
     </div>
 </template>
 
