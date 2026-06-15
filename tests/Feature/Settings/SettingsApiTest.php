@@ -183,6 +183,30 @@ final class SettingsApiTest extends TestCase
         Storage::disk('public')->assertExists(substr($tenant->logo_url, strlen('/storage/')));
     }
 
+    public function test_brand_update_stores_favicon_and_sets_url(): void
+    {
+        Storage::fake('public');
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
+
+        $file = UploadedFile::fake()->image('favicon.png', 64, 64);
+
+        $response = $this->actingAs($owner)->post(
+            $this->tenantUrl($tenant, '/api/v1/settings/brand'),
+            [
+                'business_name' => 'Con Favicon',
+                'favicon'       => $file,
+            ],
+            ['Accept' => 'application/json'],
+        );
+
+        $response->assertOk();
+
+        $tenant->refresh();
+        $this->assertNotNull($tenant->favicon_url);
+        $this->assertStringStartsWith('/storage/tenants/' . $tenant->id . '/brand', $tenant->favicon_url);
+        Storage::disk('public')->assertExists(substr($tenant->favicon_url, strlen('/storage/')));
+    }
+
     public function test_unauthenticated_request_is_rejected(): void
     {
         ['tenant' => $tenant] = $this->setupTenant();

@@ -9,10 +9,11 @@
  * Each tab saves its own group independently (POST /settings/{group}); the
  * response returns the full resolved settings so the local state stays in sync.
  */
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import {
     Flower, Phone, MapPin, Receipt, ClipboardList, FileText, Calendar, Bell,
-    Camera, Save, Loader2,
+    Camera, Image, Save, Loader2,
 } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
 import AppButton from '@/components/base/AppButton.vue'
@@ -61,12 +62,32 @@ const catalog = ref<SettingsCatalog | null>(null)
 const saving = reactive<Record<string, boolean>>({})
 const errors = reactive<Record<string, Record<string, string>>>({})
 
-// Brand logo upload (not part of the JSON settings object).
+// Brand logo / favicon uploads (not part of the JSON settings object).
 const logoFile = ref<File | null>(null)
 const logoPreview = ref<string | null>(null)
+const faviconFile = ref<File | null>(null)
+const faviconPreview = ref<string | null>(null)
 
 // Reservation occasions edited as newline-separated text.
 const occasionsText = ref('')
+
+// ── Dirty tracking ──────────────────────────────────────────────────────────────
+// Snapshot of the last saved/loaded state. isDirty compares the live form to it
+// so we can warn before discarding unsaved edits on navigation or reload.
+const baseline = ref('')
+
+function currentSnapshot(): string {
+    return JSON.stringify({ settings: settings.value, occasionsText: occasionsText.value })
+}
+
+function resetBaseline(): void {
+    baseline.value = currentSnapshot()
+}
+
+const isDirty = computed<boolean>(() =>
+    pageState.value === 'loaded'
+    && (baseline.value !== currentSnapshot() || logoFile.value !== null || faviconFile.value !== null),
+)
 
 async function load(): Promise<void> {
     pageState.value = 'loading'
@@ -76,6 +97,7 @@ async function load(): Promise<void> {
         catalog.value = result.meta.catalog
         occasionsText.value = (result.data.reservations.reservation_occasions ?? []).join('\n')
         pageState.value = 'loaded'
+        resetBaseline()
     } catch {
         pageState.value = 'error'
     }
@@ -120,6 +142,12 @@ function onLogoSelected(event: Event): void {
     logoPreview.value = file ? URL.createObjectURL(file) : null
 }
 
+function onFaviconSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null
+    faviconFile.value = file
+    faviconPreview.value = file ? URL.createObjectURL(file) : null
+}
+
 // ── Save one group ───────────────────────────────────────────────────────────────
 
 async function save(group: SettingsGroup): Promise<void> {
@@ -136,7 +164,10 @@ async function save(group: SettingsGroup): Promise<void> {
         if (group === 'brand') {
             logoFile.value = null
             logoPreview.value = null
+            faviconFile.value = null
+            faviconPreview.value = null
         }
+        resetBaseline()
         toast.success('Cambios guardados.')
     } catch (err: unknown) {
         const apiErr = err as { response?: { status?: number; data?: { errors?: Record<string, string[]>; message?: string } } }
@@ -165,6 +196,7 @@ function buildPayload(group: SettingsGroup): Record<string, unknown> | FormData 
         if (s.brand.primary_color) form.append('primary_color', s.brand.primary_color)
         if (s.brand.secondary_color) form.append('secondary_color', s.brand.secondary_color)
         if (logoFile.value) form.append('logo', logoFile.value)
+        if (faviconFile.value) form.append('favicon', faviconFile.value)
         return form
     }
 
@@ -192,6 +224,24 @@ const notificationLabels: { key: keyof TenantSettings['notifications']; label: s
     { key: 'quotation_accepted', label: 'Cotización aceptada' },
     { key: 'payment_received', label: 'Pago recibido' },
 ]
+
+// ── Unsaved-changes guard ─────────────────────────────────────────────────────────
+// Switching tabs keeps edits (one shared reactive object), so only true navigation
+// away is guarded: vue-router route changes and the native browser unload (reload/close).
+const DISCARD_PROMPT = 'Tienes cambios sin guardar. ¿Seguro que quieres salir? Se perderán.'
+
+function onBeforeUnloadNative(event: BeforeUnloadEvent): void {
+    if (!isDirty.value) return
+    event.preventDefault()
+    event.returnValue = DISCARD_PROMPT
+}
+
+onMounted(() => window.addEventListener('beforeunload', onBeforeUnloadNative))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnloadNative))
+
+onBeforeRouteLeave(() => {
+    if (isDirty.value && !window.confirm(DISCARD_PROMPT)) return false
+})
 </script>
 
 <template>
@@ -243,6 +293,22 @@ const notificationLabels: { key: keyof TenantSettings['notifications']; label: s
                             <label class="btn btn-tertiary text-xs py-1.5 px-3 cursor-pointer inline-flex items-center">
                                 <Camera :size="12" class="mr-1.5" /> Cambiar logo
                                 <input type="file" accept="image/*" class="hidden" data-testid="input-logo" @change="onLogoSelected" />
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Favicon — small icon shown in the browser tab of the public storefront. -->
+                    <div class="flex items-center gap-5 mb-6">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden" style="background: var(--surface-mid)">
+                            <img v-if="faviconPreview || settings.brand.favicon_url" :src="faviconPreview ?? settings.brand.favicon_url ?? ''" alt="Favicon" class="w-full h-full object-contain" />
+                            <Image v-else :size="20" class="text-on-surface-variant" />
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-on-surface mb-1">Favicon</p>
+                            <p class="text-xs text-on-surface-variant mb-2">Ícono de la pestaña · PNG, ICO o SVG · máx 512KB</p>
+                            <label class="btn btn-tertiary text-xs py-1.5 px-3 cursor-pointer inline-flex items-center">
+                                <Image :size="12" class="mr-1.5" /> Cambiar favicon
+                                <input type="file" accept="image/png,image/svg+xml,image/x-icon,.ico" class="hidden" data-testid="input-favicon" @change="onFaviconSelected" />
                             </label>
                         </div>
                     </div>
@@ -429,7 +495,10 @@ const notificationLabels: { key: keyof TenantSettings['notifications']; label: s
             </template>
 
             <!-- Save bar -->
-            <div class="flex justify-end">
+            <div class="flex items-center justify-end gap-3">
+                <span v-if="isDirty" class="text-xs text-on-surface-variant" data-testid="dirty-indicator">
+                    Tienes cambios sin guardar
+                </span>
                 <AppButton
                     :icon="saving[tabs.find(t => t.id === activeTab)!.group] ? Loader2 : Save"
                     size="sm"
