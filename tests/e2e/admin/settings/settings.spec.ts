@@ -131,6 +131,44 @@ test.describe('Settings page (S8-E3/E4)', () => {
         await expect(page.locator('text=Cambios guardados')).toHaveCount(0)
     })
 
+    test('selecting a favicon shows a preview and marks the form dirty', async ({ page }) => {
+        await login(page)
+        await gotoSettings(page)
+
+        // 1x1 transparent PNG.
+        const png = Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+            'base64',
+        )
+        await page.setInputFiles('[data-testid="input-favicon"]', {
+            name: 'favicon.png', mimeType: 'image/png', buffer: png,
+        })
+
+        await expect(page.locator('[data-testid="dirty-indicator"]')).toBeVisible()
+        await expect(page.locator('[data-testid="panel-marca"] img[alt="Favicon"]')).toBeVisible()
+    })
+
+    test('warns before navigating away with unsaved changes', async ({ page }) => {
+        await login(page)
+        await gotoSettings(page)
+
+        // Make the form dirty.
+        await page.fill('[data-testid="input-business-name"] input', 'Edición sin guardar')
+        await expect(page.locator('[data-testid="dirty-indicator"]')).toBeVisible()
+
+        // Cancel the leave confirm -> we stay on settings.
+        let prompted = false
+        page.once('dialog', (dialog) => {
+            prompted = true
+            void dialog.dismiss()
+        })
+        await page.locator('a[href="/admin/dashboard"]').first().click()
+
+        await expect.poll(() => prompted).toBe(true)
+        await expect(page).toHaveURL(/\/admin\/settings/)
+        await expect(page.locator('[data-testid="panel-marca"]')).toBeVisible()
+    })
+
     test('renders correctly on a 375px viewport', async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 812 })
         await login(page)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
-import { useSlideover } from '@/composables/useSlideover'
+import { useSwipeToClose } from '@/composables/useSwipeToClose'
 
 interface Props {
     modelValue: boolean
@@ -24,11 +24,14 @@ const emit = defineEmits<{
     'update:modelValue': [value: boolean]
 }>()
 
-const { onTouchStart, onTouchMove, onTouchEnd } = useSlideover(props.side)
+const panel = ref<HTMLElement | null>(null)
 
 function close(): void {
     emit('update:modelValue', false)
 }
+
+// Swipe-to-close on the panel (right panel: swipe right; left panel: swipe left).
+useSwipeToClose(panel, props.side, close)
 
 // Lock body scroll while open
 watch(
@@ -89,6 +92,7 @@ const enterFrom = {
                 >
                     <div
                         v-if="modelValue"
+                        ref="panel"
                         :class="[
                             'absolute max-h-[90vh] md:max-h-none',
                             'bg-surface-lowest dark:bg-surface-low',
@@ -96,13 +100,10 @@ const enterFrom = {
                             'overflow-hidden flex flex-col',
                             slideClasses[side],
                         ]"
-                        :style="{ [side === 'right' ? 'width' : 'width']: `min(${width}, 100vw)` }"
+                        :style="{ width: `min(${width}, 100vw)` }"
                         role="dialog"
                         :aria-label="title"
                         :data-testid="testId"
-                        @touchstart="onTouchStart"
-                        @touchmove.prevent="onTouchMove"
-                        @touchend="onTouchEnd"
                     >
                         <!-- Drag handle (mobile) -->
                         <div class="md:hidden flex justify-center pt-3 pb-1 shrink-0">
