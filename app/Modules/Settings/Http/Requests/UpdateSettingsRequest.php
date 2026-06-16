@@ -42,8 +42,12 @@ final class UpdateSettingsRequest extends FormRequest
                 'business_name'   => ['required', 'string', 'max:120'],
                 'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
                 'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
-                'logo'            => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
-                'favicon'         => ['nullable', 'image', 'mimes:png,ico,svg', 'max:512'],
+                // SVG is intentionally NOT accepted: an SVG can carry a <script>
+                // that executes when the asset is opened directly (logos are served
+                // from the public disk, often by nginx/CDN that bypass our CSP), so
+                // a tenant-uploaded SVG is a stored-XSS vector. Raster only.
+                'logo'            => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+                'favicon'         => ['nullable', 'image', 'mimes:png,ico', 'max:512'],
             ],
             'locale' => [
                 'currency'     => ['required', 'string', Rule::in($currencies)],
