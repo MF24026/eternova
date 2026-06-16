@@ -82,6 +82,9 @@ async function handleSubmit() {
                         :aria-invalid="!!fieldErrors.password"
                     >
                     <p v-if="fieldErrors.password" class="field-error" role="alert">{{ fieldErrors.password }}</p>
+                    <router-link :to="{ name: 'forgot-password' }" class="forgot-link" data-testid="forgot-link">
+                        Olvidaste tu contrasena?
+                    </router-link>
                 </div>
 
                 <p v-if="generalError && !Object.keys(fieldErrors).length" class="field-error general-error" role="alert">
@@ -243,6 +246,18 @@ async function handleSubmit() {
 }
 
 .login-link:hover {
+    text-decoration: underline;
+}
+
+.forgot-link {
+    align-self: flex-end;
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.forgot-link:hover {
     text-decoration: underline;
 }
 

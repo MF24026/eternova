@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Modules\Auth\Http\Controllers\Api\V1\ForgotPasswordController;
 use App\Modules\Auth\Http\Controllers\Api\V1\LoginController;
 use App\Modules\Auth\Http\Controllers\Api\V1\LogoutController;
 use App\Modules\Auth\Http\Controllers\Api\V1\MeController;
 use App\Modules\Auth\Http\Controllers\Api\V1\RegisterController;
+use App\Modules\Auth\Http\Controllers\Api\V1\ResetPasswordController;
 use App\Modules\Auth\Http\Controllers\Api\V1\TokenController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +30,14 @@ Route::get('/health', static fn () => response()->json([
 Route::post('/auth/register', RegisterController::class)->name('api.v1.auth.register');
 Route::post('/auth/login', [LoginController::class, 'login'])->name('api.v1.auth.login');
 Route::post('/auth/token', [TokenController::class, 'issue'])->name('api.v1.auth.token');
+
+// ── Password reset (unauthenticated, throttled) ──────────────────────────────
+Route::post('/auth/forgot-password', ForgotPasswordController::class)
+    ->middleware('throttle:6,1')
+    ->name('api.v1.auth.forgot-password');
+Route::post('/auth/reset-password', ResetPasswordController::class)
+    ->middleware('throttle:6,1')
+    ->name('api.v1.auth.reset-password');
 
 // ── Authenticated routes ─────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(static function (): void {

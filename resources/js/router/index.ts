@@ -49,6 +49,18 @@ const router = createRouter({
             component: () => import('@/pages/Onboarding/SignupWizardPage.vue'),
             meta: { guestOnly: true, layout: 'onboarding' },
         },
+        {
+            path: '/forgot-password',
+            name: 'forgot-password',
+            component: () => import('@/pages/Auth/ForgotPasswordPage.vue'),
+            meta: { guestOnly: true },
+        },
+        {
+            path: '/reset-password',
+            name: 'reset-password',
+            component: () => import('@/pages/Auth/ResetPasswordPage.vue'),
+            meta: { guestOnly: true },
+        },
 
         // ── Admin routes ────────────────────────────────────────────────────
         {
