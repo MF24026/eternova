@@ -30,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+        // Per-request CSP nonce, stamped onto the script/style tags @vite renders.
+        // SecurityHeaders reads it (Vite::cspNonce()) to build the production CSP
+        // so the SPA's own scripts run while injected inline scripts are blocked.
+        Vite::useCspNonce();
+
         // N+1 guardrail: in non-production, lazy-loading a relation throws so the
         // offending code is fixed (eager load) at dev/test time instead of silently
         // firing a query per row in production.
