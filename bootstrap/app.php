@@ -27,7 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: static function (): void {
             // Load every routes/api/v1/*.php file under the /api/v1 prefix.
-            Route::middleware(['api', InjectRequestId::class])
+            // throttle:api is a baseline per-user/per-IP rate limit (the 'api'
+            // limiter in AppServiceProvider) — an abuse/DoS guard for all routes.
+            Route::middleware(['api', 'throttle:api', InjectRequestId::class])
                 ->prefix('api/v1')
                 ->group(static function (): void {
                     foreach (glob(__DIR__.'/../routes/api/v1/*.php') as $file) {

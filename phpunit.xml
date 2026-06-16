@@ -35,7 +35,12 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="DEBUGBAR_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="OCR_DRIVER" value="fake"/>
+        <!-- Rate limits raised so the suite isn't throttled; the throttle test
+             lowers them locally via config(). -->
+        <env name="RATE_LIMIT_API" value="100000"/>
+        <env name="RATE_LIMIT_LOGIN" value="100000"/>
     </php>
 </phpunit>
