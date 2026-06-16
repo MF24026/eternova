@@ -84,11 +84,14 @@ final class TenantAccessIsolationTest extends TestCase
 
         Tenant::factory()->create(['slug' => 'any-shop', 'status' => 'active', 'trial_ends_at' => null]);
 
+        // Path must live under /api so the SPA catch-all (routes/web.php /{any?}
+        // with ^(?!api)) doesn't shadow it and return the SPA shell (200) — which
+        // made this isolation assertion a silent false negative.
         Route::middleware(['tenant', 'auth:sanctum'])
-            ->get('/_test/protected', static fn () => response()->json(['ok' => true]))
+            ->get('/api/_test/protected', static fn () => response()->json(['ok' => true]))
             ->name('test.protected');
 
-        $this->getJson('http://any-shop.eternova.app/_test/protected')
+        $this->getJson('http://any-shop.eternova.app/api/_test/protected')
             ->assertStatus(401);
     }
 
