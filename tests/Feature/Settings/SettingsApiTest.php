@@ -207,6 +207,50 @@ final class SettingsApiTest extends TestCase
         Storage::disk('public')->assertExists(substr($tenant->favicon_url, strlen('/storage/')));
     }
 
+    public function test_brand_update_rejects_svg_logo(): void
+    {
+        // An SVG can carry a <script> that runs when the asset is opened directly;
+        // logos are served from the public disk (often by nginx/CDN, bypassing our
+        // CSP), so accepting one is a stored-XSS vector. Must be rejected (422).
+        Storage::fake('public');
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
+
+        $malicious = UploadedFile::fake()->createWithContent(
+            'logo.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(document.cookie)</script></svg>',
+        );
+
+        $response = $this->actingAs($owner)->post(
+            $this->tenantUrl($tenant, '/api/v1/settings/brand'),
+            ['business_name' => 'XSS Intento', 'logo' => $malicious],
+            ['Accept' => 'application/json'],
+        );
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['logo']);
+
+        $tenant->refresh();
+        $this->assertNull($tenant->logo_url);
+    }
+
+    public function test_brand_update_rejects_svg_favicon(): void
+    {
+        Storage::fake('public');
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
+
+        $malicious = UploadedFile::fake()->createWithContent(
+            'favicon.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+        );
+
+        $response = $this->actingAs($owner)->post(
+            $this->tenantUrl($tenant, '/api/v1/settings/brand'),
+            ['business_name' => 'XSS Intento', 'favicon' => $malicious],
+            ['Accept' => 'application/json'],
+        );
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['favicon']);
+    }
+
     public function test_unauthenticated_request_is_rejected(): void
     {
         ['tenant' => $tenant] = $this->setupTenant();
