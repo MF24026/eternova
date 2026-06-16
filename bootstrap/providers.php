@@ -2,6 +2,7 @@
 
 use App\Modules\Catalog\Providers\CatalogServiceProvider;
 use App\Modules\Customers\Providers\CustomersServiceProvider;
+use App\Modules\Dashboard\Providers\DashboardServiceProvider;
 use App\Modules\Inventory\Providers\InventoryServiceProvider;
 use App\Modules\Orders\Providers\OrdersServiceProvider;
 use App\Modules\POS\Providers\PosServiceProvider;
@@ -21,6 +22,7 @@ return [
     ExpensesServiceProvider::class,
     ReservationsServiceProvider::class,
     CustomersServiceProvider::class,
+    DashboardServiceProvider::class,
     PosServiceProvider::class,
     QuotationsServiceProvider::class,
     SettingsServiceProvider::class,
