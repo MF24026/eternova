@@ -148,7 +148,7 @@ test.describe('Settings page (S8-E3/E4)', () => {
         await expect(page.locator('[data-testid="panel-marca"] img[alt="Favicon"]')).toBeVisible()
     })
 
-    test('warns before navigating away with unsaved changes', async ({ page }) => {
+    test('warns before navigating away with unsaved changes (styled dialog)', async ({ page }) => {
         await login(page)
         await gotoSettings(page)
 
@@ -156,17 +156,19 @@ test.describe('Settings page (S8-E3/E4)', () => {
         await page.fill('[data-testid="input-business-name"] input', 'Edición sin guardar')
         await expect(page.locator('[data-testid="dirty-indicator"]')).toBeVisible()
 
-        // Cancel the leave confirm -> we stay on settings.
-        let prompted = false
-        page.once('dialog', (dialog) => {
-            prompted = true
-            void dialog.dismiss()
-        })
+        // Navigating away opens the styled confirm (not a native dialog).
         await page.locator('a[href="/admin/dashboard"]').first().click()
+        await expect(page.locator('[data-testid="confirm-accept"]')).toBeVisible({ timeout: 8_000 })
 
-        await expect.poll(() => prompted).toBe(true)
+        // Cancel -> stay on settings.
+        await page.click('[data-testid="confirm-cancel"]')
         await expect(page).toHaveURL(/\/admin\/settings/)
         await expect(page.locator('[data-testid="panel-marca"]')).toBeVisible()
+
+        // Try again and accept -> navigation proceeds to the dashboard.
+        await page.locator('a[href="/admin/dashboard"]').first().click()
+        await page.click('[data-testid="confirm-accept"]')
+        await expect(page).toHaveURL(/\/admin\/dashboard/)
     })
 
     test('renders correctly on a 375px viewport', async ({ page }) => {

@@ -258,11 +258,9 @@ test.describe('Products admin CRUD', () => {
         // Product is visible in active list
         await expect(page.getByText('Borrar Este Producto E2E')).toBeVisible()
 
-        // Click archive button
+        // Click archive button -> styled confirm dialog -> accept
         await page.getByRole('button', { name: 'Archivar' }).first().click()
-        await page.getByRole('button', { name: 'Aceptar' }).click().catch(() => {
-            // confirm() dialog — Playwright auto-confirms by default
-        })
+        await page.locator('[data-testid="confirm-accept"]').click()
 
         // Wait for list refresh — product should disappear from active filter
         await expect(page.getByText('Borrar Este Producto E2E')).not.toBeVisible({ timeout: 5_000 })

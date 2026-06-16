@@ -8,6 +8,7 @@ import AppEmptyState from '@/components/base/AppEmptyState.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import { useCategoriesStore } from '@/stores/categories'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import type { Category, CategoryInput, CategoryReorderItem } from '@/types/domain/Category'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '@/types/api'
@@ -19,6 +20,7 @@ onMounted(() => {
 
 const store = useCategoriesStore()
 const toast = useToast()
+const { confirm } = useConfirm()
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 const searchQuery = ref('')
@@ -225,7 +227,13 @@ async function submitForm(): Promise<void> {
 
 // ── Delete / Restore ───────────────────────────────────────────────────────────
 async function deleteCategory(cat: Category): Promise<void> {
-    if (! confirm(`Archivar "${cat.name}"? Los subcategorias quedaran sin padre.`)) return
+    const ok = await confirm({
+        title: 'Archivar categoria',
+        message: `"${cat.name}" se archivara y sus subcategorias quedaran sin padre.`,
+        confirmLabel: 'Archivar',
+        variant: 'danger',
+    })
+    if (!ok) return
 
     try {
         await store.remove(cat.id)

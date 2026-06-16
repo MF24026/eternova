@@ -9,6 +9,7 @@ import AppEmptyState from '@/components/base/AppEmptyState.vue'
 import { useProductsStore } from '@/stores/products'
 import { useCategoriesStore } from '@/stores/categories'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import type { Product } from '@/types/domain/Product'
 
 onMounted(() => {
@@ -21,6 +22,7 @@ const router = useRouter()
 const store = useProductsStore()
 const categoriesStore = useCategoriesStore()
 const toast = useToast()
+const { confirm } = useConfirm()
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 const searchQuery = ref('')
@@ -58,7 +60,13 @@ function openEdit(product: Product): void {
 
 // ── Delete / Restore ───────────────────────────────────────────────────────────
 async function deleteProduct(product: Product): Promise<void> {
-    if (!confirm(`Archivar "${product.name}"?`)) return
+    const ok = await confirm({
+        title: 'Archivar producto',
+        message: `"${product.name}" se ocultara del catalogo. Podras restaurarlo despues.`,
+        confirmLabel: 'Archivar',
+        variant: 'danger',
+    })
+    if (!ok) return
 
     try {
         await store.remove(product.id)
