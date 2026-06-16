@@ -122,6 +122,10 @@ function maybeStartTour(): void {
     // Only the owner gets the first-run tour, and only if they haven't seen it.
     if (currentMembership.value?.role !== 'owner') return
     if (localStorage.getItem(key) === '1') return
+    // Anchor the welcome tour to the dashboard it describes — don't pop it over
+    // whatever page the owner happens to land on first (e.g. a bookmarked
+    // /admin/settings). If they land elsewhere, it shows when they reach it.
+    if (route.name !== 'admin.dashboard') return
     showTour.value = true
 }
 
@@ -130,10 +134,13 @@ function onTourFinish(): void {
     if (key !== null) localStorage.setItem(key, '1')
 }
 
-// Start the tour once the current user (and tenant context) is known.
+// Start the tour once the current user (and tenant context) is known, and also
+// when the owner navigates onto the dashboard (covers landing elsewhere first).
 watch(currentMembership, (membership) => {
     if (membership) maybeStartTour()
 }, { immediate: true })
+
+watch(() => route.name, () => maybeStartTour())
 </script>
 
 <template>
