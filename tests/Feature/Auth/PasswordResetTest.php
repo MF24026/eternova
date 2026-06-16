@@ -46,6 +46,23 @@ final class PasswordResetTest extends TestCase
             ->assertJsonValidationErrorFor('email');
     }
 
+    public function test_reset_notification_mail_is_in_spanish_and_links_to_the_spa(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create(['email' => 'owner@shop.sv']);
+
+        $this->postJson('/api/v1/auth/forgot-password', ['email' => 'owner@shop.sv'])->assertOk();
+
+        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user) {
+            $mail = $notification->toMail($user);
+
+            return str_contains($mail->subject ?? '', 'Restablece tu contrasena')
+                && $mail->actionText === 'Restablecer contrasena'
+                && is_string($mail->actionUrl)
+                && str_contains($mail->actionUrl, '/reset-password?token=');
+        });
+    }
+
     public function test_reset_password_with_valid_token_updates_the_password(): void
     {
         $user = User::factory()->create(['email' => 'owner@shop.sv']);
