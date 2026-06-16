@@ -14,6 +14,7 @@ use App\Modules\Orders\Models\OrderItem;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -145,6 +146,48 @@ final class DashboardSummaryTest extends TestCase
         $this->assertNotEmpty($summary['top_products']);
         $this->assertSame('Rosa Eterna', $summary['top_products'][0]['name']);
         $this->assertSame(7, $summary['top_products'][0]['units']);
+    }
+
+    /**
+     * N+1 guard: the dashboard summary issues a bounded number of queries that
+     * does NOT grow with the number of rows. We measure the same workload at two
+     * dataset sizes; if the query count is identical, no relation is being lazily
+     * loaded per row. Model::preventLazyLoading() (AppServiceProvider) is the
+     * runtime backstop; this test pins the contract so a future change that
+     * reintroduces an N+1 fails here.
+     */
+    public function test_summary_does_not_n_plus_one_with_row_count(): void
+    {
+        $countQueriesForOrders = function (int $orders): int {
+            $tenant = Tenant::factory()->create();
+            $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
+            app()->instance('currentTenant', $tenant);
+
+            $product = Product::factory()->forTenant($tenant)->create();
+            $variant = ProductVariant::factory()->forProduct($product)->create();
+
+            for ($i = 0; $i < $orders; $i++) {
+                $order = Order::factory()->forTenant($tenant)->forBranch($branch)->create(['total_cents' => 1000]);
+                OrderItem::factory()->forOrder($order)->forVariant($variant)->create(['quantity' => 1]);
+            }
+
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $this->service->summary(14);
+            $count = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            return $count;
+        };
+
+        $small = $countQueriesForOrders(3);
+        $large = $countQueriesForOrders(15);
+
+        $this->assertSame(
+            $small,
+            $large,
+            "Dashboard summary query count grew from {$small} to {$large} as rows increased — an N+1 regression."
+        );
     }
 
     public function test_kpis_are_isolated_per_tenant(): void
