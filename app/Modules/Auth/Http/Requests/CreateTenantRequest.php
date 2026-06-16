@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Auth\Http\Requests;
 
+use App\Modules\Catalog\Services\StarterCatalogService;
 use App\Modules\Tenancy\Support\SlugValidator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class CreateTenantRequest extends FormRequest
 {
@@ -66,6 +68,8 @@ final class CreateTenantRequest extends FormRequest
             // plan_slug format validation only — existence is validated in TenantProvisioner
             // so that invalid plan slugs cause a transactional rollback (not a pre-flight 422).
             'plan_slug' => ['sometimes', 'nullable', 'string', 'max:50'],
+            // Starter catalog template (business type) chosen in onboarding.
+            'starter_template' => ['sometimes', 'nullable', 'string', Rule::in(StarterCatalogService::TEMPLATES)],
         ];
     }
 }

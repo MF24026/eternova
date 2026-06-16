@@ -132,6 +132,34 @@ test.describe('Signup wizard', () => {
         await expect(page.locator('#tenant-slug-status')).toContainText('Reservado', { timeout: 8_000 })
     })
 
+    test('tenant step offers a business-type picker that defaults to floreria and is selectable', async ({ page }) => {
+        const user = freshUser()
+
+        await page.goto(`${baseURL}/signup`)
+        await waitForApp(page)
+
+        await page.getByLabel('Nombre completo').fill(user.name)
+        await page.getByLabel('Correo electronico').fill(user.email)
+        await page.getByLabel('Contrasena').fill(user.password)
+        await page.getByRole('button', { name: 'Continuar' }).click()
+
+        await expect(page.getByText('Elige tu plan')).toBeVisible({ timeout: 10_000 })
+        await page.getByRole('button', { name: 'Continuar' }).click()
+
+        await expect(page.getByText('Configura tu negocio')).toBeVisible({ timeout: 10_000 })
+
+        // All four templates render; floreria is the default selection.
+        for (const t of ['floreria', 'accesorios', 'peluches', 'reposteria']) {
+            await expect(page.locator(`[data-testid="template-${t}"]`)).toBeVisible()
+        }
+        await expect(page.locator('[data-testid="template-floreria"]')).toHaveAttribute('aria-pressed', 'true')
+
+        // Selecting another template moves the selection.
+        await page.locator('[data-testid="template-reposteria"]').click()
+        await expect(page.locator('[data-testid="template-reposteria"]')).toHaveAttribute('aria-pressed', 'true')
+        await expect(page.locator('[data-testid="template-floreria"]')).toHaveAttribute('aria-pressed', 'false')
+    })
+
     test('shows taken slug error when slug already exists in DB', async ({ page, request }) => {
         const user = freshUser()
         const takenSlug = freshSlug()
