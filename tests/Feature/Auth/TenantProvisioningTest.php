@@ -6,6 +6,8 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use App\Modules\Billing\Models\Subscription;
+use App\Modules\Catalog\Models\Product;
+use App\Modules\Catalog\Models\ProductVariant;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
@@ -153,5 +155,83 @@ final class TenantProvisioningTest extends TestCase
             ->postJson('/api/v1/tenants', $this->validPayload(['slug' => 'mi-tienda']))
             ->assertStatus(422)
             ->assertJsonValidationErrorFor('slug');
+    }
+
+    public function test_provision_seeds_the_chosen_starter_catalog(): void
+    {
+        $this->basico();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/api/v1/tenants', $this->validPayload(['starter_template' => 'reposteria']))
+            ->assertStatus(201);
+
+        $tenant = Tenant::withoutGlobalScopes()->where('slug', 'mi-tienda')->firstOrFail();
+        $branch = Branch::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('is_main', true)->firstOrFail();
+
+        // Categories + products from the reposteria template.
+        $this->assertDatabaseHas('categories', ['tenant_id' => $tenant->id, 'slug' => 'tortas']);
+        $this->assertDatabaseHas('products', ['tenant_id' => $tenant->id, 'name' => 'Torta Personalizada']);
+
+        $products = Product::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get();
+        $this->assertCount(6, $products);
+
+        // Each product has variants, each variant has starting inventory at the main branch.
+        $product  = $products->firstWhere('name', 'Torta Personalizada');
+        $variants = ProductVariant::withoutGlobalScopes()->where('product_id', $product->id)->get();
+        $this->assertCount(3, $variants);
+
+        $this->assertDatabaseHas('branch_inventory', [
+            'branch_id'          => $branch->id,
+            'product_variant_id' => $variants->first()->id,
+            'quantity'           => 20,
+        ]);
+    }
+
+    public function test_provision_defaults_to_floreria_catalog_when_no_template_given(): void
+    {
+        $this->basico();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/api/v1/tenants', $this->validPayload())
+            ->assertStatus(201);
+
+        $tenant = Tenant::withoutGlobalScopes()->where('slug', 'mi-tienda')->firstOrFail();
+        $this->assertDatabaseHas('products', ['tenant_id' => $tenant->id, 'name' => 'Rosa Eterna Clasica']);
+    }
+
+    public function test_provision_rejects_an_invalid_starter_template(): void
+    {
+        $this->basico();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/api/v1/tenants', $this->validPayload(['starter_template' => 'casino']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrorFor('starter_template');
+    }
+
+    public function test_starter_catalog_is_isolated_to_the_new_tenant(): void
+    {
+        $this->basico();
+
+        $userA = User::factory()->create();
+        $this->actingAs($userA)
+            ->postJson('/api/v1/tenants', $this->validPayload(['slug' => 'tienda-a', 'starter_template' => 'peluches']))
+            ->assertStatus(201);
+
+        $userB = User::factory()->create();
+        $this->actingAs($userB)
+            ->postJson('/api/v1/tenants', $this->validPayload(['slug' => 'tienda-b', 'starter_template' => 'accesorios']))
+            ->assertStatus(201);
+
+        $tenantA = Tenant::withoutGlobalScopes()->where('slug', 'tienda-a')->firstOrFail();
+        $tenantB = Tenant::withoutGlobalScopes()->where('slug', 'tienda-b')->firstOrFail();
+
+        $this->assertDatabaseHas('products', ['tenant_id' => $tenantA->id, 'name' => 'Oso de Peluche Clasico']);
+        $this->assertDatabaseMissing('products', ['tenant_id' => $tenantA->id, 'name' => 'Collar Minimalista Plata']);
+        $this->assertDatabaseHas('products', ['tenant_id' => $tenantB->id, 'name' => 'Collar Minimalista Plata']);
+        $this->assertDatabaseMissing('products', ['tenant_id' => $tenantB->id, 'name' => 'Oso de Peluche Clasico']);
     }
 }

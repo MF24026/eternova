@@ -6,6 +6,7 @@ namespace App\Modules\Auth\Services;
 
 use App\Models\User;
 use App\Modules\Billing\Services\SubscriptionService;
+use App\Modules\Catalog\Services\StarterCatalogService;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
@@ -29,6 +30,7 @@ final readonly class TenantProvisioner
 {
     public function __construct(
         private SubscriptionService $subscriptionService,
+        private StarterCatalogService $starterCatalog,
     ) {}
 
     /**
@@ -51,7 +53,7 @@ final readonly class TenantProvisioner
             );
         }
 
-        return DB::transaction(function () use ($owner, $tenantData, $plan): Tenant {
+        $tenant = DB::transaction(function () use ($owner, $tenantData, $plan): Tenant {
             // Step 1 — Tenant
             $tenant = Tenant::create([
                 'name' => $tenantData['name'],
@@ -93,5 +95,20 @@ final readonly class TenantProvisioner
 
             return $tenant;
         });
+
+        // Seed a starter catalog so the owner sees real data on first login.
+        // Done after the provisioning transaction commits and isolated in its own
+        // try/catch: a catalog-seeding hiccup must never fail tenant registration.
+        try {
+            $this->starterCatalog->seed($tenant, $tenantData['starter_template'] ?? null);
+        } catch (\Throwable $e) {
+            Log::warning('Starter catalog seeding failed', [
+                'tenant_id' => $tenant->id,
+                'template' => $tenantData['starter_template'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $tenant;
     }
 }
