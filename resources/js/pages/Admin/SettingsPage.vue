@@ -21,6 +21,7 @@ import AppSpinner from '@/components/base/AppSpinner.vue'
 import UpgradeLock from '@/components/composite/UpgradeLock.vue'
 import SettingsService from '@/services/SettingsService'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { usePlanGate } from '@/composables/usePlanGate'
 import type {
     TenantSettings, SettingsCatalog, SettingsGroup,
@@ -28,6 +29,7 @@ import type {
 
 const toast = useToast()
 const planGate = usePlanGate()
+const { confirm } = useConfirm()
 
 function onUpgrade(): void {
     toast.info('La gestión de plan estará disponible pronto.')
@@ -239,8 +241,16 @@ function onBeforeUnloadNative(event: BeforeUnloadEvent): void {
 onMounted(() => window.addEventListener('beforeunload', onBeforeUnloadNative))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnloadNative))
 
-onBeforeRouteLeave(() => {
-    if (isDirty.value && !window.confirm(DISCARD_PROMPT)) return false
+onBeforeRouteLeave(async () => {
+    if (!isDirty.value) return
+    const leave = await confirm({
+        title: 'Cambios sin guardar',
+        message: DISCARD_PROMPT,
+        confirmLabel: 'Salir sin guardar',
+        cancelLabel: 'Seguir editando',
+        variant: 'danger',
+    })
+    if (!leave) return false
 })
 </script>
 

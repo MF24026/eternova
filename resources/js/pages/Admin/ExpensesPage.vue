@@ -16,6 +16,7 @@ import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useFormatDate } from '@/composables/useFormatDate'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import {
     EXPENSE_CATEGORY_TYPE_VARIANT,
     EXPENSE_OCR_STATUS_LABELS,
@@ -35,6 +36,7 @@ const { branches, loadBranches } = useBranches()
 const { formatCents } = useFormatCurrency()
 const { formatDate } = useFormatDate()
 const toast = useToast()
+const { confirm } = useConfirm()
 
 // ── Slideoveres ────────────────────────────────────────────────────────────────
 
@@ -156,9 +158,12 @@ async function fetchExpenses(page = 1): Promise<void> {
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 async function deleteExpense(expense: Expense): Promise<void> {
-    const confirmed = window.confirm(
-        `¿Eliminar el gasto "${expense.description}"? Esta acción no se puede deshacer.`,
-    )
+    const confirmed = await confirm({
+        title: 'Eliminar gasto',
+        message: `"${expense.description}" se eliminara permanentemente. Esta accion no se puede deshacer.`,
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+    })
     if (!confirmed) return
 
     try {

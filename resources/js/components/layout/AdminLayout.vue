@@ -26,6 +26,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useTheme } from '@/composables/useTheme'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import OnboardingTour from '@/components/composite/OnboardingTour.vue'
+import ConfirmDialog from '@/components/composite/ConfirmDialog.vue'
 import { useRouter } from 'vue-router'
 
 interface NavItem {
@@ -339,6 +340,9 @@ watch(currentMembership, (membership) => {
 
         <!-- First-login onboarding tour (owner, once per tenant) -->
         <OnboardingTour v-model="showTour" @finish="onTourFinish" />
+
+        <!-- Single host for useConfirm() promise-based confirmations -->
+        <ConfirmDialog />
     </div>
 </template>
 
