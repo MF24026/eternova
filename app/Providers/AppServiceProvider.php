@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // N+1 guardrail: in non-production, lazy-loading a relation throws so the
+        // offending code is fixed (eager load) at dev/test time instead of silently
+        // firing a query per row in production.
+        Model::preventLazyLoading(! $this->app->isProduction());
 
         // Password-reset email: link points at the SPA reset page on the same
         // host the request came from (each tenant lives on its own subdomain),
