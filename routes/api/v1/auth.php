@@ -28,7 +28,9 @@ Route::get('/health', static fn () => response()->json([
 
 // ── Registration + Login (unauthenticated) ───────────────────────────────────
 Route::post('/auth/register', RegisterController::class)->name('api.v1.auth.register');
-Route::post('/auth/login', [LoginController::class, 'login'])->name('api.v1.auth.login');
+Route::post('/auth/login', [LoginController::class, 'login'])
+    ->middleware('throttle:login')
+    ->name('api.v1.auth.login');
 Route::post('/auth/token', [TokenController::class, 'issue'])->name('api.v1.auth.token');
 
 // ── Password reset (unauthenticated, throttled) ──────────────────────────────
