@@ -36,8 +36,8 @@ final class StoreReservationRequest extends FormRequest
             'total_cents'            => ['required', 'integer', 'min:0'],
             // Explicit per-reservation deposit override — uses tenant default when absent
             'deposit_required_cents' => ['nullable', 'integer', 'min:0'],
-            'customer_id'            => ['nullable', 'integer', 'exists:customers,id'],
-            'branch_id'              => ['nullable', 'string', 'exists:branches,id'],
+            'customer_id'            => ['nullable', 'integer', tenant_exists('customers')],
+            'branch_id'              => ['nullable', 'string', tenant_exists('branches')],
             'special_instructions'   => ['nullable', 'string', 'max:2000'],
             'admin_notes'            => ['nullable', 'string', 'max:2000'],
         ];

@@ -40,18 +40,18 @@ final class PosCheckoutRequest extends FormRequest
             'branch_id' => [
                 'required',
                 'string',
-                Rule::exists('branches', 'id'),
+                tenant_exists('branches'),
                 $this->branchBelongsToCurrentTenant(),
             ],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_variant_id' => [
                 'required',
                 'integer',
-                Rule::exists('product_variants', 'id')->whereNull('deleted_at'),
+                tenant_exists_variant()->whereNull('deleted_at'),
             ],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'payment_method' => ['required', Rule::in(['cash', 'card', 'transfer', 'other'])],
-            'customer_id' => ['nullable', 'integer', Rule::exists('customers', 'id')],
+            'customer_id' => ['nullable', 'integer', tenant_exists('customers')],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

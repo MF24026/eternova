@@ -27,7 +27,7 @@ final class ReorderVariantsRequest extends FormRequest
     {
         return [
             'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['required', 'integer', 'exists:product_variants,id'],
+            'items.*.id' => ['required', 'integer', tenant_exists_variant()],
             'items.*.position' => ['required', 'integer', 'min:0'],
         ];
     }
