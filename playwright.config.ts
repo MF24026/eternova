@@ -31,8 +31,12 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
         },
         {
+            // Pixel 7 is a Chromium-engine device profile, so this project runs
+            // on the same browser the desktop project already installs. iPhone
+            // profiles pull the WebKit engine, which contradicts the project
+            // name and is not provisioned in CI.
             name: 'chromium-mobile',
-            use: { ...devices['iPhone 13'] },
+            use: { ...devices['Pixel 7'] },
         },
     ],
 });
