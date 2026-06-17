@@ -50,17 +50,18 @@ test.describe('Storefront publico', () => {
 });
 
 test.describe('Auth', () => {
-    test('Login muestra form con campos correo/contrasena y boton Google', async ({ page }) => {
+    test('Login muestra form con campos correo/contrasena y boton Entrar', async ({ page }) => {
         await gotoAndWaitForApp(page, '/login');
         await expect(page.locator('input#email')).toBeVisible();
         await expect(page.locator('input#password')).toBeVisible();
-        await expect(page.getByRole('button', { name: /entrar al atelier/i })).toBeVisible();
-        await expect(page.getByText(/continuar con google/i)).toBeVisible();
+        await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible();
     });
 
-    test('Register (Breeze default) carga', async ({ page }) => {
-        await gotoAndWaitForApp(page, '/register');
-        await expect(page.locator('input[name="name"], input#name')).toBeVisible();
+    test('Signup (onboarding wizard) muestra el paso de cuenta', async ({ page }) => {
+        await gotoAndWaitForApp(page, '/signup');
+        await expect(page.locator('input#account-name')).toBeVisible();
+        await expect(page.locator('input#account-email')).toBeVisible();
+        await expect(page.locator('input#account-password')).toBeVisible();
     });
 });
 

@@ -59,11 +59,9 @@ final class SecurityHeaders
      * <style> blocks and :style bindings that carry no nonce, so a style nonce
      * would break the UI.
      *
-     * Fonts come from two CDNs today: bunny.net (the <link> in the blade shell)
-     * and Google Fonts (an @import in app.css that reaches fonts.googleapis.com
-     * for the stylesheet and fonts.gstatic.com for the files). Both are
-     * whitelisted so the policy matches what the app actually loads; collapsing
-     * onto a single provider is a separate cleanup.
+     * Fonts come from a single CDN: bunny.net (the <link> in the blade shell).
+     * The stylesheet lives at fonts.bunny.net and the font files are served from
+     * the same origin, so font-src and style-src only whitelist that one host.
      */
     private function contentSecurityPolicy(): string
     {
@@ -78,8 +76,8 @@ final class SecurityHeaders
             "frame-ancestors 'none'",
             "form-action 'self'",
             "img-src 'self' data: blob:",
-            "font-src 'self' https://fonts.bunny.net https://fonts.gstatic.com",
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com",
+            "font-src 'self' https://fonts.bunny.net",
+            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
             "script-src {$scriptSrc}",
             "connect-src 'self'",
         ]);
