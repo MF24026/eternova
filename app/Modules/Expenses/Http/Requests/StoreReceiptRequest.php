@@ -41,7 +41,7 @@ final class StoreReceiptRequest extends FormRequest
             'branch_id' => [
                 'nullable',
                 'string',
-                'exists:branches,id',
+                tenant_exists('branches'),
             ],
         ];
     }

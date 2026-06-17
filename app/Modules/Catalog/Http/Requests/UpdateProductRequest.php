@@ -62,9 +62,9 @@ final class UpdateProductRequest extends FormRequest
 
             // M2M sync — optional on update
             'categories' => ['sometimes', 'array'],
-            'categories.*' => ['integer', 'exists:categories,id'],
+            'categories.*' => ['integer', tenant_exists('categories')],
             'tags' => ['sometimes', 'array'],
-            'tags.*' => ['integer', 'exists:tags,id'],
+            'tags.*' => ['integer', tenant_exists('tags')],
         ];
     }
 }

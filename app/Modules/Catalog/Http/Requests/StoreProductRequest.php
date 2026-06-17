@@ -66,9 +66,9 @@ final class StoreProductRequest extends FormRequest
 
             // M2M relations
             'categories' => ['nullable', 'array'],
-            'categories.*' => ['integer', 'exists:categories,id'],
+            'categories.*' => ['integer', tenant_exists('categories')],
             'tags' => ['nullable', 'array'],
-            'tags.*' => ['integer', 'exists:tags,id'],
+            'tags.*' => ['integer', tenant_exists('tags')],
         ];
     }
 }

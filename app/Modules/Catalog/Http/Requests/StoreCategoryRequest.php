@@ -43,7 +43,7 @@ final class StoreCategoryRequest extends FormRequest
             'parent_id' => [
                 'nullable',
                 'integer',
-                'exists:categories,id',
+                tenant_exists('categories'),
                 static function (string $attribute, mixed $value, \Closure $fail): void {
                     if ($value === null) {
                         return;

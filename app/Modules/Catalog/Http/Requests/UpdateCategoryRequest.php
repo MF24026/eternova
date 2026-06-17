@@ -53,7 +53,7 @@ final class UpdateCategoryRequest extends FormRequest
                 'sometimes',
                 'nullable',
                 'integer',
-                'exists:categories,id',
+                tenant_exists('categories'),
                 static function (string $attribute, mixed $value, \Closure $fail) use ($category): void {
                     if ($value === null) {
                         return;

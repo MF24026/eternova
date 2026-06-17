@@ -33,8 +33,8 @@ final class StoreQuotationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_id'    => ['nullable', 'integer', 'exists:customers,id'],
-            'branch_id'      => ['nullable', 'string', 'exists:branches,id'],
+            'customer_id'    => ['nullable', 'integer', tenant_exists('customers')],
+            'branch_id'      => ['nullable', 'string', tenant_exists('branches')],
             'issue_date'     => ['required', 'date'],
             'valid_until'    => ['nullable', 'date', 'after_or_equal:issue_date'],
             'discount_cents' => ['nullable', 'integer', 'min:0'],
@@ -46,7 +46,7 @@ final class StoreQuotationRequest extends FormRequest
             'items.*.description'        => ['required', 'string', 'max:500'],
             'items.*.quantity'           => ['required', 'integer', 'min:1'],
             'items.*.unit_price_cents'   => ['required', 'integer', 'min:0'],
-            'items.*.product_id'         => ['nullable', 'integer', 'exists:products,id'],
+            'items.*.product_id'         => ['nullable', 'integer', tenant_exists('products')],
             'items.*.sort_order'         => ['nullable', 'integer'],
         ];
     }

@@ -21,12 +21,12 @@ final class ReorderCategoriesRequest extends FormRequest
     {
         return [
             'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['required', 'integer', 'exists:categories,id'],
+            'items.*.id' => ['required', 'integer', tenant_exists('categories')],
             'items.*.sort_order' => ['required', 'integer', 'min:0'],
             'items.*.parent_id' => [
                 'nullable',
                 'integer',
-                'exists:categories,id',
+                tenant_exists('categories'),
                 // Prevent an item from being its own parent
                 static function (string $attribute, mixed $value, \Closure $fail): void {
                     if ($value === null) {
