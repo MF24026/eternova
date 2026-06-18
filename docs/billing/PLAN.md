@@ -37,7 +37,7 @@ honored in every billing migration and query:
 |---|-------|--------|--------|
 | 1 | Foundation — 9-state machine, domain events, append-only audit log, repository | merged #177 | DONE |
 | 2 | Gateway abstraction — interface, CircuitBreaker, FakeGateway, ErrorTranslator, IdempotencyService, WompiGateway, PCI smoke | `feature/billing-gateway` | DONE |
-| 3 | Webhook receiver — HMAC verify, idempotency, queue dispatch, handlers | — | TODO |
+| 3 | Webhook receiver — HMAC verify, idempotency, queue dispatch, handlers | `feature/billing-webhooks` | DONE |
 | 4 | Crons — recurring charges, dunning retry, suspend, soft/hard delete, reconcile, trial reminders | — | TODO |
 | 5 | Notifications — 7 templates, invoice PDF, listeners | — | TODO |
 | 6 | Tenant UI — `/account/billing/*` (Owner-only), plan selector, payment method iframe, invoices | — | TODO (needs Wompi public key for iframe) |
@@ -88,3 +88,22 @@ only required for the Phase 2 sandbox smoke and the Phase 6 payment iframe.
   trace redaction + no-body-in-log).
 - **Pending real keys (Erick):** set `BILLING_DRIVER=wompi` + `WOMPI_*` and run a sandbox
   smoke (one test card per error code) before Phase 6 ships the payment iframe.
+
+## Phase 3 — delivered
+
+- `POST /api/v1/billing/webhooks/wompi` — public (server-to-server), HMAC-gated.
+  `WompiWebhookController` returns explicit responses (NOT `abort()`: this app's handler
+  renders a bare HttpException as 500). Verifies signature, dedupes by event id, queues, 204.
+- `webhook_log` table extended (`event_id`, `status`, `received_at` + UNIQUE(gateway,
+  event_id)) — reused the existing unused table instead of a redundant `webhook_events`.
+  `WebhookLog` model gained `$table='webhook_log'` (it pluralized wrongly; was never used).
+- `ProcessWompiWebhookEvent` job (async, backoff [60,300,900,3600], retryUntil 24h) routes
+  to handlers; unknown event type acknowledged + ignored.
+- Handlers: `TransactionUpdatedHandler` (APPROVED→renew via state machine, DECLINED/ERROR→
+  past_due + schedule retry, VOIDED→cancel — all idempotent, replays don't double-advance),
+  `TransactionRefundedHandler` + `ChargebackHandler` (audit-only; chargeback never
+  auto-suspends — operator decision in Phase 7).
+- Tests: `WompiWebhookReceiverTest` (HMAC/idempotency/queue), `WebhookProcessingTest`
+  (each event type's domain effect). PHPUnit only — webhook is machine-to-machine, no UI.
+- **Wompi note:** real checksum algorithm + dedupe key finalized at sandbox time;
+  FakeGateway uses HMAC which the tests exercise.
