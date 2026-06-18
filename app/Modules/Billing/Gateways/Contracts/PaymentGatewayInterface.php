@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Billing\Gateways\Contracts;
+
+use App\Modules\Billing\Gateways\Data\CardData;
+use App\Modules\Billing\Gateways\Data\ChargeData;
+use App\Modules\Billing\Gateways\Data\ChargeResult;
+use App\Modules\Billing\Gateways\Data\RefundResult;
+use App\Modules\Billing\Gateways\Data\TokenResult;
+use App\Modules\Billing\Gateways\Data\TransactionResult;
+use SensitiveParameter;
+
+/**
+ * The seam between billing logic and any payment provider. Everything above this interface
+ * speaks app-domain DTOs and GatewayError codes; only the concrete implementations
+ * (WompiGateway, FakeGateway) know the provider's wire format.
+ *
+ * Swapping Wompi for Stripe/Mercadopago means writing one new implementor + ErrorTranslator,
+ * with zero changes to the state machine, crons, webhooks or UI.
+ */
+interface PaymentGatewayInterface
+{
+    public function charge(#[SensitiveParameter] ChargeData $data): ChargeResult;
+
+    public function refund(string $transactionId, int $amountCents, string $idempotencyKey): RefundResult;
+
+    public function tokenize(#[SensitiveParameter] CardData $card): TokenResult;
+
+    /**
+     * Display metadata for a stored token (last4, brand, expiry). Never returns a PAN.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function detokenize(string $token): ?array;
+
+    public function verifyWebhookSignature(string $payload, string $signature): bool;
+
+    public function getTransaction(string $transactionId): ?TransactionResult;
+}
