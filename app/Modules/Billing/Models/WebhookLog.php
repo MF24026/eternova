@@ -13,10 +13,24 @@ final class WebhookLog extends Model
     /** @use HasFactory<WebhookLogFactory> */
     use HasFactory;
 
+    /** The migration creates the singular `webhook_log`; override Laravel's pluralization. */
+    protected $table = 'webhook_log';
+
+    public const STATUS_RECEIVED = 'received';
+
+    public const STATUS_PROCESSING = 'processing';
+
+    public const STATUS_COMPLETED = 'completed';
+
+    public const STATUS_FAILED = 'failed';
+
     /** @var list<string> */
     protected $fillable = [
         'gateway',
         'event_type',
+        'event_id',
+        'status',
+        'received_at',
         'payload',
         'signature',
         'processed_at',
@@ -28,6 +42,7 @@ final class WebhookLog extends Model
         // payload is cast to array for structured access in handlers.
         // The raw JSON string is preserved in DB for replay and auditing.
         'payload' => 'array',
+        'received_at' => 'datetime',
         'processed_at' => 'datetime',
     ];
 
@@ -37,11 +52,20 @@ final class WebhookLog extends Model
     }
 
     /**
+     * Mark this webhook as being processed by the async job.
+     */
+    public function markProcessing(): void
+    {
+        $this->update(['status' => self::STATUS_PROCESSING]);
+    }
+
+    /**
      * Mark this webhook as successfully processed.
      */
     public function markProcessed(): void
     {
         $this->update([
+            'status' => self::STATUS_COMPLETED,
             'processed_at' => now(),
             'error' => null,
         ]);
@@ -53,7 +77,7 @@ final class WebhookLog extends Model
      */
     public function markFailed(string $error): void
     {
-        $this->update(['error' => $error]);
+        $this->update(['status' => self::STATUS_FAILED, 'error' => $error]);
     }
 
     public function isProcessed(): bool
