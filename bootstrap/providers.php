@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Billing\Providers\BillingServiceProvider;
 use App\Modules\Catalog\Providers\CatalogServiceProvider;
 use App\Modules\Customers\Providers\CustomersServiceProvider;
 use App\Modules\Dashboard\Providers\DashboardServiceProvider;
@@ -16,6 +17,7 @@ use App\Providers\AppServiceProvider;
 return [
     AppServiceProvider::class,
     TenancyServiceProvider::class,
+    BillingServiceProvider::class,
     CatalogServiceProvider::class,
     InventoryServiceProvider::class,
     OrdersServiceProvider::class,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Models;
 
+use App\Modules\Billing\Domain\States\SubscriptionState;
 use App\Modules\Billing\Observers\SubscriptionObserver;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
@@ -12,11 +13,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Subscription extends Model
 {
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory;
+    use SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = [
@@ -28,6 +31,31 @@ final class Subscription extends Model
         'current_period_end',
         'cancel_at_period_end',
         'canceled_at',
+        'next_billing_at',
+        'last_paid_at',
+        'billing_period',
+        'currency',
+        'amount_cents',
+        'gateway_subscription_id',
+        'gateway_customer_id',
+        'card_token',
+        'card_last4',
+        'card_brand',
+        'card_exp_month',
+        'card_exp_year',
+        'retry_count',
+        'next_retry_at',
+        'past_due_since',
+    ];
+
+    /**
+     * card_token holds the gateway token (never the PAN) and is encrypted at rest and
+     * hidden from every array/JSON serialization so it cannot leak through an API Resource.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'card_token',
     ];
 
     /** @var array<string, string> */
@@ -37,6 +65,15 @@ final class Subscription extends Model
         'current_period_end' => 'datetime',
         'cancel_at_period_end' => 'boolean',
         'canceled_at' => 'datetime',
+        'next_billing_at' => 'datetime',
+        'last_paid_at' => 'datetime',
+        'next_retry_at' => 'datetime',
+        'past_due_since' => 'datetime',
+        'amount_cents' => 'integer',
+        'retry_count' => 'integer',
+        'card_exp_month' => 'integer',
+        'card_exp_year' => 'integer',
+        'card_token' => 'encrypted',
     ];
 
     protected static function booted(): void
@@ -62,6 +99,16 @@ final class Subscription extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * The State object for the current status column. All status transitions must go
+     * through $subscription->state()->applyTransition(...) so they are validated and
+     * audited; the raw `status` column remains the source of truth it reads from.
+     */
+    public function state(): SubscriptionState
+    {
+        return SubscriptionState::for($this);
     }
 
     /**
