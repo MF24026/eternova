@@ -35,8 +35,8 @@ honored in every billing migration and query:
 
 | # | Phase | Branch | Status |
 |---|-------|--------|--------|
-| 1 | Foundation — 9-state machine, domain events, append-only audit log, repository | `feature/billing-foundation` | DONE (PHPUnit) |
-| 2 | Gateway abstraction — interface, CircuitBreaker, FakeGateway, ErrorTranslator, IdempotencyService, WompiGateway, PCI smoke | — | TODO |
+| 1 | Foundation — 9-state machine, domain events, append-only audit log, repository | merged #177 | DONE |
+| 2 | Gateway abstraction — interface, CircuitBreaker, FakeGateway, ErrorTranslator, IdempotencyService, WompiGateway, PCI smoke | `feature/billing-gateway` | DONE |
 | 3 | Webhook receiver — HMAC verify, idempotency, queue dispatch, handlers | — | TODO |
 | 4 | Crons — recurring charges, dunning retry, suspend, soft/hard delete, reconcile, trial reminders | — | TODO |
 | 5 | Notifications — 7 templates, invoice PDF, listeners | — | TODO |
@@ -65,3 +65,26 @@ only required for the Phase 2 sandbox smoke and the Phase 6 payment iframe.
 - `BillingServiceProvider` registered in `bootstrap/providers.php`.
 - Tests (PHPUnit-only — pure domain, no UI): `SubscriptionStateMachineTest`,
   `BillingAuditLogTest`, `SubscriptionRepositoryTest`. Existing `SubscriptionTest` unchanged.
+
+## Phase 2 — delivered
+
+- `PaymentGatewayInterface` (`Gateways/Contracts`) — the seam. App code speaks DTOs +
+  `GatewayError`; only implementors know the wire format.
+- DTOs (`Gateways/Data`): `CardData`, `ChargeData`, `ChargeResult`, `RefundResult`,
+  `TokenResult`, `TransactionResult`. `CardData`/`ChargeData`/`TokenResult` mask sensitive
+  fields via `__debugInfo()`; card/token params carry `#[\SensitiveParameter]`.
+- `FakeGateway` (default driver) with force flags + recorded charges/refunds — the whole
+  stack runs without real keys.
+- `WompiGateway` — real impl. PCI discipline enforced: never logs `$response->body()`,
+  throws `GatewayException` with no `previous`, masks credentials, HMAC webhook verify.
+- `WompiErrorTranslator` — provider codes → `GatewayError` (unknown ⇒ retryable).
+- `CircuitBreaker` (`Support`) — cache-backed, separate key per call type.
+- `IdempotencyService` + `IdempotentOperation` model + `idempotent_operations` table
+  (DB-level UNIQUE on key+operation+tenant_id = exactly-once).
+- `config/billing.php` — driver select (`BILLING_DRIVER`, default `fake`), Wompi keys,
+  circuit + lifecycle windows. Binding wired in `BillingServiceProvider::register()`.
+- Tests: `GatewayChargeTest`, `IdempotencyServiceTest`, `CircuitBreakerTest`,
+  `WompiErrorTranslatorTest`, `BillingPciSmokeTest` (SensitiveParameter reflection +
+  trace redaction + no-body-in-log).
+- **Pending real keys (Erick):** set `BILLING_DRIVER=wompi` + `WOMPI_*` and run a sandbox
+  smoke (one test card per error code) before Phase 6 ships the payment iframe.
