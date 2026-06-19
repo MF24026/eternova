@@ -40,7 +40,8 @@ honored in every billing migration and query:
 | 3 | Webhook receiver — HMAC verify, idempotency, queue dispatch, handlers | `feature/billing-webhooks` | DONE |
 | 4 | Crons — recurring charges, dunning retry, suspend, soft/hard delete, reconcile, trial reminders | `feature/billing-crons` | DONE |
 | 5 | Notifications + invoice PDF, listeners | `feature/billing-notifications` | DONE |
-| 6 | Tenant UI — `/account/billing/*` (Owner-only), plan selector, payment method iframe, invoices | — | TODO (needs Wompi public key for iframe) |
+| 6a | Tenant billing API — `/account/billing/*` (Owner-only): overview, invoices, download, cancel, change-plan | `feature/billing-account-api` | DONE |
+| 6b | Tenant billing **UI** (Vue/SPA) + Playwright E2E + qa-engineer; payment-method iframe | — | TODO (iframe needs Wompi public key) |
 | 7 | SuperAdmin console — MRR/churn metrics, manual actions with mandatory reason + audit | — | TODO |
 | 8 | Ops — RUNBOOK, maintenance mode, billing log channel (1825d), security tests, alerting, SECURITY.md | — | TODO |
 
@@ -146,3 +147,24 @@ only required for the Phase 2 sandbox smoke and the Phase 6 payment iframe.
   fallback). `BillingCronsTest` setUp now fakes Storage + Notification (renewal issues invoices).
 - **Deferred to Phase 6/7** (need their triggering UI/operator actions): Cancelled + Resumed +
   standalone ChargeSucceeded notifications. Billing emails are SaaS-branded (not tenant brand).
+
+## Phase 6a — delivered (billing account API)
+
+- `billing.manage` gate — **Owner-only** (or super_admin). admin/staff/customer get 403. No
+  branch axis. Defined in `BillingServiceProvider`.
+- Endpoints under `/api/v1/account/billing/*` (auth:sanctum + tenant):
+  - `GET /` overview (current subscription + plan + recent invoices)
+  - `GET /invoices` list, `GET /invoices/{id}/download` (PDF stream)
+  - `POST /cancel` (at period end), `POST /plan` (change plan, new price next period)
+- `TenantBillingService` filters every query by `tenant_id` explicitly (Subscription/Invoice
+  are NOT BelongsToTenant) — the isolation boundary. Invoice download resolves by tenant, so a
+  foreign id 404s (no route-model binding leak).
+- `SubscriptionResource` / `InvoiceResource` (token never exposed), `ChangePlanRequest`.
+- Tests: `BillingAccountApiTest` — gate (owner vs admin/staff/customer/other-tenant),
+  cross-tenant invoice isolation, cancel + change-plan + download. PHPUnit.
+
+## Phase 6b — TODO (the UI)
+
+Vue SPA pages under `/account/billing/*` (vue-router + axios — NOT Inertia), the payment-method
+iframe (needs `WOMPI_PUBLIC_KEY`), Playwright E2E, and qa-engineer visual QA. Cancel/resume UI
+actions will emit the deferred Cancelled/Resumed notifications.

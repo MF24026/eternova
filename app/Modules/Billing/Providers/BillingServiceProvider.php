@@ -26,7 +26,9 @@ use App\Modules\Billing\Listeners\SendChargeFailedNotification;
 use App\Modules\Billing\Listeners\SendSuspendedNotification;
 use App\Modules\Billing\Listeners\SendTrialEndingNotification;
 use App\Modules\Billing\Support\CircuitBreaker;
+use App\Models\User;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
@@ -66,6 +68,12 @@ final class BillingServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Billing is Owner-only (the skill's hard rule): admin/staff/customer never see it.
+        // super_admin is allowed for support/impersonation. Branch axis does not exist here.
+        Gate::define('billing.manage', static function (User $user): bool {
+            return $user->is_super_admin || $user->currentRole() === 'owner';
+        });
+
         Event::listen(SubscriptionStateChanged::class, RecordSubscriptionStateChange::class);
 
         // Phase 5 — domain events -> notifications (+ invoice issuance on renewal).
