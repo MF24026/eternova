@@ -11,12 +11,20 @@ use App\Modules\Billing\Console\Commands\RetryDunningCommand;
 use App\Modules\Billing\Console\Commands\SendTrialRemindersCommand;
 use App\Modules\Billing\Console\Commands\SoftDeleteCancelledCommand;
 use App\Modules\Billing\Console\Commands\SuspendOverdueCommand;
+use App\Modules\Billing\Domain\Events\SubscriptionChargeFailed;
+use App\Modules\Billing\Domain\Events\SubscriptionRenewed;
 use App\Modules\Billing\Domain\Events\SubscriptionStateChanged;
+use App\Modules\Billing\Domain\Events\SubscriptionSuspended;
+use App\Modules\Billing\Domain\Events\TrialEndingSoon;
 use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Gateways\FakeGateway;
 use App\Modules\Billing\Gateways\Support\WompiErrorTranslator;
 use App\Modules\Billing\Gateways\WompiGateway;
+use App\Modules\Billing\Listeners\CreateInvoiceOnRenewal;
 use App\Modules\Billing\Listeners\RecordSubscriptionStateChange;
+use App\Modules\Billing\Listeners\SendChargeFailedNotification;
+use App\Modules\Billing\Listeners\SendSuspendedNotification;
+use App\Modules\Billing\Listeners\SendTrialEndingNotification;
 use App\Modules\Billing\Support\CircuitBreaker;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -59,6 +67,12 @@ final class BillingServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(SubscriptionStateChanged::class, RecordSubscriptionStateChange::class);
+
+        // Phase 5 — domain events -> notifications (+ invoice issuance on renewal).
+        Event::listen(TrialEndingSoon::class, SendTrialEndingNotification::class);
+        Event::listen(SubscriptionChargeFailed::class, SendChargeFailedNotification::class);
+        Event::listen(SubscriptionSuspended::class, SendSuspendedNotification::class);
+        Event::listen(SubscriptionRenewed::class, CreateInvoiceOnRenewal::class);
 
         if ($this->app->runningInConsole()) {
             // Module commands live outside app/Console/Commands, so register them explicitly.
