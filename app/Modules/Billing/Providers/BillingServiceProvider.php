@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Providers;
 
+use App\Modules\Billing\Console\Commands\HardDeleteOldCommand;
+use App\Modules\Billing\Console\Commands\ProcessRecurringChargesCommand;
+use App\Modules\Billing\Console\Commands\ReconcileSubscriptionsCommand;
+use App\Modules\Billing\Console\Commands\RetryDunningCommand;
+use App\Modules\Billing\Console\Commands\SendTrialRemindersCommand;
+use App\Modules\Billing\Console\Commands\SoftDeleteCancelledCommand;
+use App\Modules\Billing\Console\Commands\SuspendOverdueCommand;
 use App\Modules\Billing\Domain\Events\SubscriptionStateChanged;
 use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Gateways\FakeGateway;
@@ -52,5 +59,18 @@ final class BillingServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(SubscriptionStateChanged::class, RecordSubscriptionStateChange::class);
+
+        if ($this->app->runningInConsole()) {
+            // Module commands live outside app/Console/Commands, so register them explicitly.
+            $this->commands([
+                ProcessRecurringChargesCommand::class,
+                RetryDunningCommand::class,
+                SuspendOverdueCommand::class,
+                SoftDeleteCancelledCommand::class,
+                HardDeleteOldCommand::class,
+                ReconcileSubscriptionsCommand::class,
+                SendTrialRemindersCommand::class,
+            ]);
+        }
     }
 }

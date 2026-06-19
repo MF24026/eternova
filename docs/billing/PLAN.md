@@ -38,7 +38,7 @@ honored in every billing migration and query:
 | 1 | Foundation — 9-state machine, domain events, append-only audit log, repository | merged #177 | DONE |
 | 2 | Gateway abstraction — interface, CircuitBreaker, FakeGateway, ErrorTranslator, IdempotencyService, WompiGateway, PCI smoke | `feature/billing-gateway` | DONE |
 | 3 | Webhook receiver — HMAC verify, idempotency, queue dispatch, handlers | `feature/billing-webhooks` | DONE |
-| 4 | Crons — recurring charges, dunning retry, suspend, soft/hard delete, reconcile, trial reminders | — | TODO |
+| 4 | Crons — recurring charges, dunning retry, suspend, soft/hard delete, reconcile, trial reminders | `feature/billing-crons` | DONE |
 | 5 | Notifications — 7 templates, invoice PDF, listeners | — | TODO |
 | 6 | Tenant UI — `/account/billing/*` (Owner-only), plan selector, payment method iframe, invoices | — | TODO (needs Wompi public key for iframe) |
 | 7 | SuperAdmin console — MRR/churn metrics, manual actions with mandatory reason + audit | — | TODO |
@@ -107,3 +107,24 @@ only required for the Phase 2 sandbox smoke and the Phase 6 payment iframe.
   (each event type's domain effect). PHPUnit only — webhook is machine-to-machine, no UI.
 - **Wompi note:** real checksum algorithm + dedupe key finalized at sandbox time;
   FakeGateway uses HMAC which the tests exercise.
+
+## Phase 4 — delivered
+
+- 7 idempotent cron commands (`Console/Commands`), registered in `BillingServiceProvider`
+  (module commands aren't auto-discovered) and scheduled in `routes/console.php` (02:00-08:00,
+  `withoutOverlapping`). All skip when `BillingMaintenance::isEnabled()`.
+  - `billing:process-recurring-charges` — charge active subs due; success→renew, decline→dunning.
+  - `billing:retry-dunning` — retry past-due on the day-3/7/14 ladder.
+  - `billing:suspend-overdue` — suspend when retries exhausted or past the window.
+  - `billing:soft-delete-cancelled` — canceled (period ended) + expired/suspended (past grace) → SoftDeleted.
+  - `billing:hard-delete-old` — SoftDeleted past retention → HardDeleted + PII purge.
+  - `billing:reconcile-subscriptions` — drift vs gateway → `reconciliation_discrepancies` (manual review).
+  - `billing:send-trial-reminders` — `TrialEndingSoon` event, idempotent via `trial_reminder_sent_at`.
+- `SubscriptionChargeService` (ChargeData from stored token, behind IdempotencyService) +
+  `DunningService` (renew / charge-failure / scheduleNextRetry / suspend, all via the state machine).
+- `BillingMaintenance` flag (cache-backed; full CLI/UI in Phase 8).
+- Domain events `SubscriptionRenewed` / `SubscriptionChargeFailed` / `SubscriptionSuspended` /
+  `TrialEndingSoon` (Phase 5 listeners consume them).
+- Migration: `trial_reminder_sent_at` on subscriptions + `reconciliation_discrepancies` table.
+- Tests: `BillingCronsTest` (every command, success + skip paths, via FakeGateway force flags).
+  PHPUnit only — crons have no UI.
