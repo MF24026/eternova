@@ -43,7 +43,7 @@ honored in every billing migration and query:
 | 6a | Tenant billing API — `/account/billing/*` (Owner-only): overview, invoices, download, cancel, change-plan | `feature/billing-account-api` | DONE |
 | 6b | Tenant billing **UI** (Vue/SPA) + Playwright E2E + qa-engineer; payment-method iframe | — | TODO (iframe needs Wompi public key) |
 | 7 | SuperAdmin console — MRR/churn metrics, manual actions with mandatory reason + audit | — | TODO |
-| 8 | Ops — RUNBOOK, maintenance mode, billing log channel (1825d), security tests, alerting, SECURITY.md | — | TODO |
+| 8 | Ops — RUNBOOK, maintenance CLI, billing log channel (1825d), SECURITY.md, security-suite consolidation | `feature/billing-ops` | DONE |
 
 Each phase is its own branch off `develop` → build → dual-layer test → PR to `develop`.
 Phases 1-5 and 7 are fully buildable + testable with `FakeGateway`; real Wompi keys are
@@ -168,3 +168,20 @@ only required for the Phase 2 sandbox smoke and the Phase 6 payment iframe.
 Vue SPA pages under `/account/billing/*` (vue-router + axios — NOT Inertia), the payment-method
 iframe (needs `WOMPI_PUBLIC_KEY`), Playwright E2E, and qa-engineer visual QA. Cancel/resume UI
 actions will emit the deferred Cancelled/Resumed notifications.
+
+## Phase 8 — delivered (ops)
+
+- `billing:maintenance {enable|disable|status} [--format=json]` — toggles the cache-backed flag
+  the crons already consult. Registered in `BillingServiceProvider`.
+- Dedicated `billing` log channel (`config/logging.php`): own file `logs/billing/billing.log`,
+  perms 0600, 1825-day (5-year) retention. `WompiGateway` now logs there.
+- `docs/billing/RUNBOOK.md` — maintenance, the 7 crons, Wompi go-live steps, common ops
+  (stuck sub, secret rotation, reconciliation, chargeback, refund), logs, idempotency.
+- `SECURITY.md` (root) — vuln reporting, PCI SAQ-A scope, the defensive posture summary.
+- Tests: `BillingOpsTest` (maintenance CLI enable/disable/status/invalid + log channel config).
+  The cross-cutting security invariants stay asserted in their phase suites (webhook HMAC, PCI
+  smoke, idempotency, cross-tenant) — referenced, not duplicated.
+
+## Status: phases 1-5, 6a, 8 DONE. Remaining: **6b** (tenant Vue UI + Playwright + qa-engineer,
+needs Wompi public key) and **7** (SuperAdmin console — also UI). The whole billing BACKEND +
+tenant API + ops are complete and merged to `develop`.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Providers;
 
+use App\Modules\Billing\Console\Commands\BillingMaintenanceCommand;
 use App\Modules\Billing\Console\Commands\HardDeleteOldCommand;
 use App\Modules\Billing\Console\Commands\ProcessRecurringChargesCommand;
 use App\Modules\Billing\Console\Commands\ReconcileSubscriptionsCommand;
@@ -58,7 +59,7 @@ final class BillingServiceProvider extends ServiceProvider
                         (int) config('billing.circuit.threshold', 5),
                         (int) config('billing.circuit.cooldown_seconds', 60),
                     ),
-                    logger: Log::channel(),
+                    logger: Log::channel('billing'),
                 );
             }
 
@@ -85,6 +86,7 @@ final class BillingServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             // Module commands live outside app/Console/Commands, so register them explicitly.
             $this->commands([
+                BillingMaintenanceCommand::class,
                 ProcessRecurringChargesCommand::class,
                 RetryDunningCommand::class,
                 SuspendOverdueCommand::class,
