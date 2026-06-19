@@ -46,6 +46,7 @@ final class Subscription extends Model
         'retry_count',
         'next_retry_at',
         'past_due_since',
+        'trial_reminder_sent_at',
     ];
 
     /**
@@ -69,6 +70,7 @@ final class Subscription extends Model
         'last_paid_at' => 'datetime',
         'next_retry_at' => 'datetime',
         'past_due_since' => 'datetime',
+        'trial_reminder_sent_at' => 'datetime',
         'amount_cents' => 'integer',
         'retry_count' => 'integer',
         'card_exp_month' => 'integer',
