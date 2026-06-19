@@ -14,6 +14,8 @@ use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
@@ -28,6 +30,10 @@ final class BillingCronsTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+        // A successful renewal now issues an invoice (PDF) + owner notification via the Phase 5
+        // listeners; fake both so the cron tests stay hermetic.
+        Storage::fake();
+        Notification::fake();
     }
 
     private function gateway(): FakeGateway

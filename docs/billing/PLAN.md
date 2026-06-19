@@ -39,7 +39,7 @@ honored in every billing migration and query:
 | 2 | Gateway abstraction — interface, CircuitBreaker, FakeGateway, ErrorTranslator, IdempotencyService, WompiGateway, PCI smoke | `feature/billing-gateway` | DONE |
 | 3 | Webhook receiver — HMAC verify, idempotency, queue dispatch, handlers | `feature/billing-webhooks` | DONE |
 | 4 | Crons — recurring charges, dunning retry, suspend, soft/hard delete, reconcile, trial reminders | `feature/billing-crons` | DONE |
-| 5 | Notifications — 7 templates, invoice PDF, listeners | — | TODO |
+| 5 | Notifications + invoice PDF, listeners | `feature/billing-notifications` | DONE |
 | 6 | Tenant UI — `/account/billing/*` (Owner-only), plan selector, payment method iframe, invoices | — | TODO (needs Wompi public key for iframe) |
 | 7 | SuperAdmin console — MRR/churn metrics, manual actions with mandatory reason + audit | — | TODO |
 | 8 | Ops — RUNBOOK, maintenance mode, billing log channel (1825d), security tests, alerting, SECURITY.md | — | TODO |
@@ -128,3 +128,21 @@ only required for the Phase 2 sandbox smoke and the Phase 6 payment iframe.
 - Migration: `trial_reminder_sent_at` on subscriptions + `reconciliation_discrepancies` table.
 - Tests: `BillingCronsTest` (every command, success + skip paths, via FakeGateway force flags).
   PHPUnit only — crons have no UI.
+
+## Phase 5 — delivered
+
+- `InvoiceService.createPaidForRenewal` (number `INV-YYYYMMDD-{tenant}-{seq}`, totals
+  consistent) + `InvoicePdfService` (DomPDF, `resources/views/pdf/invoice.blade.php`,
+  table-based, Eternova-branded; stored to `invoices/{tenant}/{number}.pdf`).
+- 4 notifications wired to the Phase-4 domain events (SaaS->tenant owner, Spanish copy,
+  `mail` + `database`): `TrialEndingNotification`, `InvoiceReadyNotification` (PDF attached),
+  `ChargeFailedNotification`, `SubscriptionSuspendedNotification`.
+- `BillingNotificationService` routes to the owner User (so the in-app channel works), falling
+  back to an on-demand mail to the tenant billing email.
+- Listeners (registered in provider): `SendTrialEndingNotification`,
+  `SendChargeFailedNotification`, `SendSuspendedNotification`, `CreateInvoiceOnRenewal`
+  (issues invoice + PDF + InvoiceReadyNotification on `SubscriptionRenewed`).
+- Tests: `BillingNotificationsTest` (invoice/PDF + each event->notification + owner/on-demand
+  fallback). `BillingCronsTest` setUp now fakes Storage + Notification (renewal issues invoices).
+- **Deferred to Phase 6/7** (need their triggering UI/operator actions): Cancelled + Resumed +
+  standalone ChargeSucceeded notifications. Billing emails are SaaS-branded (not tenant brand).
