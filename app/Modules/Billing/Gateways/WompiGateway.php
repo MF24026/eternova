@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Gateways;
 
+use App\Modules\Billing\Enums\GatewayError;
+use App\Modules\Billing\Exceptions\GatewayException;
 use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Gateways\Data\CardData;
 use App\Modules\Billing\Gateways\Data\ChargeData;
@@ -13,7 +15,6 @@ use App\Modules\Billing\Gateways\Data\TokenResult;
 use App\Modules\Billing\Gateways\Data\TransactionResult;
 use App\Modules\Billing\Gateways\Support\WompiErrorTranslator;
 use App\Modules\Billing\Support\CircuitBreaker;
-use App\Modules\Billing\Exceptions\GatewayException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
@@ -21,21 +22,30 @@ use SensitiveParameter;
 use Throwable;
 
 /**
- * Wompi (Colombia/El Salvador) implementation of the payment gateway seam.
+ * Wompi **El Salvador** implementation of the payment gateway seam. The SV API uses Spanish
+ * endpoints/fields and differs from Wompi Colombia — see docs/billing/wompi-sv-integration.md
+ * (provider Q&A + https://docs.wompi.sv) for the source of truth.
  *
- * PCI discipline enforced here, not by convention:
- *   - private key / events secret are #[\SensitiveParameter] so they stay out of traces.
- *   - the gateway response body is NEVER logged or chained into an exception — it can carry
- *     a token. Only a status code + correlation id are logged.
- *   - thrown GatewayException carries no `previous`, so the original (which may reference a
- *     card token in its trace) is not propagated.
+ * Confirmed from the docs:
+ *   - charge `POST /TransaccionCompra` with `monto` (USD dollars, NOT cents), `emailCliente`,
+ *     `nombreCliente`, `idExterno` (dedupe; there is NO Idempotency-Key header); response is
+ *     `idTransaccion` + `esAprobada` (bool — no status string) + `mensaje` (free-text error).
+ *   - tokenize `POST /TokenesTarjeta` (exp as INTEGER mesVencimiento/anioVencimiento) -> `tokenTarjeta`.
+ *   - webhook signature: header `wompi_hash` = HMAC-SHA256(raw body, API Secret).
+ *   - max $1,000 USD per transaction; Visa/Mastercard only.
  *
- * NOTE: real-endpoint shapes (refund route, token fields) are finalized against the Wompi
- * sandbox in the Phase 2 smoke once credentials are available; the structure here follows
- * Wompi's documented v1 API.
+ * ASSUMPTIONS still to confirm against a live (non-productive) call: the field name for charging
+ * a STORED token in /TransaccionCompra (assumed `tokenTarjeta`), the tokenize response metadata
+ * field names, and the transaction-consult endpoint path. Marked inline.
+ *
+ * PCI discipline (unchanged): credentials are #[\SensitiveParameter]; the response body is never
+ * logged; the thrown GatewayException carries no `previous` (its trace could hold a token).
  */
 final class WompiGateway implements PaymentGatewayInterface
 {
+    /** Wompi SV rejects transactions above $1,000 USD. */
+    private const MAX_TRANSACTION_CENTS = 100_000;
+
     public function __construct(
         #[SensitiveParameter] private readonly string $privateKey,
         private readonly string $publicKey,
@@ -50,38 +60,40 @@ final class WompiGateway implements PaymentGatewayInterface
     {
         $correlationId = Str::uuid()->toString();
 
+        if ($data->amountCents > self::MAX_TRANSACTION_CENTS) {
+            // Non-retryable: above Wompi SV's hard per-transaction cap. Treated as a decline so
+            // dunning does not loop on it (will not occur for normal plan prices).
+            return ChargeResult::failed(GatewayError::CardDeclined->value, 'Amount exceeds the Wompi SV per-transaction limit.');
+        }
+
         try {
             return $this->apiBreaker->execute(function () use ($data, $correlationId): ChargeResult {
                 $response = Http::withToken($this->privateKey)
                     ->timeout(15)
-                    ->post("{$this->baseUrl}/v1/transactions", [
-                        'amount_in_cents' => $data->amountCents,
-                        'currency' => $data->currency,
-                        'customer_email' => $data->customerEmail,
-                        'payment_method' => ['type' => 'CARD', 'installments' => 1, 'token' => $data->cardToken],
-                        'reference' => $data->reference,
+                    ->post("{$this->baseUrl}/TransaccionCompra", [
+                        'monto' => round($data->amountCents / 100, 2),
+                        'emailCliente' => $data->customerEmail,
+                        'nombreCliente' => $data->customerName ?? $data->customerEmail,
+                        // ASSUMPTION: stored-token charge field name in /TransaccionCompra.
+                        'tokenTarjeta' => $data->cardToken,
+                        'idExterno' => $data->reference,
+                        'cantidadCuotas' => 1,
                     ]);
 
                 if (! $response->successful()) {
                     // Do NOT log $response->body() — it may contain a token.
                     $this->logFailure('charge_http_error', $response->status(), $correlationId);
 
-                    return ChargeResult::failed(
-                        $this->errorTranslator->translate((string) $response->json('error.reason', 'UNKNOWN'))->value,
-                        'Payment failed',
-                    );
+                    return ChargeResult::failed(GatewayError::ProcessingError->value, 'Payment failed');
                 }
 
-                $status = (string) $response->json('data.status', 'ERROR');
-
-                if ($status !== 'APPROVED') {
-                    return ChargeResult::failed(
-                        $this->errorTranslator->translate((string) $response->json('data.status_message', $status))->value,
-                        'Payment declined',
-                    );
+                // SV approval is the `esAprobada` boolean; `mensaje` is free Spanish text, so a
+                // non-approval is classified as a (non-retryable) decline.
+                if ($response->json('esAprobada') !== true) {
+                    return ChargeResult::failed(GatewayError::CardDeclined->value, 'Payment declined');
                 }
 
-                return ChargeResult::succeeded((string) $response->json('data.id'));
+                return ChargeResult::succeeded((string) $response->json('idTransaccion'));
             });
         } catch (Throwable $e) {
             $this->logException('charge_exception', $e, $correlationId);
@@ -96,22 +108,22 @@ final class WompiGateway implements PaymentGatewayInterface
         try {
             $response = Http::withToken($this->privateKey)
                 ->timeout(15)
-                ->withHeaders(['Idempotency-Key' => $idempotencyKey])
-                ->post("{$this->baseUrl}/v1/refunds", [
-                    'transaction_id' => $transactionId,
-                    'amount_in_cents' => $amountCents,
+                ->post("{$this->baseUrl}/Reembolsos", [
+                    'idTransaccion' => $transactionId,
+                    'monto' => round($amountCents / 100, 2),
+                    'idExterno' => $idempotencyKey,   // SV dedupe — no Idempotency-Key header
                 ]);
 
             if (! $response->successful()) {
                 $this->logFailure('refund_http_error', $response->status(), $correlationId);
 
                 return RefundResult::failed(
-                    $this->errorTranslator->translate((string) $response->json('error.reason', 'UNKNOWN'))->value,
+                    $this->errorTranslator->translate((string) $response->json('mensaje', 'UNKNOWN'))->value,
                     'Refund failed',
                 );
             }
 
-            return RefundResult::succeeded((string) $response->json('data.id'));
+            return RefundResult::succeeded((string) ($response->json('idReembolso') ?? $response->json('idTransaccion') ?? $transactionId));
         } catch (Throwable $e) {
             $this->logException('refund_exception', $e, $correlationId);
             throw new GatewayException('Refund failed');
@@ -123,29 +135,30 @@ final class WompiGateway implements PaymentGatewayInterface
         $correlationId = Str::uuid()->toString();
 
         try {
-            // Tokenization uses the PUBLIC key (same endpoint the frontend iframe hits).
+            // Tokenization uses the PUBLIC key (same endpoint the hosted-fields iframe hits).
             $response = Http::withToken($this->publicKey)
                 ->timeout(15)
-                ->post("{$this->baseUrl}/v1/tokens/cards", [
-                    'number' => $card->number,
-                    'cvc' => $card->cvv,
-                    'exp_month' => $card->expMonth,
-                    'exp_year' => $card->expYear,
-                    'card_holder' => $card->holderName ?? '',
+                ->post("{$this->baseUrl}/TokenesTarjeta", [
+                    'numeroTarjeta' => $card->number,
+                    'cvv' => $card->cvv,
+                    'mesVencimiento' => (int) $card->expMonth,
+                    'anioVencimiento' => (int) $card->expYear,
+                    'nombreTarjetaHabiente' => $card->holderName ?? '',
                 ]);
 
             if (! $response->successful()) {
                 $this->logFailure('tokenize_http_error', $response->status(), $correlationId);
 
                 return TokenResult::failed(
-                    $this->errorTranslator->translate((string) $response->json('error.reason', 'UNKNOWN'))->value
+                    $this->errorTranslator->translate((string) $response->json('mensaje', 'UNKNOWN'))->value
                 );
             }
 
+            // ASSUMPTION: tokenize response metadata field names — confirm against a live call.
             return TokenResult::succeeded(
-                token: (string) $response->json('data.id'),
-                last4: (string) $response->json('data.last_four', $card->last4()),
-                brand: (string) $response->json('data.brand', 'unknown'),
+                token: (string) $response->json('tokenTarjeta'),
+                last4: (string) ($response->json('ultimosDigitos') ?? $card->last4()),
+                brand: (string) ($response->json('marca') ?? 'unknown'),
                 expMonth: (int) $card->expMonth,
                 expYear: (int) $card->expYear,
             );
@@ -162,6 +175,10 @@ final class WompiGateway implements PaymentGatewayInterface
         return null;
     }
 
+    /**
+     * Verify the `wompi_hash` header: HMAC-SHA256 of the raw body keyed by the API Secret.
+     * https://docs.wompi.sv/webhook/validar-webhook
+     */
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
         $expected = hash_hmac('sha256', $payload, $this->eventsSecret);
@@ -172,19 +189,23 @@ final class WompiGateway implements PaymentGatewayInterface
     public function getTransaction(string $transactionId): ?TransactionResult
     {
         try {
+            // ASSUMPTION: transaction-consult endpoint path — confirm against the docs/a live call.
             $response = Http::withToken($this->privateKey)
                 ->timeout(15)
-                ->get("{$this->baseUrl}/v1/transactions/{$transactionId}");
+                ->get("{$this->baseUrl}/TransaccionConsulta/{$transactionId}");
 
             if (! $response->successful()) {
                 return null;
             }
 
+            $monto = $response->json('monto');
+
             return new TransactionResult(
-                id: (string) $response->json('data.id', $transactionId),
-                status: (string) $response->json('data.status', 'UNKNOWN'),
-                amountCents: $response->json('data.amount_in_cents'),
-                currency: $response->json('data.currency'),
+                id: (string) $response->json('idTransaccion', $transactionId),
+                // Normalize SV's esAprobada bool to a status string for the reconcile comparison.
+                status: $response->json('esAprobada') === true ? 'APPROVED' : 'DECLINED',
+                amountCents: $monto !== null ? (int) round(((float) $monto) * 100) : null,
+                currency: 'USD',
             );
         } catch (Throwable $e) {
             $this->logException('get_transaction_exception', $e, Str::uuid()->toString());

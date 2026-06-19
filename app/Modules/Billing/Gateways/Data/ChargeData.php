@@ -20,6 +20,7 @@ final readonly class ChargeData
         #[SensitiveParameter] public string $cardToken,
         public string $reference,
         public ?string $tenantId = null,
+        public ?string $customerName = null,
     ) {}
 
     /**
@@ -34,6 +35,7 @@ final readonly class ChargeData
             'cardToken' => '***redacted***',
             'reference' => $this->reference,
             'tenantId' => $this->tenantId,
+            'customerName' => $this->customerName,
         ];
     }
 }

@@ -55,7 +55,7 @@ final class WompiWebhookReceiverTest extends TestCase
             [],
             [],
             [],
-            ['HTTP_X_EVENT_CHECKSUM' => $signature, 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json'],
+            ['HTTP_WOMPI_HASH' => $signature, 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json'],
             $payload,
         );
     }

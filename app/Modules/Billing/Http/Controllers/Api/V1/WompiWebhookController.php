@@ -27,7 +27,8 @@ final class WompiWebhookController
     public function __invoke(Request $request, PaymentGatewayInterface $gateway): Response|JsonResponse
     {
         $payload = $request->getContent();
-        $signature = (string) $request->header('X-Event-Checksum', '');
+        // Wompi SV sends the signature in the `wompi_hash` header: HMAC-SHA256 of the raw body.
+        $signature = (string) $request->header('wompi_hash', '');
 
         // 1. HMAC gate. Reject anything not signed by us before parsing further.
         if ($signature === '' || ! $gateway->verifyWebhookSignature($payload, $signature)) {
