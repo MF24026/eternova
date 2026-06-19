@@ -34,13 +34,17 @@ final readonly class SubscriptionChargeService
 
     private function buildChargeData(Subscription $subscription): ChargeData
     {
+        $tenant = $subscription->tenant;
+
         return new ChargeData(
             amountCents: (int) ($subscription->amount_cents ?? 0),
             currency: (string) ($subscription->currency ?? 'USD'),
-            customerEmail: (string) ($subscription->tenant?->email ?? ''),
+            customerEmail: (string) ($tenant?->email ?? ''),
             cardToken: (string) ($subscription->card_token ?? ''),
             reference: (string) ($subscription->gateway_subscription_id ?? "sub_{$subscription->id}"),
             tenantId: (string) $subscription->tenant_id,
+            // Wompi SV requires nombreCliente; use the tenant's business/legal name.
+            customerName: $tenant?->business_name ?? $tenant?->name,
         );
     }
 }

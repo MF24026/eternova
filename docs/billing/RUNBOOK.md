@@ -35,15 +35,24 @@ suspected billing incidents, or a webhook-secret rotation.
 All commands are idempotent and respect maintenance mode. Run any one ad hoc with
 `php artisan <command>`.
 
-## Going live with Wompi (from FakeGateway)
+## Going live with Wompi SV (from FakeGateway)
 
-1. Set in `.env`: `BILLING_DRIVER=wompi`, `WOMPI_ENV`, `WOMPI_BASE_URL`, `WOMPI_PUBLIC_KEY`,
-   `WOMPI_PRIVATE_KEY`, `WOMPI_EVENTS_SECRET`. Never commit these.
-2. Point the Wompi dashboard's events webhook at `POST /api/v1/billing/webhooks/wompi`.
-3. Run the sandbox smoke: one test card per error code (approved, declined, insufficient funds,
-   invalid CVC, expired). Confirm the subscription transitions + an invoice is issued on approval.
-4. Finalize `WompiGateway::verifyWebhookSignature()` + the event dedupe key against the real
-   Wompi checksum algorithm (FakeGateway uses a straight HMAC; the receiver plumbing is identical).
+This is **Wompi SV (El Salvador)** — full spec in `docs/billing/wompi-sv-integration.md`.
+
+1. Set in `.env`: `BILLING_DRIVER=wompi`, `WOMPI_BASE_URL` (confirm the SV API host),
+   `WOMPI_PUBLIC_KEY`, `WOMPI_PRIVATE_KEY`, `WOMPI_EVENTS_SECRET` (= the API Secret, used as the
+   `wompi_hash` HMAC key). Never commit these.
+2. Point the Wompi dashboard webhook at `POST /api/v1/billing/webhooks/wompi`.
+3. There is **no separate sandbox** — toggle the app to **non-productive mode** and run the test
+   card `5200000000002235` (CVV any, exp 01/2029) through a real `/TransaccionCompra` charge
+   (`esReal=false`, no real money). Confirm the subscription activates + an invoice is issued.
+4. Confirm the two ASSUMPTIONS flagged in `WompiGateway`: the stored-token charge field in
+   `/TransaccionCompra` (assumed `tokenTarjeta`) and the tokenize response metadata field names —
+   capture a real non-productive response and adjust if needed. Webhook signature (`wompi_hash`,
+   HMAC-SHA256 raw body) and the dedupe field (`idExterno`) are already aligned.
+5. Capture a real webhook payload and confirm `TransactionUpdatedHandler`'s field mapping — SV
+   only sends **transaction success/failure** webhooks (no refund/chargeback; the `reconcile`
+   cron is the refund-detection path).
 
 ## Common operations
 
