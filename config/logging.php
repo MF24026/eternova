@@ -73,6 +73,18 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Dedicated billing channel — its own file, restrictive perms, and a 5-year (1825d)
+        // retention for tax/AML compliance (CO/SV). Keeps payment forensics tractable and
+        // separate from the noisy app log. See config/billing.php log_retention_days.
+        'billing' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/billing/billing.log'),
+            'level' => env('BILLING_LOG_LEVEL', 'info'),
+            'days' => (int) env('BILLING_LOG_RETENTION_DAYS', 1825),
+            'permission' => 0600,
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
