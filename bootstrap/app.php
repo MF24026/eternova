@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Exceptions\PlanGateException;
 use App\Http\Middleware\InjectRequestId;
 use App\Http\Middleware\SecurityHeaders;
+use App\Modules\SuperAdmin\Http\Middleware\EnsureSuperAdmin;
 use App\Modules\Tenancy\Http\Middleware\EnsureTenant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -62,6 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register alias — apply to tenant-scoped routes when ready
         $middleware->alias([
             'tenant' => EnsureTenant::class,
+            'super_admin' => EnsureSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

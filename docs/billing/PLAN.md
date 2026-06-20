@@ -42,7 +42,8 @@ honored in every billing migration and query:
 | 5 | Notifications + invoice PDF, listeners | `feature/billing-notifications` | DONE |
 | 6a | Tenant billing API — `/account/billing/*` (Owner-only): overview, invoices, download, cancel, change-plan | `feature/billing-account-api` | DONE |
 | 6b | Tenant billing **UI** (Vue/SPA) + Playwright E2E + qa-engineer; payment-method iframe | — | TODO (iframe needs Wompi public key) |
-| 7 | SuperAdmin console — MRR/churn metrics, manual actions with mandatory reason + audit | — | TODO |
+| 7a | SuperAdmin billing API — `super_admin` gate, MRR/churn metrics, tenant views, audited operator actions | `feature/superadmin-billing-api` | DONE |
+| 7b | SuperAdmin **UI** (Vue at admin.eternova.app) + Playwright E2E + qa-engineer | — | TODO |
 | 8 | Ops — RUNBOOK, maintenance CLI, billing log channel (1825d), SECURITY.md, security-suite consolidation | `feature/billing-ops` | DONE |
 
 Each phase is its own branch off `develop` → build → dual-layer test → PR to `develop`.
@@ -185,3 +186,23 @@ actions will emit the deferred Cancelled/Resumed notifications.
 ## Status: phases 1-5, 6a, 8 DONE. Remaining: **6b** (tenant Vue UI + Playwright + qa-engineer,
 needs Wompi public key) and **7** (SuperAdmin console — also UI). The whole billing BACKEND +
 tenant API + ops are complete and merged to `develop`.
+
+## Phase 7a — delivered (SuperAdmin billing API)
+
+- `super_admin` middleware (`EnsureSuperAdmin`, alias in bootstrap) — hard gate on the
+  `is_super_admin` boolean (separate trust axis from tenant RBAC); logs every super-admin access
+  (and denied attempt) to the billing channel. Throws AccessDeniedHttpException (this app renders
+  a bare `abort(403)` as 500).
+- `BillingMetricsService` — cross-tenant MRR (yearly normalized /12), ARPU, counts by state,
+  plan distribution, churn rate, total tenants.
+- `SuperAdminBillingActionService` — `extendTrial` / `suspend` / `reactivate`. Each re-checks
+  super-admin (defense in depth), requires a non-empty reason, and writes an append-only audit
+  row stamped with `operator_id` + reason (state changes also audit via the state machine). Added
+  `active -> suspended` to the state machine for operator fraud/abuse suspends.
+- Endpoints `/api/v1/super-admin/*` (auth:sanctum + super_admin, NO tenant scope; mutations
+  throttled 20/min): `GET /billing/metrics`, `GET /tenants`, `GET /tenants/{tenant}`,
+  `POST /tenants/{tenant}/{extend-trial|suspend|reactivate}`.
+- Tests: `SuperAdminBillingTest` — gate (401/403/200), metrics, audited actions + reason
+  requirement + non-super lockout. PHPUnit.
+- Served at `admin.eternova.app` (already a reserved `system` subdomain). The Vue console +
+  Playwright + qa-engineer are Phase 7b.

@@ -54,6 +54,7 @@ final class SubscriptionStateMachineTest extends TestCase
             'active -> past_due' => [SubscriptionStatus::Active, SubscriptionStatus::PastDue],
             'active -> paused' => [SubscriptionStatus::Active, SubscriptionStatus::Paused],
             'active -> canceled' => [SubscriptionStatus::Active, SubscriptionStatus::Canceled],
+            'active -> suspended' => [SubscriptionStatus::Active, SubscriptionStatus::Suspended],
             'past_due -> active' => [SubscriptionStatus::PastDue, SubscriptionStatus::Active],
             'past_due -> suspended' => [SubscriptionStatus::PastDue, SubscriptionStatus::Suspended],
             'paused -> active' => [SubscriptionStatus::Paused, SubscriptionStatus::Active],
