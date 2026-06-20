@@ -83,7 +83,7 @@ final class WompiGatewayTest extends TestCase
             return str_ends_with($request->url(), '/TransaccionCompra')
                 && $body['monto'] === 9.0          // dollars, not cents
                 && $body['idExterno'] === 'ref-1'  // dedupe field, not a header
-                && $body['tokenTarjeta'] === 'tok-x'
+                && $body['token'] === 'tok-x'
                 && $body['nombreCliente'] === 'Floreria Demo';
         });
     }
@@ -120,10 +120,11 @@ final class WompiGatewayTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_tokenize_parses_token_tarjeta(): void
+    public function test_tokenize_parses_token_and_derives_last4_from_masked_pan(): void
     {
+        // Real SV /Tokenizacion shape (validated 2026-06-19 in non-productive mode).
         Http::fake($this->withAuth([
-            '*/TokenesTarjeta' => Http::response(['tokenTarjeta' => 'tok-sv', 'ultimosDigitos' => '2235', 'marca' => 'mastercard'], 200),
+            '*/Tokenizacion' => Http::response(['token' => 'tok-sv', 'tarjetaEnmascarada' => '5200 0000 XXXX 2235 '], 200),
         ]));
 
         $result = $this->gateway()->tokenize(new CardData('5200000000002235', '123', '1', '2029'));
@@ -133,7 +134,7 @@ final class WompiGatewayTest extends TestCase
         $this->assertSame('2235', $result->last4);
 
         Http::assertSent(function ($request): bool {
-            if (! str_ends_with($request->url(), '/TokenesTarjeta')) {
+            if (! str_ends_with($request->url(), '/Tokenizacion')) {
                 return false;
             }
             $body = $request->data();

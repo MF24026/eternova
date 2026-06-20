@@ -36,9 +36,27 @@ POST https://id.wompi.sv/connect/token        (application/x-www-form-urlencoded
 Then send `Authorization: Bearer <access_token>` to `https://api.wompi.sv`. `WompiGateway`
 fetches + caches this token (TTL = expires_in − 60s) and never logs it.
 
+## ⭐ Smoke findings — validated against the real API (non-productive, 2026-06-19)
+- **OAuth**: `POST https://id.wompi.sv/connect/token` → 200, real Bearer (632 chars, expires_in
+  3600). Confirmed.
+- **Tokenize**: `POST https://api.wompi.sv/Tokenizacion` (NOT `/TokenesTarjeta`) with
+  `{numeroTarjeta, cvv, mesVencimiento:int, anioVencimiento:int}` → 200
+  `{"token":"...","tarjetaEnmascarada":"5200 0000 XXXX 2235 "}`. Token field is **`token`**;
+  derive last4 from `tarjetaEnmascarada`; no brand field. (No `nombreTarjetaHabiente`.)
+- **Charge**: `POST /TransaccionCompra` → **403**. `POST /TransaccionCompra/3DS` is the
+  **interactive 3DS** flow — its 400 lists required fields: `email, ciudad, país, nombre,
+  apellido, region, número telefonico, dirección, redirect de transacción, codigo postal`. That
+  needs a redirect + full billing address, so it is **NOT usable for unattended recurring
+  charges**.
+- **🔴 OPEN QUESTION for Wompi support (blocks live recurring billing):** what is the endpoint +
+  body to charge a **saved token without 3DS** (unattended/recurring)? Q2 confirmed it exists
+  ("Cobros tokenizados sin 3DS") but it is not in the public docs. `WompiGateway::charge()` is a
+  placeholder until this is answered.
+
 ## Endpoints (Q9, docs) — base `https://api.wompi.sv`
-- Tokenize card: `POST /TokenesTarjeta` → returns `tokenTarjeta` (the durable token).
-- Create purchase: `POST /TransaccionCompra` (https://docs.wompi.sv/metodos-api/crear-transaccion-compra)
+- Tokenize card: `POST /Tokenizacion` → returns `token` + `tarjetaEnmascarada` (validated).
+- Create purchase (3DS, interactive): `POST /TransaccionCompra/3DS` (full billing + redirect).
+- Create purchase (tokenized, unattended): **pending Wompi support** (see above).
 - Refund: `POST /Reembolsos`
 
 ### `POST /TransaccionCompra` request body
