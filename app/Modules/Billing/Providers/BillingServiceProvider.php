@@ -6,9 +6,7 @@ namespace App\Modules\Billing\Providers;
 
 use App\Modules\Billing\Console\Commands\BillingMaintenanceCommand;
 use App\Modules\Billing\Console\Commands\HardDeleteOldCommand;
-use App\Modules\Billing\Console\Commands\ProcessRecurringChargesCommand;
 use App\Modules\Billing\Console\Commands\ReconcileSubscriptionsCommand;
-use App\Modules\Billing\Console\Commands\RetryDunningCommand;
 use App\Modules\Billing\Console\Commands\SendTrialRemindersCommand;
 use App\Modules\Billing\Console\Commands\SoftDeleteCancelledCommand;
 use App\Modules\Billing\Console\Commands\SuspendOverdueCommand;
@@ -87,8 +85,6 @@ final class BillingServiceProvider extends ServiceProvider
             // Module commands live outside app/Console/Commands, so register them explicitly.
             $this->commands([
                 BillingMaintenanceCommand::class,
-                ProcessRecurringChargesCommand::class,
-                RetryDunningCommand::class,
                 SuspendOverdueCommand::class,
                 SoftDeleteCancelledCommand::class,
                 HardDeleteOldCommand::class,

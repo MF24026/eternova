@@ -8,7 +8,6 @@ use App\Modules\Billing\Domain\Events\TrialEndingSoon;
 use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Gateways\FakeGateway;
 use App\Modules\Billing\Models\Subscription;
-use App\Modules\Billing\Support\BillingMaintenance;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -61,84 +60,11 @@ final class BillingCronsTest extends TestCase
         ], $attributes));
     }
 
-    // ── process-recurring-charges ────────────────────────────────────────────
-
-    public function test_recurring_charge_success_renews_the_subscription(): void
-    {
-        $sub = $this->subscription('active', ['next_billing_at' => now()->subDay()]);
-
-        $this->artisan('billing:process-recurring-charges')->assertSuccessful();
-
-        $sub->refresh();
-        $this->assertSame('active', $sub->status);
-        $this->assertTrue($sub->next_billing_at->isFuture());
-        $this->assertNotNull($sub->last_paid_at);
-        $this->assertSame([2900], $this->gateway()->chargedAmounts);
-    }
-
-    public function test_recurring_charge_decline_moves_to_past_due_and_schedules_retry(): void
-    {
-        $this->gateway()->forceChargeFailure = true;
-        $sub = $this->subscription('active', ['next_billing_at' => now()->subDay()]);
-
-        $this->artisan('billing:process-recurring-charges')->assertSuccessful();
-
-        $sub->refresh();
-        $this->assertSame('past_due', $sub->status);
-        $this->assertNotNull($sub->past_due_since);
-        $this->assertSame(1, $sub->retry_count);
-        $this->assertNotNull($sub->next_retry_at);
-    }
-
-    public function test_maintenance_mode_skips_recurring_charges(): void
-    {
-        BillingMaintenance::enable();
-        $sub = $this->subscription('active', ['next_billing_at' => now()->subDay()]);
-
-        $this->artisan('billing:process-recurring-charges')->assertSuccessful();
-
-        $this->assertSame([], $this->gateway()->chargedAmounts, 'No charge should run under maintenance.');
-        $this->assertSame(now()->subDay()->toDateString(), $sub->refresh()->next_billing_at->toDateString());
-    }
-
-    // ── retry-dunning ────────────────────────────────────────────────────────
-
-    public function test_dunning_retry_success_reactivates(): void
-    {
-        $sub = $this->subscription('past_due', [
-            'retry_count' => 1,
-            'next_retry_at' => now()->subHour(),
-            'past_due_since' => now()->subDays(3),
-        ]);
-
-        $this->artisan('billing:retry-dunning')->assertSuccessful();
-
-        $this->assertSame('active', $sub->refresh()->status);
-    }
-
-    public function test_dunning_retry_failure_reschedules_next_attempt(): void
-    {
-        $this->gateway()->forceChargeFailure = true;
-        $sub = $this->subscription('past_due', [
-            'retry_count' => 1,
-            'next_retry_at' => now()->subHour(),
-            'past_due_since' => now()->subDays(3),
-        ]);
-
-        $this->artisan('billing:retry-dunning')->assertSuccessful();
-
-        $sub->refresh();
-        $this->assertSame('past_due', $sub->status);
-        $this->assertSame(2, $sub->retry_count);
-        $this->assertTrue($sub->next_retry_at->isFuture());
-    }
-
     // ── suspend-overdue ──────────────────────────────────────────────────────
 
-    public function test_suspend_overdue_suspends_exhausted_subscriptions(): void
+    public function test_suspend_overdue_suspends_subscriptions_past_the_dunning_window(): void
     {
         $sub = $this->subscription('past_due', [
-            'retry_count' => 3,
             'past_due_since' => now()->subDays(20),
         ]);
 
@@ -147,10 +73,9 @@ final class BillingCronsTest extends TestCase
         $this->assertSame('suspended', $sub->refresh()->status);
     }
 
-    public function test_suspend_overdue_leaves_subscriptions_with_retries_left(): void
+    public function test_suspend_overdue_leaves_recently_past_due_subscriptions(): void
     {
         $sub = $this->subscription('past_due', [
-            'retry_count' => 1,
             'past_due_since' => now()->subDay(),
         ]);
 
