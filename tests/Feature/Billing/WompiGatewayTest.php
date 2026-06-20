@@ -176,6 +176,15 @@ final class WompiGatewayTest extends TestCase
         });
     }
 
+    public function test_cancel_recurring_link_posts_to_the_deactivate_endpoint(): void
+    {
+        Http::fake($this->withAuth(['*/EnlacePagoRecurrente/*' => Http::response([], 200)]));
+
+        $this->assertTrue($this->gateway()->cancelRecurringPaymentLink('enlace-1'));
+
+        Http::assertSent(fn ($r) => str_ends_with($r->url(), '/EnlacePagoRecurrente/enlace-1') && $r->method() === 'POST');
+    }
+
     public function test_get_transaction_normalizes_es_aprobada_to_a_status(): void
     {
         Http::fake($this->withAuth([
