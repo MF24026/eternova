@@ -23,18 +23,20 @@ return [
     | Wompi credentials
     |--------------------------------------------------------------------------
     |
-    | Never commit real values. This is Wompi SV (El Salvador), not Colombia. There is NO
-    | separate sandbox host — QA uses the application in "non-productive" mode on the purchase
-    | endpoint. Confirm the API base host before go-live (docs live at docs.wompi.sv).
-    | events_secret is the API Secret used as the `wompi_hash` webhook HMAC key.
-    | See docs/billing/wompi-sv-integration.md.
+    | Never commit real values. This is Wompi SV (El Salvador), not Colombia, and it uses
+    | OAuth2 client_credentials — NOT a public/private key pair:
+    |   - app_id     = client_id   (the business "App ID")
+    |   - api_secret = client_secret AND the `wompi_hash` webhook HMAC key (the "API Secret")
+    | The server fetches a Bearer token from auth_url/connect/token, then calls base_url. There
+    | is NO separate sandbox host — QA uses the app in "non-productive" mode on the purchase
+    | endpoint. See docs/billing/wompi-sv-integration.md.
     */
     'wompi' => [
         'env' => env('WOMPI_ENV', 'production'),
+        'auth_url' => env('WOMPI_AUTH_URL', 'https://id.wompi.sv'),
         'base_url' => env('WOMPI_BASE_URL', 'https://api.wompi.sv'),
-        'public_key' => env('WOMPI_PUBLIC_KEY', ''),
-        'private_key' => env('WOMPI_PRIVATE_KEY', ''),
-        'events_secret' => env('WOMPI_EVENTS_SECRET', ''),
+        'app_id' => env('WOMPI_APP_ID', ''),
+        'api_secret' => env('WOMPI_API_SECRET', ''),
     ],
 
     /*

@@ -48,10 +48,10 @@ final class BillingPciSmokeTest extends TestCase
     private function wompiGateway(object $logger): WompiGateway
     {
         return new WompiGateway(
-            privateKey: 'prv_test_key',
-            publicKey: 'pub_test_key',
-            eventsSecret: 'events_secret',
-            baseUrl: 'https://sandbox.wompi.test',
+            appId: 'app_test',
+            apiSecret: 'api_secret_test',
+            authBaseUrl: 'https://id.wompi.test',
+            baseUrl: 'https://api.wompi.test',
             errorTranslator: new WompiErrorTranslator(),
             apiBreaker: new CircuitBreaker('pci-test:'.uniqid(), threshold: 99, cooldownSeconds: 60),
             logger: $logger,
@@ -63,9 +63,9 @@ final class BillingPciSmokeTest extends TestCase
         $cases = [
             [WompiGateway::class, 'charge', 'data', true],
             [WompiGateway::class, 'tokenize', 'card', true],
-            [WompiGateway::class, '__construct', 'privateKey', true],
-            [WompiGateway::class, '__construct', 'eventsSecret', true],
-            [WompiGateway::class, '__construct', 'publicKey', false],
+            [WompiGateway::class, '__construct', 'apiSecret', true],
+            [WompiGateway::class, '__construct', 'appId', false],
+            [WompiGateway::class, '__construct', 'authBaseUrl', false],
             [WompiGateway::class, '__construct', 'baseUrl', false],
         ];
 
@@ -138,6 +138,8 @@ final class BillingPciSmokeTest extends TestCase
     {
         Cache::flush();
         Http::fake([
+            // Auth succeeds; the purchase endpoint fails with a body that must not be logged.
+            '*/connect/token' => Http::response(['access_token' => 'tok', 'expires_in' => 3600], 200),
             '*' => Http::response(['error' => ['reason' => 'CARD_DECLINED'], 'leak' => 'TOKEN_LEAK_IN_BODY'], 500),
         ]);
 

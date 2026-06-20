@@ -30,13 +30,26 @@ final class WompiGatewayTest extends TestCase
         };
 
         return new WompiGateway(
-            privateKey: 'prv_test',
-            publicKey: 'pub_test',
-            eventsSecret: 'events_secret',
+            appId: 'app-test',
+            apiSecret: 'api_secret_test',
+            authBaseUrl: 'https://id.wompi.test',
             baseUrl: 'https://api.wompi.test',
             errorTranslator: new WompiErrorTranslator(),
             apiBreaker: new CircuitBreaker('wompi-sv-test:'.uniqid(), threshold: 99, cooldownSeconds: 60),
             logger: $logger,
+        );
+    }
+
+    /**
+     * The OAuth token endpoint fake, merged into every API fake so accessToken() resolves.
+     *
+     * @return array<string, \Illuminate\Http\Client\Response>
+     */
+    private function withAuth(array $endpoints): array
+    {
+        return array_merge(
+            ['*/connect/token' => Http::response(['access_token' => 'tok-abc', 'expires_in' => 3600, 'token_type' => 'Bearer'], 200)],
+            $endpoints,
         );
     }
 
@@ -55,9 +68,9 @@ final class WompiGatewayTest extends TestCase
 
     public function test_approved_charge_parses_es_aprobada_and_sends_sv_body(): void
     {
-        Http::fake([
+        Http::fake($this->withAuth([
             '*/TransaccionCompra' => Http::response(['esAprobada' => true, 'idTransaccion' => 'tx-sv-1'], 200),
-        ]);
+        ]));
 
         $result = $this->gateway()->charge($this->chargeData(900));
 
@@ -77,9 +90,9 @@ final class WompiGatewayTest extends TestCase
 
     public function test_declined_charge_is_a_card_decline(): void
     {
-        Http::fake([
+        Http::fake($this->withAuth([
             '*/TransaccionCompra' => Http::response(['esAprobada' => false, 'mensaje' => 'Fondos insuficientes'], 200),
-        ]);
+        ]));
 
         $result = $this->gateway()->charge($this->chargeData());
 
@@ -89,7 +102,7 @@ final class WompiGatewayTest extends TestCase
 
     public function test_http_error_is_a_processing_error(): void
     {
-        Http::fake(['*/TransaccionCompra' => Http::response(['mensaje' => 'boom'], 500)]);
+        Http::fake($this->withAuth(['*/TransaccionCompra' => Http::response(['mensaje' => 'boom'], 500)]));
 
         $result = $this->gateway()->charge($this->chargeData());
 
@@ -109,9 +122,9 @@ final class WompiGatewayTest extends TestCase
 
     public function test_tokenize_parses_token_tarjeta(): void
     {
-        Http::fake([
+        Http::fake($this->withAuth([
             '*/TokenesTarjeta' => Http::response(['tokenTarjeta' => 'tok-sv', 'ultimosDigitos' => '2235', 'marca' => 'mastercard'], 200),
-        ]);
+        ]));
 
         $result = $this->gateway()->tokenize(new CardData('5200000000002235', '123', '1', '2029'));
 
@@ -120,6 +133,9 @@ final class WompiGatewayTest extends TestCase
         $this->assertSame('2235', $result->last4);
 
         Http::assertSent(function ($request): bool {
+            if (! str_ends_with($request->url(), '/TokenesTarjeta')) {
+                return false;
+            }
             $body = $request->data();
 
             return $body['numeroTarjeta'] === '5200000000002235'
@@ -130,9 +146,9 @@ final class WompiGatewayTest extends TestCase
 
     public function test_get_transaction_normalizes_es_aprobada_to_a_status(): void
     {
-        Http::fake([
+        Http::fake($this->withAuth([
             '*/TransaccionConsulta/*' => Http::response(['idTransaccion' => 'tx-9', 'esAprobada' => true, 'monto' => 9.00], 200),
-        ]);
+        ]));
 
         $tx = $this->gateway()->getTransaction('tx-9');
 
