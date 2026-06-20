@@ -28,9 +28,10 @@ final class ActiveState extends SubscriptionState
     public function allowedTransitions(): array
     {
         return [
-            SubscriptionStatus::PastDue,   // recurring charge failed
-            SubscriptionStatus::Paused,    // tenant paused
-            SubscriptionStatus::Canceled,  // tenant cancelled
+            SubscriptionStatus::PastDue,    // recurring charge failed
+            SubscriptionStatus::Paused,     // tenant paused
+            SubscriptionStatus::Canceled,   // tenant cancelled
+            SubscriptionStatus::Suspended,  // operator suspend (fraud/abuse) from the SuperAdmin console
         ];
     }
 }
