@@ -94,7 +94,7 @@ final class WebhookProcessingTest extends TestCase
         $this->assertSame(WebhookLog::STATUS_COMPLETED, $this->lastLog->status);
     }
 
-    public function test_declined_charge_moves_active_to_past_due_and_schedules_retry(): void
+    public function test_declined_charge_moves_active_to_past_due_without_scheduling_retry(): void
     {
         $sub = $this->subscription('active');
 
@@ -105,7 +105,16 @@ final class WebhookProcessingTest extends TestCase
         $sub->refresh();
         $this->assertSame('past_due', $sub->status);
         $this->assertNotNull($sub->past_due_since);
-        $this->assertNotNull($sub->next_retry_at);
+        // Wompi owns retries now; we no longer schedule our own.
+        $this->assertNull($sub->next_retry_at);
+    }
+
+    public function test_approved_recurring_charge_activates_trialing_by_id_enlace(): void
+    {
+        $sub = $this->subscription('trialing', 'enlace-9');
+        $this->process(['event' => 'transaction.updated',
+            'data' => ['idEnlace' => 'enlace-9', 'transaction' => ['id' => 'tx-r1', 'status' => 'APPROVED']]]);
+        $this->assertSame('active', $sub->fresh()->status);
     }
 
     public function test_voided_charge_cancels_the_subscription(): void

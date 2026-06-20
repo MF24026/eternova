@@ -45,8 +45,8 @@ final class DunningService
     }
 
     /**
-     * A charge failed: enter dunning (active -> past_due) and schedule the first retry. A
-     * subscription already past_due just gets its next retry rescheduled.
+     * A charge failed: enter dunning (active -> past_due) and stamp past_due_since. Wompi owns
+     * recurrence + retries, so we only record the transition here — no retry scheduling.
      */
     public function applyChargeFailure(Subscription $subscription): void
     {
@@ -57,25 +57,7 @@ final class DunningService
             $subscription->forceFill(['past_due_since' => $subscription->past_due_since ?? now()])->save();
         }
 
-        $this->scheduleNextRetry($subscription);
-
         SubscriptionChargeFailed::dispatch($subscription->id, (string) $subscription->tenant_id);
-    }
-
-    /**
-     * Advance the retry counter and set the next retry date from the configured schedule
-     * (e.g. day 3, 7, 14). Clamps to the last interval once the schedule is exhausted.
-     */
-    public function scheduleNextRetry(Subscription $subscription): void
-    {
-        /** @var list<int> $days */
-        $days = config('billing.dunning_retry_days', [3, 7, 14]);
-        $index = min((int) $subscription->retry_count, count($days) - 1);
-
-        $subscription->forceFill([
-            'retry_count' => (int) $subscription->retry_count + 1,
-            'next_retry_at' => now()->addDays((int) $days[$index]),
-        ])->save();
     }
 
     /**
@@ -92,10 +74,5 @@ final class DunningService
         $state->applyTransition(SubscriptionStatus::Suspended);
 
         SubscriptionSuspended::dispatch($subscription->id, (string) $subscription->tenant_id);
-    }
-
-    public function maxRetries(): int
-    {
-        return count((array) config('billing.dunning_retry_days', [3, 7, 14]));
     }
 }

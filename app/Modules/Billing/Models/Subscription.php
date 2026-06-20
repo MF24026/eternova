@@ -37,6 +37,8 @@ final class Subscription extends Model
         'currency',
         'amount_cents',
         'gateway_subscription_id',
+        'affiliation_url',
+        'affiliation_qr_url',
         'gateway_customer_id',
         'card_token',
         'card_last4',

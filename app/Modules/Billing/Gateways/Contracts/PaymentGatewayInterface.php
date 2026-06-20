@@ -31,6 +31,12 @@ interface PaymentGatewayInterface
      */
     public function createRecurringPaymentLink(RecurringPlanData $data): RecurringPaymentLink;
 
+    /** Deactivate a recurring link so the gateway stops charging. Returns false on failure. */
+    public function cancelRecurringPaymentLink(string $linkId): bool;
+
+    /** Fetch a recurring link's current state (for reconciliation), or null. @return array<string,mixed>|null */
+    public function getRecurringLink(string $linkId): ?array;
+
     public function charge(#[SensitiveParameter] ChargeData $data): ChargeResult;
 
     public function refund(string $transactionId, int $amountCents, string $idempotencyKey): RefundResult;

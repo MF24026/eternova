@@ -37,8 +37,13 @@ final class FakeGateway implements PaymentGatewayInterface
 
     public bool $forceRecurringLinkFailure = false;
 
+    public bool $forceCancelFailure = false;
+
     /** @var list<array{amountCents: int, dayOfMonth: int}> */
     public array $recurringLinks = [];
+
+    /** @var list<string> */
+    public array $cancelledLinks = [];
 
     public string $webhookSecret = 'fake-events-secret';
 
@@ -66,6 +71,21 @@ final class FakeGateway implements PaymentGatewayInterface
             qrUrl: "https://fake.wompi.test/qr/{$id}.jpg",
             isProductive: false,
         );
+    }
+
+    public function cancelRecurringPaymentLink(string $linkId): bool
+    {
+        if ($this->forceCancelFailure) {
+            return false;
+        }
+        $this->cancelledLinks[] = $linkId;
+
+        return true;
+    }
+
+    public function getRecurringLink(string $linkId): ?array
+    {
+        return ['idEnlace' => $linkId, 'estaProductivo' => false];
     }
 
     public function charge(#[SensitiveParameter] ChargeData $data): ChargeResult

@@ -108,6 +108,30 @@ final class WompiGateway implements PaymentGatewayInterface
         }
     }
 
+    public function cancelRecurringPaymentLink(string $linkId): bool
+    {
+        try {
+            return $this->authorized()->post("{$this->baseUrl}/EnlacePagoRecurrente/{$linkId}")->successful();
+        } catch (\Throwable $e) {
+            $this->logException('recurring_cancel_exception', $e, \Illuminate\Support\Str::uuid()->toString());
+
+            return false;
+        }
+    }
+
+    public function getRecurringLink(string $linkId): ?array
+    {
+        try {
+            $response = $this->authorized()->get("{$this->baseUrl}/EnlacePagoRecurrente/{$linkId}");
+
+            return $response->successful() ? (array) $response->json() : null;
+        } catch (\Throwable $e) {
+            $this->logException('recurring_get_exception', $e, \Illuminate\Support\Str::uuid()->toString());
+
+            return null;
+        }
+    }
+
     public function charge(#[SensitiveParameter] ChargeData $data): ChargeResult
     {
         $correlationId = Str::uuid()->toString();

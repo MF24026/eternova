@@ -21,7 +21,7 @@ final class TransactionUpdatedHandler
     public function handle(array $data): void
     {
         $tx = $data['transaction'] ?? $data;
-        $reference = (string) ($tx['reference'] ?? '');
+        $reference = (string) ($tx['reference'] ?? ($data['idEnlace'] ?? ''));
 
         $subscription = Subscription::query()
             ->where('gateway_subscription_id', $reference)
@@ -65,14 +65,7 @@ final class TransactionUpdatedHandler
         }
 
         $state->applyTransition(SubscriptionStatus::PastDue);
-
-        $firstRetryDays = config('billing.dunning_retry_days')[0] ?? 3;
-
-        $subscription->forceFill([
-            'past_due_since' => now(),
-            'retry_count' => 0,
-            'next_retry_at' => now()->addDays((int) $firstRetryDays),
-        ])->save();
+        $subscription->forceFill(['past_due_since' => $subscription->past_due_since ?? now()])->save();
     }
 
     private function markVoided(Subscription $subscription): void

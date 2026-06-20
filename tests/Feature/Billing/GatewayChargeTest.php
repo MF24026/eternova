@@ -117,6 +117,15 @@ final class GatewayChargeTest extends TestCase
         );
     }
 
+    public function test_cancel_recurring_link_records_and_can_be_forced_to_fail(): void
+    {
+        $this->assertTrue($this->gateway->cancelRecurringPaymentLink('fake_link_1'));
+        $this->assertSame(['fake_link_1'], $this->gateway->cancelledLinks);
+
+        $this->gateway->forceCancelFailure = true;
+        $this->assertFalse($this->gateway->cancelRecurringPaymentLink('fake_link_2'));
+    }
+
     public function test_webhook_signature_verification(): void
     {
         $payload = '{"event":"transaction.updated"}';
