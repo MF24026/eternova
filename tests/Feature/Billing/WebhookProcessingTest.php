@@ -112,8 +112,8 @@ final class WebhookProcessingTest extends TestCase
     public function test_approved_recurring_charge_activates_trialing_by_id_enlace(): void
     {
         $sub = $this->subscription('trialing', 'enlace-9');
-        $this->process(['event' => 'transaction.updated', 'idEnlace' => 'enlace-9',
-            'data' => ['transaction' => ['id' => 'tx-r1', 'reference' => 'enlace-9', 'status' => 'APPROVED']]]);
+        $this->process(['event' => 'transaction.updated',
+            'data' => ['idEnlace' => 'enlace-9', 'transaction' => ['id' => 'tx-r1', 'status' => 'APPROVED']]]);
         $this->assertSame('active', $sub->fresh()->status);
     }
 
