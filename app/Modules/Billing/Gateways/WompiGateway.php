@@ -10,6 +10,8 @@ use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Gateways\Data\CardData;
 use App\Modules\Billing\Gateways\Data\ChargeData;
 use App\Modules\Billing\Gateways\Data\ChargeResult;
+use App\Modules\Billing\Gateways\Data\RecurringPaymentLink;
+use App\Modules\Billing\Gateways\Data\RecurringPlanData;
 use App\Modules\Billing\Gateways\Data\RefundResult;
 use App\Modules\Billing\Gateways\Data\TokenResult;
 use App\Modules\Billing\Gateways\Data\TransactionResult;
@@ -57,6 +59,54 @@ final class WompiGateway implements PaymentGatewayInterface
         private readonly CircuitBreaker $apiBreaker,
         private readonly LoggerInterface $logger,
     ) {}
+
+    /**
+     * Create a Wompi-managed recurring subscription link (validated 2026-06-20, non-productive):
+     * POST /EnlacePagoRecurrente {diaDePago, nombre, idAplicativo, monto, descripcionProducto}
+     * -> {idEnlace, urlEnlace, urlEnlaceLargo, estaProductivo, urlQrCodeEnlace}. Wompi owns the
+     * recurrence; we store idEnlace and react to webhooks.
+     */
+    public function createRecurringPaymentLink(RecurringPlanData $data): RecurringPaymentLink
+    {
+        $correlationId = Str::uuid()->toString();
+
+        if ($data->amountCents > self::MAX_TRANSACTION_CENTS) {
+            return RecurringPaymentLink::failed(GatewayError::CardDeclined->value);
+        }
+
+        try {
+            $response = $this->authorized()->post("{$this->baseUrl}/EnlacePagoRecurrente", [
+                'diaDePago' => $data->dayOfMonth,
+                'nombre' => $data->name,
+                'idAplicativo' => $this->appId,
+                'monto' => round($data->amountCents / 100, 2),
+                'descripcionProducto' => $data->description,
+            ]);
+
+            if (! $response->successful()) {
+                $this->logFailure('recurring_link_http_error', $response->status(), $correlationId);
+
+                return RecurringPaymentLink::failed(GatewayError::ProcessingError->value);
+            }
+
+            $linkId = (string) $response->json('idEnlace');
+
+            if ($linkId === '') {
+                return RecurringPaymentLink::failed(GatewayError::ProcessingError->value);
+            }
+
+            return RecurringPaymentLink::succeeded(
+                linkId: $linkId,
+                shortUrl: (string) $response->json('urlEnlace'),
+                longUrl: $response->json('urlEnlaceLargo'),
+                qrUrl: $response->json('urlQrCodeEnlace'),
+                isProductive: (bool) $response->json('estaProductivo', false),
+            );
+        } catch (Throwable $e) {
+            $this->logException('recurring_link_exception', $e, $correlationId);
+            throw new GatewayException('Recurring link creation failed');
+        }
+    }
 
     public function charge(#[SensitiveParameter] ChargeData $data): ChargeResult
     {

@@ -6,6 +6,7 @@ namespace Tests\Feature\Billing;
 
 use App\Modules\Billing\Gateways\Data\CardData;
 use App\Modules\Billing\Gateways\Data\ChargeData;
+use App\Modules\Billing\Gateways\Data\RecurringPlanData;
 use App\Modules\Billing\Gateways\Support\WompiErrorTranslator;
 use App\Modules\Billing\Gateways\WompiGateway;
 use App\Modules\Billing\Support\CircuitBreaker;
@@ -142,6 +143,36 @@ final class WompiGatewayTest extends TestCase
             return $body['numeroTarjeta'] === '5200000000002235'
                 && $body['mesVencimiento'] === 1     // integer, not "01"
                 && $body['anioVencimiento'] === 2029;
+        });
+    }
+
+    public function test_create_recurring_link_parses_the_enlace_response(): void
+    {
+        // Real SV /EnlacePagoRecurrente shape (validated 2026-06-20 in non-productive mode).
+        Http::fake($this->withAuth([
+            '*/EnlacePagoRecurrente' => Http::response([
+                'idEnlace' => 'enlace-1',
+                'urlEnlace' => 'https://s.wompi.sv/abc',
+                'urlEnlaceLargo' => 'https://cargosautomaticos.wompi.sv/x',
+                'estaProductivo' => false,
+                'urlQrCodeEnlace' => 'https://img/qr.jpg',
+            ], 200),
+        ]));
+
+        $link = $this->gateway()->createRecurringPaymentLink(new RecurringPlanData(2900, 15, 'Pro', 'Mensual'));
+
+        $this->assertTrue($link->isSuccess());
+        $this->assertSame('enlace-1', $link->linkId);
+        $this->assertSame('https://s.wompi.sv/abc', $link->shortUrl);
+        $this->assertFalse($link->isProductive);
+
+        Http::assertSent(function ($request): bool {
+            if (! str_ends_with($request->url(), '/EnlacePagoRecurrente')) {
+                return false;
+            }
+            $b = $request->data();
+
+            return $b['monto'] === 29.0 && $b['diaDePago'] === 15 && $b['idAplicativo'] === 'app-test';
         });
     }
 

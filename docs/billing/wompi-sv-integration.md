@@ -48,10 +48,28 @@ fetches + caches this token (TTL = expires_in − 60s) and never logs it.
   apellido, region, número telefonico, dirección, redirect de transacción, codigo postal`. That
   needs a redirect + full billing address, so it is **NOT usable for unattended recurring
   charges**.
-- **🔴 OPEN QUESTION for Wompi support (blocks live recurring billing):** what is the endpoint +
-  body to charge a **saved token without 3DS** (unattended/recurring)? Q2 confirmed it exists
-  ("Cobros tokenizados sin 3DS") but it is not in the public docs. `WompiGateway::charge()` is a
-  placeholder until this is answered.
+- **✅ RESOLVED — recurring is GATEWAY-MANAGED via `POST /EnlacePagoRecurrente`** (validated
+  2026-06-20, non-productive). Wompi support pointed us here. We do NOT charge a stored token on
+  our own schedule; instead we create a recurring link and Wompi owns the recurrence.
+  - Request: `{diaDePago:int, nombre, idAplicativo:<App ID>, monto:decimal USD, descripcionProducto}`.
+  - Response: `{idEnlace, urlEnlace, urlEnlaceLargo, estaProductivo:bool, urlQrCodeEnlace}`.
+  - Flow: create the link → store `idEnlace` as `gateway_subscription_id` → send the tenant
+    `urlEnlace` (or the QR) to **affiliate their card on Wompi's hosted page** → Wompi charges
+    automatically on `diaDePago` each month → we react to the success/fail **webhooks**.
+
+### ⚠️ Architectural implications of the gateway-managed model (design review needed)
+This differs from the cron-driven, store-a-token model the build initially assumed:
+- **The affiliation `urlEnlace` replaces a self-hosted card iframe** in Phase 6b (simpler, more
+  PCI-friendly — the PAN never touches us and we don't even store a token).
+- **Our `billing:process-recurring-charges` / `billing:retry-dunning` crons are largely
+  superseded** — Wompi runs the schedule + retries. We likely keep them only as
+  reconciliation/safety nets (or retire them). `WompiGateway::charge()` (token charge) is NOT the
+  subscription path and stays unused for SaaS billing.
+- **What we keep as-is:** the webhook receiver (Wompi notifies each charge), the subscription
+  state machine + invoices + notifications driven off those webhooks, reconcile, suspend/cancel
+  lifecycle, metrics, and the SuperAdmin console.
+- **Next:** a focused "billing model alignment" pass + Phase 6b wires subscribe → create link →
+  affiliate → webhook-activate.
 
 ## Endpoints (Q9, docs) — base `https://api.wompi.sv`
 - Tokenize card: `POST /Tokenizacion` → returns `token` + `tarjetaEnmascarada` (validated).

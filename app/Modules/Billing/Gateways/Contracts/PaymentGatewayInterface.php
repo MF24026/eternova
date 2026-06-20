@@ -7,6 +7,8 @@ namespace App\Modules\Billing\Gateways\Contracts;
 use App\Modules\Billing\Gateways\Data\CardData;
 use App\Modules\Billing\Gateways\Data\ChargeData;
 use App\Modules\Billing\Gateways\Data\ChargeResult;
+use App\Modules\Billing\Gateways\Data\RecurringPaymentLink;
+use App\Modules\Billing\Gateways\Data\RecurringPlanData;
 use App\Modules\Billing\Gateways\Data\RefundResult;
 use App\Modules\Billing\Gateways\Data\TokenResult;
 use App\Modules\Billing\Gateways\Data\TransactionResult;
@@ -22,6 +24,13 @@ use SensitiveParameter;
  */
 interface PaymentGatewayInterface
 {
+    /**
+     * Create a gateway-managed recurring payment link. The tenant affiliates their card once on
+     * the returned hosted URL; the gateway then charges automatically each period and notifies us
+     * via webhook. (This is the Wompi SV recurring model — the gateway owns the schedule, not us.)
+     */
+    public function createRecurringPaymentLink(RecurringPlanData $data): RecurringPaymentLink;
+
     public function charge(#[SensitiveParameter] ChargeData $data): ChargeResult;
 
     public function refund(string $transactionId, int $amountCents, string $idempotencyKey): RefundResult;

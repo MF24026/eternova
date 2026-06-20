@@ -8,6 +8,8 @@ use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Gateways\Data\CardData;
 use App\Modules\Billing\Gateways\Data\ChargeData;
 use App\Modules\Billing\Gateways\Data\ChargeResult;
+use App\Modules\Billing\Gateways\Data\RecurringPaymentLink;
+use App\Modules\Billing\Gateways\Data\RecurringPlanData;
 use App\Modules\Billing\Gateways\Data\RefundResult;
 use App\Modules\Billing\Gateways\Data\TokenResult;
 use App\Modules\Billing\Gateways\Data\TransactionResult;
@@ -33,6 +35,11 @@ final class FakeGateway implements PaymentGatewayInterface
 
     public bool $forceWebhookSignatureInvalid = false;
 
+    public bool $forceRecurringLinkFailure = false;
+
+    /** @var list<array{amountCents: int, dayOfMonth: int}> */
+    public array $recurringLinks = [];
+
     public string $webhookSecret = 'fake-events-secret';
 
     public string $transactionStatus = 'APPROVED';
@@ -42,6 +49,24 @@ final class FakeGateway implements PaymentGatewayInterface
 
     /** @var list<array{transactionId: string, amountCents: int}> */
     public array $refundsIssued = [];
+
+    public function createRecurringPaymentLink(RecurringPlanData $data): RecurringPaymentLink
+    {
+        if ($this->forceRecurringLinkFailure) {
+            return RecurringPaymentLink::failed('declined');
+        }
+
+        $this->recurringLinks[] = ['amountCents' => $data->amountCents, 'dayOfMonth' => $data->dayOfMonth];
+        $id = 'fake_link_'.Str::uuid()->toString();
+
+        return RecurringPaymentLink::succeeded(
+            linkId: $id,
+            shortUrl: "https://fake.wompi.test/s/{$id}",
+            longUrl: "https://fake.wompi.test/EnlaceSuscripcion?id={$id}",
+            qrUrl: "https://fake.wompi.test/qr/{$id}.jpg",
+            isProductive: false,
+        );
+    }
 
     public function charge(#[SensitiveParameter] ChargeData $data): ChargeResult
     {

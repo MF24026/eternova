@@ -7,6 +7,7 @@ namespace Tests\Feature\Billing;
 use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Gateways\Data\CardData;
 use App\Modules\Billing\Gateways\Data\ChargeData;
+use App\Modules\Billing\Gateways\Data\RecurringPlanData;
 use App\Modules\Billing\Gateways\FakeGateway;
 use Illuminate\Http\Client\ConnectionException;
 use Tests\TestCase;
@@ -95,6 +96,25 @@ final class GatewayChargeTest extends TestCase
 
         $this->assertTrue($result->isSuccess());
         $this->assertSame([['transactionId' => 'fake_tx_1', 'amountCents' => 2900]], $this->gateway->refundsIssued);
+    }
+
+    public function test_recurring_link_is_created_and_recorded(): void
+    {
+        $link = $this->gateway->createRecurringPaymentLink(new RecurringPlanData(2900, 10, 'Pro', 'Mensual'));
+
+        $this->assertTrue($link->isSuccess());
+        $this->assertNotNull($link->shortUrl);
+        $this->assertNotNull($link->linkId);
+        $this->assertSame([['amountCents' => 2900, 'dayOfMonth' => 10]], $this->gateway->recurringLinks);
+    }
+
+    public function test_recurring_link_failure_is_forced(): void
+    {
+        $this->gateway->forceRecurringLinkFailure = true;
+
+        $this->assertFalse(
+            $this->gateway->createRecurringPaymentLink(new RecurringPlanData(2900, 10, 'Pro', 'Mensual'))->isSuccess()
+        );
     }
 
     public function test_webhook_signature_verification(): void
