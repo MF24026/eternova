@@ -68,14 +68,19 @@ final class WompiGateway implements PaymentGatewayInterface
         }
 
         try {
+            // OPEN QUESTION (blocks live recurring billing): the endpoint + body for an
+            // UNATTENDED tokenized charge (no 3DS) is NOT in the public docs. The 2026-06-19
+            // smoke found that POST /TransaccionCompra is 403 and POST /TransaccionCompra/3DS is
+            // the interactive 3DS flow (requires full billing address + a redirect URL — not
+            // usable for recurring). Wompi support must provide the recurring-charge endpoint;
+            // the path/field below are a placeholder until then. See wompi-sv-integration.md.
             return $this->apiBreaker->execute(function () use ($data, $correlationId): ChargeResult {
                 $response = $this->authorized()
                     ->post("{$this->baseUrl}/TransaccionCompra", [
                         'monto' => round($data->amountCents / 100, 2),
                         'emailCliente' => $data->customerEmail,
                         'nombreCliente' => $data->customerName ?? $data->customerEmail,
-                        // ASSUMPTION: stored-token charge field name in /TransaccionCompra.
-                        'tokenTarjeta' => $data->cardToken,
+                        'token' => $data->cardToken,
                         'idExterno' => $data->reference,
                         'cantidadCuotas' => 1,
                     ]);
@@ -134,13 +139,15 @@ final class WompiGateway implements PaymentGatewayInterface
         $correlationId = Str::uuid()->toString();
 
         try {
+            // CONFIRMED against the sandbox (non-productive smoke, 2026-06-19):
+            // POST /Tokenizacion {numeroTarjeta, cvv, mesVencimiento:int, anioVencimiento:int}
+            // -> {"token":"...","tarjetaEnmascarada":"5200 0000 XXXX 2235 "}
             $response = $this->authorized()
-                ->post("{$this->baseUrl}/TokenesTarjeta", [
+                ->post("{$this->baseUrl}/Tokenizacion", [
                     'numeroTarjeta' => $card->number,
                     'cvv' => $card->cvv,
                     'mesVencimiento' => (int) $card->expMonth,
                     'anioVencimiento' => (int) $card->expYear,
-                    'nombreTarjetaHabiente' => $card->holderName ?? '',
                 ]);
 
             if (! $response->successful()) {
@@ -151,11 +158,15 @@ final class WompiGateway implements PaymentGatewayInterface
                 );
             }
 
-            // ASSUMPTION: tokenize response metadata field names — confirm against a live call.
+            // The SV response has no brand and no separate last4 — derive last4 from the masked
+            // PAN ("5200 0000 XXXX 2235 " -> "2235").
+            $masked = preg_replace('/\D/', '', (string) $response->json('tarjetaEnmascarada', '')) ?? '';
+            $last4 = $masked !== '' ? substr($masked, -4) : $card->last4();
+
             return TokenResult::succeeded(
-                token: (string) $response->json('tokenTarjeta'),
-                last4: (string) ($response->json('ultimosDigitos') ?? $card->last4()),
-                brand: (string) ($response->json('marca') ?? 'unknown'),
+                token: (string) $response->json('token'),
+                last4: $last4,
+                brand: 'unknown',
                 expMonth: (int) $card->expMonth,
                 expYear: (int) $card->expYear,
             );
