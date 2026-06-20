@@ -145,6 +145,19 @@ final class BillingAccountApiTest extends TestCase
         $this->assertSame('active', $sub->fresh()->status, 'Cancel-at-period-end keeps access.');
     }
 
+    public function test_cancel_deactivates_the_wompi_recurring_link(): void
+    {
+        $tenant = $this->tenantWithSubscription();
+        $sub = Subscription::query()->where('tenant_id', $tenant->id)->firstOrFail();
+        $sub->forceFill(['gateway_subscription_id' => 'enlace-x'])->save();
+        $fake = app(\App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface::class);
+
+        $this->actingAs($this->owner($tenant))
+            ->postJson($this->tenantUrl($tenant, 'api/v1/account/billing/cancel'))->assertOk();
+
+        $this->assertContains('enlace-x', $fake->cancelledLinks);
+    }
+
     public function test_owner_can_change_plan(): void
     {
         $tenant = $this->tenantWithSubscription();

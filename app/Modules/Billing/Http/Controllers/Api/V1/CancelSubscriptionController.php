@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Billing\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Http\Resources\SubscriptionResource;
 use App\Modules\Billing\Services\SubscriptionService;
 use App\Modules\Billing\Services\TenantBillingService;
@@ -20,6 +21,7 @@ final class CancelSubscriptionController extends Controller
     public function __construct(
         private readonly TenantBillingService $billing,
         private readonly SubscriptionService $subscriptions,
+        private readonly PaymentGatewayInterface $gateway,
     ) {}
 
     public function __invoke(): JsonResponse
@@ -33,6 +35,11 @@ final class CancelSubscriptionController extends Controller
         abort_if($subscription === null, 404, 'No active subscription to cancel.');
 
         $this->subscriptions->cancel($subscription, atPeriodEnd: true);
+
+        if ($subscription->gateway_subscription_id !== null) {
+            // Best-effort: never block the local cancel on a gateway failure.
+            $this->gateway->cancelRecurringPaymentLink((string) $subscription->gateway_subscription_id);
+        }
 
         return response()->json(['data' => new SubscriptionResource($subscription->fresh()->load('plan'))]);
     }
