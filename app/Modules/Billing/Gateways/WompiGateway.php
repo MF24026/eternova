@@ -15,6 +15,7 @@ use App\Modules\Billing\Gateways\Data\TokenResult;
 use App\Modules\Billing\Gateways\Data\TransactionResult;
 use App\Modules\Billing\Gateways\Support\WompiErrorTranslator;
 use App\Modules\Billing\Support\CircuitBreaker;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
@@ -22,24 +23,25 @@ use SensitiveParameter;
 use Throwable;
 
 /**
- * Wompi **El Salvador** implementation of the payment gateway seam. The SV API uses Spanish
- * endpoints/fields and differs from Wompi Colombia — see docs/billing/wompi-sv-integration.md
- * (provider Q&A + https://docs.wompi.sv) for the source of truth.
+ * Wompi **El Salvador** implementation of the payment gateway seam. SV uses Spanish endpoints/
+ * fields and **OAuth2 client_credentials** (App ID + API Secret) — NOT a public/private key pair.
+ * Full spec: docs/billing/wompi-sv-integration.md (provider Q&A + https://docs.wompi.sv).
  *
- * Confirmed from the docs:
- *   - charge `POST /TransaccionCompra` with `monto` (USD dollars, NOT cents), `emailCliente`,
- *     `nombreCliente`, `idExterno` (dedupe; there is NO Idempotency-Key header); response is
- *     `idTransaccion` + `esAprobada` (bool — no status string) + `mensaje` (free-text error).
- *   - tokenize `POST /TokenesTarjeta` (exp as INTEGER mesVencimiento/anioVencimiento) -> `tokenTarjeta`.
- *   - webhook signature: header `wompi_hash` = HMAC-SHA256(raw body, API Secret).
- *   - max $1,000 USD per transaction; Visa/Mastercard only.
+ * Auth: POST {authBaseUrl}/connect/token with grant_type=client_credentials, audience=wompi_api,
+ * client_id=App ID, client_secret=API Secret → a Bearer access_token (3600s), cached here and
+ * sent as `Authorization: Bearer` to {baseUrl}. The same API Secret is the `wompi_hash` webhook
+ * HMAC key.
  *
- * ASSUMPTIONS still to confirm against a live (non-productive) call: the field name for charging
- * a STORED token in /TransaccionCompra (assumed `tokenTarjeta`), the tokenize response metadata
- * field names, and the transaction-consult endpoint path. Marked inline.
+ * Confirmed: charge `POST /TransaccionCompra` (`monto` in USD dollars, `esAprobada` bool,
+ * `idExterno` dedupe), tokenize `POST /TokenesTarjeta` (integer exp) → `tokenTarjeta`, refund
+ * `POST /Reembolsos`, $1,000 cap, Visa/Mastercard only.
  *
- * PCI discipline (unchanged): credentials are #[\SensitiveParameter]; the response body is never
- * logged; the thrown GatewayException carries no `previous` (its trace could hold a token).
+ * ASSUMPTIONS to confirm against a live (non-productive) call: the stored-token charge field in
+ * /TransaccionCompra (assumed `tokenTarjeta`), the tokenize response metadata field names, and
+ * the consult endpoint path. Marked inline.
+ *
+ * PCI discipline: api_secret is #[\SensitiveParameter]; the response body and the access token
+ * are never logged; the thrown GatewayException carries no `previous`.
  */
 final class WompiGateway implements PaymentGatewayInterface
 {
@@ -47,9 +49,9 @@ final class WompiGateway implements PaymentGatewayInterface
     private const MAX_TRANSACTION_CENTS = 100_000;
 
     public function __construct(
-        #[SensitiveParameter] private readonly string $privateKey,
-        private readonly string $publicKey,
-        #[SensitiveParameter] private readonly string $eventsSecret,
+        private readonly string $appId,
+        #[SensitiveParameter] private readonly string $apiSecret,
+        private readonly string $authBaseUrl,
         private readonly string $baseUrl,
         private readonly WompiErrorTranslator $errorTranslator,
         private readonly CircuitBreaker $apiBreaker,
@@ -61,15 +63,13 @@ final class WompiGateway implements PaymentGatewayInterface
         $correlationId = Str::uuid()->toString();
 
         if ($data->amountCents > self::MAX_TRANSACTION_CENTS) {
-            // Non-retryable: above Wompi SV's hard per-transaction cap. Treated as a decline so
-            // dunning does not loop on it (will not occur for normal plan prices).
+            // Non-retryable: above Wompi SV's hard per-transaction cap (won't occur for normal plans).
             return ChargeResult::failed(GatewayError::CardDeclined->value, 'Amount exceeds the Wompi SV per-transaction limit.');
         }
 
         try {
             return $this->apiBreaker->execute(function () use ($data, $correlationId): ChargeResult {
-                $response = Http::withToken($this->privateKey)
-                    ->timeout(15)
+                $response = $this->authorized()
                     ->post("{$this->baseUrl}/TransaccionCompra", [
                         'monto' => round($data->amountCents / 100, 2),
                         'emailCliente' => $data->customerEmail,
@@ -106,8 +106,7 @@ final class WompiGateway implements PaymentGatewayInterface
         $correlationId = Str::uuid()->toString();
 
         try {
-            $response = Http::withToken($this->privateKey)
-                ->timeout(15)
+            $response = $this->authorized()
                 ->post("{$this->baseUrl}/Reembolsos", [
                     'idTransaccion' => $transactionId,
                     'monto' => round($amountCents / 100, 2),
@@ -135,9 +134,7 @@ final class WompiGateway implements PaymentGatewayInterface
         $correlationId = Str::uuid()->toString();
 
         try {
-            // Tokenization uses the PUBLIC key (same endpoint the hosted-fields iframe hits).
-            $response = Http::withToken($this->publicKey)
-                ->timeout(15)
+            $response = $this->authorized()
                 ->post("{$this->baseUrl}/TokenesTarjeta", [
                     'numeroTarjeta' => $card->number,
                     'cvv' => $card->cvv,
@@ -181,7 +178,7 @@ final class WompiGateway implements PaymentGatewayInterface
      */
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
-        $expected = hash_hmac('sha256', $payload, $this->eventsSecret);
+        $expected = hash_hmac('sha256', $payload, $this->apiSecret);
 
         return hash_equals($expected, $signature);
     }
@@ -190,9 +187,7 @@ final class WompiGateway implements PaymentGatewayInterface
     {
         try {
             // ASSUMPTION: transaction-consult endpoint path — confirm against the docs/a live call.
-            $response = Http::withToken($this->privateKey)
-                ->timeout(15)
-                ->get("{$this->baseUrl}/TransaccionConsulta/{$transactionId}");
+            $response = $this->authorized()->get("{$this->baseUrl}/TransaccionConsulta/{$transactionId}");
 
             if (! $response->successful()) {
                 return null;
@@ -212,6 +207,46 @@ final class WompiGateway implements PaymentGatewayInterface
 
             return null;
         }
+    }
+
+    /**
+     * A pending HTTP request pre-authorized with a fresh Bearer token (15s timeout).
+     */
+    private function authorized(): \Illuminate\Http\Client\PendingRequest
+    {
+        return Http::withToken($this->accessToken())->timeout(15);
+    }
+
+    /**
+     * OAuth2 client_credentials token, cached until shortly before it expires. App ID is the
+     * client_id, API Secret the client_secret. The token is never logged.
+     */
+    private function accessToken(): string
+    {
+        $cacheKey = "wompi:token:{$this->appId}";
+        $cached = Cache::get($cacheKey);
+
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        $response = Http::asForm()->timeout(15)->post("{$this->authBaseUrl}/connect/token", [
+            'grant_type' => 'client_credentials',
+            'audience' => 'wompi_api',
+            'client_id' => $this->appId,
+            'client_secret' => $this->apiSecret,
+        ]);
+
+        if (! $response->successful()) {
+            // Never include the response body — it could echo the secret.
+            throw new GatewayException('Wompi authentication failed');
+        }
+
+        $token = (string) $response->json('access_token');
+        $ttl = max(60, (int) $response->json('expires_in', 3600) - 60);
+        Cache::put($cacheKey, $token, now()->addSeconds($ttl));
+
+        return $token;
     }
 
     private function logFailure(string $event, int $status, string $correlationId): void

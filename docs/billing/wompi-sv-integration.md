@@ -18,11 +18,28 @@ sync with `app/Modules/Billing/Gateways/WompiGateway.php`.
   immediate-reverse endpoint (refunds go through the bank). Do NOT build a $1-auth-then-refund
   validation loop.
 
-## Endpoints (Q9, docs)
+## Authentication — OAuth2 client_credentials (NOT a public/private key pair)
+The control panel gives a **business** an **App ID** and an **API Secret** (panel.wompi.sv →
+API Rest). These map to:
+- `App ID` → `client_id`
+- `API Secret` → `client_secret` **and** the `wompi_hash` webhook HMAC key.
+
+Token flow (https://docs.wompi.sv/autenticacion/autenticacion):
+```
+POST https://id.wompi.sv/connect/token        (application/x-www-form-urlencoded)
+  grant_type=client_credentials
+  audience=wompi_api
+  client_id=<App ID>
+  client_secret=<API Secret>
+→ { "access_token": "...", "expires_in": 3600, "token_type": "Bearer", "scope": "wompi_api" }
+```
+Then send `Authorization: Bearer <access_token>` to `https://api.wompi.sv`. `WompiGateway`
+fetches + caches this token (TTL = expires_in − 60s) and never logs it.
+
+## Endpoints (Q9, docs) — base `https://api.wompi.sv`
 - Tokenize card: `POST /TokenesTarjeta` → returns `tokenTarjeta` (the durable token).
 - Create purchase: `POST /TransaccionCompra` (https://docs.wompi.sv/metodos-api/crear-transaccion-compra)
 - Refund: `POST /Reembolsos`
-- Auth: bearer token (the application's API key).
 
 ### `POST /TransaccionCompra` request body
 | Field | Type | Notes |
@@ -87,11 +104,14 @@ Map: `esAprobada === true` → success (`idTransaccion`); otherwise a decline (w
 ## `.env` to go live
 ```
 BILLING_DRIVER=wompi
-WOMPI_BASE_URL=<confirm SV API base host>   # docs are at docs.wompi.sv
-WOMPI_PUBLIC_KEY=...      # hosted-fields/tokenization (frontend)
-WOMPI_PRIVATE_KEY=...     # API bearer (server)
-WOMPI_EVENTS_SECRET=...   # = the API Secret used as the wompi_hash HMAC key
+WOMPI_AUTH_URL=https://id.wompi.sv
+WOMPI_BASE_URL=https://api.wompi.sv
+WOMPI_APP_ID=<App ID>          # = client_id
+WOMPI_API_SECRET=<API Secret>  # = client_secret AND the wompi_hash HMAC key
 ```
+Never commit these (`.env` is gitignored). Since the API Secret can be regenerated in the panel,
+**rotate it before production if it has ever been shared** (chat, screenshot, ticket).
+
 Point the Wompi dashboard webhook at `POST /api/v1/billing/webhooks/wompi`. Toggle the app to
 non-productive mode for QA, then run the test card through a real charge → confirm transitions +
 invoice issuance.

@@ -49,9 +49,9 @@ final class BillingServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentGatewayInterface::class, function (): PaymentGatewayInterface {
             if (config('billing.driver') === 'wompi') {
                 return new WompiGateway(
-                    privateKey: (string) config('billing.wompi.private_key'),
-                    publicKey: (string) config('billing.wompi.public_key'),
-                    eventsSecret: (string) config('billing.wompi.events_secret'),
+                    appId: (string) config('billing.wompi.app_id'),
+                    apiSecret: (string) config('billing.wompi.api_secret'),
+                    authBaseUrl: (string) config('billing.wompi.auth_url'),
                     baseUrl: (string) config('billing.wompi.base_url'),
                     errorTranslator: new WompiErrorTranslator(),
                     apiBreaker: new CircuitBreaker(
