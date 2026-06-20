@@ -6,6 +6,7 @@ use App\Modules\Billing\Http\Controllers\Api\V1\AccountBillingController;
 use App\Modules\Billing\Http\Controllers\Api\V1\CancelSubscriptionController;
 use App\Modules\Billing\Http\Controllers\Api\V1\ChangePlanController;
 use App\Modules\Billing\Http\Controllers\Api\V1\InvoiceController;
+use App\Modules\Billing\Http\Controllers\Api\V1\SubscribeController;
 use App\Modules\Billing\Http\Controllers\Api\V1\WompiWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,4 +33,5 @@ Route::middleware(['auth:sanctum', 'tenant'])
             ->whereNumber('invoice')->name('invoices.download');
         Route::post('/cancel', CancelSubscriptionController::class)->name('cancel');
         Route::post('/plan', ChangePlanController::class)->name('plan');
+        Route::post('/subscribe', SubscribeController::class)->name('subscribe');
     });
