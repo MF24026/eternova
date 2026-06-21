@@ -184,6 +184,30 @@ const router = createRouter({
             meta: { requiresAuth: true, layout: 'admin' },
         },
 
+        // ── SuperAdmin (platform operator, is_super_admin only) ──────────────
+        {
+            path: '/super-admin',
+            redirect: '/super-admin/metrics',
+        },
+        {
+            path: '/super-admin/metrics',
+            name: 'super-admin.metrics',
+            component: () => import('@/pages/SuperAdmin/SuperAdminMetricsPage.vue'),
+            meta: { requiresAuth: true, requiresSuperAdmin: true, layout: 'super-admin' },
+        },
+        {
+            path: '/super-admin/tenants',
+            name: 'super-admin.tenants',
+            component: () => import('@/pages/SuperAdmin/SuperAdminTenantsPage.vue'),
+            meta: { requiresAuth: true, requiresSuperAdmin: true, layout: 'super-admin' },
+        },
+        {
+            path: '/super-admin/tenants/:id',
+            name: 'super-admin.tenants.detail',
+            component: () => import('@/pages/SuperAdmin/SuperAdminTenantDetailPage.vue'),
+            meta: { requiresAuth: true, requiresSuperAdmin: true, layout: 'super-admin' },
+        },
+
         // ── Public tracking ─────────────────────────────────────────────────
         // No `layout` key → LayoutSwitcher falls back to bare <slot /> (default).
         // No `requiresAuth` → auth guard never redirects to /login for this route.
