@@ -22,6 +22,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('/billing/webhooks/wompi', WompiWebhookController::class)
     ->name('api.v1.billing.webhooks.wompi');
 
+// Verification probe: Wompi validates the configured webhook URL by hitting it and expecting a
+// 200. A GET to the POST-only route otherwise renders as 500 (the generic exception handler turns
+// the 405 into 500), which Wompi rejects as "URL no valida". This GET carries no data, does nothing.
+Route::get('/billing/webhooks/wompi', static fn () => response()->json(['status' => 'ok']))
+    ->name('api.v1.billing.webhooks.wompi.verify');
+
 // Tenant-facing billing (Owner-only — enforced by the billing.manage gate in each controller).
 Route::middleware(['auth:sanctum', 'tenant'])
     ->prefix('/account/billing')
