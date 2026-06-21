@@ -63,9 +63,13 @@ const navItems: NavItem[] = [
     { id: 'billing', label: 'Facturación', to: '/admin/billing', icon: Wallet, ownerOnly: true },
 ]
 
-// Billing is Owner-only (the API 403s the rest); hide the entry for non-owners.
+// The role lives on the current tenant membership, not on the user (see UserResource / the
+// ReservationsPage pattern). Billing is Owner-only (the API 403s the rest); hide it for non-owners.
+const isOwner = computed(
+    () => currentUser.value?.tenants.find((t) => t.is_current)?.role === 'owner',
+)
 const visibleNavItems = computed(() =>
-    navItems.filter((item) => !item.ownerOnly || currentUser.value?.role === 'owner'),
+    navItems.filter((item) => !item.ownerOnly || isOwner.value),
 )
 
 const userInitial = computed(() => {

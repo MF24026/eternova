@@ -21,14 +21,12 @@ import PlansService from '@/services/PlansService'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
-import { useAuthStore } from '@/stores/auth'
 import type { Plan } from '@/types/domain/Plan'
 import type { Subscription, Invoice } from '@/types/domain/Billing'
 
 const { formatCents } = useFormatCurrency()
 const toast = useToast()
 const { confirm } = useConfirm()
-const auth = useAuthStore()
 
 const loading = ref(true)
 const ownerOnly = ref(false)
@@ -38,8 +36,9 @@ const plans = ref<Plan[]>([])
 const subscribing = ref<string | null>(null)
 const refreshing = ref(false)
 const cancelling = ref(false)
+// Hide the affiliation QR if its image fails to load (defensive — never show a broken image).
+const qrError = ref(false)
 
-const isOwner = computed(() => auth.currentUser?.role === 'owner')
 const hasActive = computed(() => subscription.value?.status === 'active')
 const pendingAffiliation = computed(
     () => !!subscription.value?.affiliation_url && !hasActive.value,
@@ -66,6 +65,7 @@ function formatDate(value: string | null): string {
 
 async function load(): Promise<void> {
     loading.value = true
+    qrError.value = false
     try {
         const [overview, planList] = await Promise.all([
             BillingService.overview(),
@@ -106,6 +106,7 @@ async function subscribe(plan: Plan): Promise<void> {
 
 async function refresh(): Promise<void> {
     refreshing.value = true
+    qrError.value = false
     try {
         const overview = await BillingService.overview()
         subscription.value = overview.subscription
@@ -254,10 +255,11 @@ onMounted(() => {
                     </AppButton>
                 </div>
                 <img
-                    v-if="subscription!.affiliation_qr_url"
+                    v-if="subscription!.affiliation_qr_url && !qrError"
                     :src="subscription!.affiliation_qr_url!"
                     alt="Código QR de afiliación"
                     style="margin-top: 16px; width: 160px; height: 160px; border-radius: var(--r-lg)"
+                    @error="qrError = true"
                 />
             </section>
 
