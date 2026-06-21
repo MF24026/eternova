@@ -75,7 +75,8 @@ final class SecurityHeaders
             "object-src 'none'",
             "frame-ancestors 'none'",
             "form-action 'self'",
-            "img-src 'self' data: blob:",
+            // Wompi serves the recurring-affiliation QR image from its blob storage.
+            "img-src 'self' data: blob: https://wompistorage.blob.core.windows.net",
             "font-src 'self' https://fonts.bunny.net",
             "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
             "script-src {$scriptSrc}",

@@ -41,8 +41,16 @@ test.describe('Tenant billing UI (Phase 6b)', () => {
         await page.click('[data-testid="subscribe-btn-basico"]')
         await expect(page.locator('[data-testid="affiliation-panel"]')).toBeVisible({ timeout: 15_000 })
 
-        const href = await page.locator('[data-testid="affiliation-open-link"]').getAttribute('href')
+        const openLink = page.locator('[data-testid="affiliation-open-link"]')
+        const href = await openLink.getAttribute('href')
         expect(href).toBeTruthy()
+
+        // The open-link control must actually navigate in a new tab. Regression guard: a <button>
+        // nested inside an <a> swallowed the click, so nothing opened.
+        const popupPromise = page.waitForEvent('popup', { timeout: 5_000 })
+        await openLink.click()
+        const popup = await popupPromise
+        await popup.close()
 
         // Refresh state keeps the page healthy (no crash).
         await page.click('[data-testid="affiliation-refresh"]')
