@@ -177,6 +177,12 @@ const router = createRouter({
             component: () => import('@/pages/Admin/SettingsPage.vue'),
             meta: { requiresAuth: true, layout: 'admin' },
         },
+        {
+            path: '/admin/billing',
+            name: 'admin.billing',
+            component: () => import('@/pages/Admin/BillingPage.vue'),
+            meta: { requiresAuth: true, layout: 'admin' },
+        },
 
         // ── Public tracking ─────────────────────────────────────────────────
         // No `layout` key → LayoutSwitcher falls back to bare <slot /> (default).
