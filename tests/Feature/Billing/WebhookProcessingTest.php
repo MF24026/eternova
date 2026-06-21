@@ -11,6 +11,8 @@ use App\Modules\Billing\Models\WebhookLog;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
@@ -21,6 +23,15 @@ use Tests\TestCase;
 final class WebhookProcessingTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // An approved charge now issues an invoice (PDF) + owner notification via the Phase 5
+        // listener on SubscriptionRenewed; fake both so these tests stay hermetic.
+        Storage::fake();
+        Notification::fake();
+    }
 
     private function subscription(string $status, string $reference = 'ref-1'): Subscription
     {
@@ -78,6 +89,8 @@ final class WebhookProcessingTest extends TestCase
         $this->assertNotNull($sub->last_paid_at);
         // State change produced an audit row.
         $this->assertDatabaseHas('billing_audit_log', ['subscription_id' => $sub->id, 'event_type' => 'subscription.state_changed']);
+        // Wompi owns recurrence, so the webhook is where a charge succeeds -> it must issue the invoice.
+        $this->assertDatabaseHas('invoices', ['subscription_id' => $sub->id, 'status' => 'paid']);
     }
 
     public function test_approved_charge_on_active_subscription_renews_dates_without_invalid_transition(): void

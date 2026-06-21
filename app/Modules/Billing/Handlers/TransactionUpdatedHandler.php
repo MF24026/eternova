@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Handlers;
 
+use App\Modules\Billing\Domain\Events\SubscriptionRenewed;
 use App\Modules\Billing\Enums\SubscriptionStatus;
 use App\Modules\Billing\Models\Subscription;
 
@@ -54,6 +55,11 @@ final class TransactionUpdatedHandler
             'next_retry_at' => null,
             'past_due_since' => null,
         ])->save();
+
+        // A successful (recurring) charge issues the invoice + notification via the Phase 5
+        // listener. Since Wompi now owns the recurrence, the webhook is the ONLY place a charge
+        // succeeds, so this is where the invoice must be emitted.
+        SubscriptionRenewed::dispatch($subscription->id, (string) $subscription->tenant_id);
     }
 
     private function markChargeFailed(Subscription $subscription): void
