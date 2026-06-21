@@ -12,6 +12,7 @@ import {
     Receipt,
     Users,
     Settings,
+    Wallet,
     Sun,
     Moon,
     Menu,
@@ -34,6 +35,7 @@ interface NavItem {
     label: string
     to: string
     icon: unknown
+    ownerOnly?: boolean
 }
 
 const route = useRoute()
@@ -58,7 +60,17 @@ const navItems: NavItem[] = [
     { id: 'quotations', label: 'Cotizaciones', to: '/admin/quotations', icon: FileText },
     { id: 'customers', label: 'Clientes', to: '/admin/customers', icon: Users },
     { id: 'settings', label: 'Ajustes', to: '/admin/settings', icon: Settings },
+    { id: 'billing', label: 'Facturación', to: '/admin/billing', icon: Wallet, ownerOnly: true },
 ]
+
+// The role lives on the current tenant membership, not on the user (see UserResource / the
+// ReservationsPage pattern). Billing is Owner-only (the API 403s the rest); hide it for non-owners.
+const isOwner = computed(
+    () => currentUser.value?.tenants.find((t) => t.is_current)?.role === 'owner',
+)
+const visibleNavItems = computed(() =>
+    navItems.filter((item) => !item.ownerOnly || isOwner.value),
+)
 
 const userInitial = computed(() => {
     const name = currentUser.value?.name ?? 'A'
@@ -208,7 +220,7 @@ watch(() => route.name, () => maybeStartTour())
             <!-- Nav items -->
             <nav class="stack scroll flex-1" style="gap: 4px">
                 <RouterLink
-                    v-for="item in navItems"
+                    v-for="item in visibleNavItems"
                     :key="item.id"
                     :to="item.to"
                     :class="['sidebar-item', { active: isActive(item.to) }]"

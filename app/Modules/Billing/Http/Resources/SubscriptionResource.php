@@ -37,6 +37,10 @@ final class SubscriptionResource extends JsonResource
             'current_period_end' => $this->current_period_end,
             'next_billing_at' => $this->next_billing_at,
             'cancel_at_period_end' => (bool) $this->cancel_at_period_end,
+            // Pending-affiliation resume: the hosted Wompi link + QR the owner must visit to
+            // affiliate their card (so the UI can re-show it after a reload).
+            'affiliation_url' => $this->affiliation_url,
+            'affiliation_qr_url' => $this->affiliation_qr_url,
             // Display-only payment method metadata. NEVER the token (it is $hidden anyway).
             'card_last4' => $this->card_last4,
             'card_brand' => $this->card_brand,

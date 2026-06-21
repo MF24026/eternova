@@ -58,6 +58,25 @@ final class BillingAccountApiTest extends TestCase
             ->assertJsonStructure(['data' => ['subscription' => ['id', 'status', 'plan'], 'recent_invoices']]);
     }
 
+    public function test_overview_exposes_affiliation_url_for_pending_affiliation(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $plan = Plan::factory()->create();
+        Subscription::factory()->forTenant($tenant)->withPlan($plan)->create([
+            'status' => 'trialing',
+            'gateway_subscription_id' => 'idEnlace-123',
+            'affiliation_url' => 'https://s.wompi.sv/ABC',
+            'affiliation_qr_url' => 'https://wompistorage/qr.jpg',
+        ]);
+
+        // The UI resumes a pending affiliation from the overview, so the link + QR must be exposed.
+        $this->actingAs($this->owner($tenant))
+            ->getJson($this->tenantUrl($tenant, 'api/v1/account/billing'))
+            ->assertOk()
+            ->assertJsonPath('data.subscription.affiliation_url', 'https://s.wompi.sv/ABC')
+            ->assertJsonPath('data.subscription.affiliation_qr_url', 'https://wompistorage/qr.jpg');
+    }
+
     public function test_admin_staff_and_customer_are_forbidden(): void
     {
         $tenant = $this->tenantWithSubscription();
