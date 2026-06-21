@@ -3,8 +3,6 @@ import { ref, computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
     Building2,
-    CreditCard,
-    HeadphonesIcon,
     BarChart3,
     Menu,
     X,
@@ -31,10 +29,10 @@ const sidebarOpen = ref(false)
 const sidebarCollapsed = ref(false)
 const signingOut = ref(false)
 
+// Suscripciones + Soporte have no backend yet (7b scope = Tenants + Metricas); re-add when their
+// APIs land so the nav never points at a 404.
 const navItems: NavItem[] = [
     { id: 'tenants', label: 'Tenants', to: '/super-admin/tenants', icon: Building2 },
-    { id: 'subscriptions', label: 'Suscripciones', to: '/super-admin/subscriptions', icon: CreditCard },
-    { id: 'support', label: 'Soporte', to: '/super-admin/support', icon: HeadphonesIcon },
     { id: 'metrics', label: 'Metricas', to: '/super-admin/metrics', icon: BarChart3 },
 ]
 

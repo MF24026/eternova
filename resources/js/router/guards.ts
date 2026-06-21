@@ -19,6 +19,11 @@ export async function authGuard(
         return { name: 'login', query: { redirect: to.fullPath } }
     }
 
+    // Platform operator pages require the is_super_admin flag; bounce everyone else to their panel.
+    if (to.meta.requiresSuperAdmin === true && !auth.isSuperAdmin) {
+        return { name: 'admin.dashboard' }
+    }
+
     if (to.meta.guestOnly === true && auth.isAuthenticated) {
         return { name: 'admin.dashboard' }
     }
