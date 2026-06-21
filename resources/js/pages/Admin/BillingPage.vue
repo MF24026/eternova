@@ -233,16 +233,15 @@ onMounted(() => {
                     automáticos; volvé y tocá "Refrescar estado" cuando termines.
                 </p>
                 <div class="flex items-center gap-3" style="flex-wrap: wrap">
-                    <a
+                    <AppButton
                         :href="subscription!.affiliation_url!"
-                        target="_blank"
-                        rel="noopener noreferrer"
                         data-testid="affiliation-open-link"
+                        variant="primary"
+                        size="md"
+                        :icon="ExternalLink"
                     >
-                        <AppButton variant="primary" size="md" :icon="ExternalLink">
-                            Abrir enlace de afiliación
-                        </AppButton>
-                    </a>
+                        Abrir enlace de afiliación
+                    </AppButton>
                     <AppButton
                         data-testid="affiliation-refresh"
                         variant="secondary"

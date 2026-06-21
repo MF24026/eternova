@@ -60,6 +60,16 @@ final class SecurityHeadersTest extends TestCase
         $this->assertStringContainsString("object-src 'none'", $csp);
     }
 
+    public function test_csp_allows_the_wompi_qr_image_host(): void
+    {
+        $response = $this->getJson('http://localhost/api/v1/health');
+
+        $csp = $response->headers->get('Content-Security-Policy');
+        $this->assertNotNull($csp);
+        // The recurring-affiliation QR is served from Wompi's blob storage; the img-src must allow it.
+        $this->assertStringContainsString('https://wompistorage.blob.core.windows.net', $csp);
+    }
+
     public function test_csp_is_strict_with_a_nonce_in_production(): void
     {
         $this->app['env'] = 'production';
