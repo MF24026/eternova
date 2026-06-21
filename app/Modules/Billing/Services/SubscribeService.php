@@ -9,7 +9,9 @@ use App\Modules\Billing\Gateways\Data\RecurringPlanData;
 use App\Modules\Billing\Models\Subscription;
 use App\Modules\Plans\Models\Plan;
 use App\Modules\Tenancy\Models\Tenant;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
 /**
  * Creates a Wompi-managed recurring payment link for a tenant and snapshots the
@@ -46,6 +48,10 @@ final class SubscribeService
                 'current_period_end' => now()->addDays(30),
             ]);
 
+        // The link being replaced (a plan change, or re-subscribing over a pending one). The new
+        // link is stored first so a failure above never strands the tenant without one.
+        $previousLinkId = $subscription->gateway_subscription_id;
+
         $subscription->forceFill([
             'plan_id' => $plan->id,
             'amount_cents' => $amountCents,
@@ -54,6 +60,20 @@ final class SubscribeService
             'affiliation_url' => $link->shortUrl,
             'affiliation_qr_url' => $link->qrUrl,
         ])->save();
+
+        // Stop Wompi charging the old plan's link. Best-effort: the new link is already stored, so a
+        // failed cancel is logged (for reconciliation), never fatal — and never leaks card data.
+        if ($previousLinkId !== null && $previousLinkId !== $link->linkId) {
+            try {
+                $this->gateway->cancelRecurringPaymentLink($previousLinkId);
+            } catch (Throwable) {
+                Log::warning('billing: failed to cancel previous recurring link on plan change', [
+                    'tenant_id' => $tenant->id,
+                    'previous_link_id' => $previousLinkId,
+                    'new_link_id' => $link->linkId,
+                ]);
+            }
+        }
 
         return $subscription;
     }
