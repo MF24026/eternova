@@ -40,11 +40,23 @@ const cancelling = ref(false)
 const qrError = ref(false)
 
 const hasActive = computed(() => subscription.value?.status === 'active')
-const pendingAffiliation = computed(
-    () => !!subscription.value?.affiliation_url && !hasActive.value,
-)
-// The plan picker is offered whenever there is no active subscription (subscribe or switch).
-const showPlanPicker = computed(() => !hasActive.value)
+// Affiliation just created this session (subscribe or plan change) — shown even while `active`.
+const recentAffiliation = ref<{ url: string; qr: string | null } | null>(null)
+// The link the owner still needs to affiliate: the fresh one from this session, otherwise the
+// stored one on a not-yet-active subscription.
+const affiliationToShow = computed<{ url: string; qr: string | null } | null>(() => {
+    if (recentAffiliation.value) return recentAffiliation.value
+    if (subscription.value?.affiliation_url && !hasActive.value) {
+        return { url: subscription.value.affiliation_url, qr: subscription.value.affiliation_qr_url }
+    }
+    return null
+})
+// The plan picker is always offered: to subscribe, or to switch plans while active (changing plan
+// cancels the old Wompi link, creates a new one, and re-affiliates — see SubscribeService).
+const currentPlanSlug = computed(() => subscription.value?.plan?.slug ?? null)
+function isCurrentPlan(plan: Plan): boolean {
+    return hasActive.value && plan.slug === currentPlanSlug.value
+}
 
 const statusVariant = computed(() => {
     switch (subscription.value?.status) {
@@ -92,13 +104,21 @@ function isForbidden(error: unknown): boolean {
 }
 
 async function subscribe(plan: Plan): Promise<void> {
+    const changing = hasActive.value
     subscribing.value = plan.slug
     try {
-        await BillingService.subscribe(plan.id)
+        const result = await BillingService.subscribe(plan.id)
+        // Show the affiliation panel from the fresh link even when the sub stays `active` (a plan
+        // change keeps access until the new link's webhook lands).
+        if (result.affiliation_url) {
+            recentAffiliation.value = { url: result.affiliation_url, qr: result.affiliation_qr_url }
+        }
         await load()
-        toast.success('Suscripción creada. Afiliá tu tarjeta para activarla.')
+        toast.success(changing
+            ? 'Plan cambiado. Afiliá tu tarjeta para activar el nuevo plan.'
+            : 'Suscripción creada. Afiliá tu tarjeta para activarla.')
     } catch {
-        toast.error('No se pudo crear la suscripción. Intentá de nuevo.')
+        toast.error('No se pudo procesar la suscripción. Intentá de nuevo.')
     } finally {
         subscribing.value = null
     }
@@ -107,6 +127,7 @@ async function subscribe(plan: Plan): Promise<void> {
 async function refresh(): Promise<void> {
     refreshing.value = true
     qrError.value = false
+    recentAffiliation.value = null
     try {
         const overview = await BillingService.overview()
         subscription.value = overview.subscription
@@ -217,7 +238,7 @@ onMounted(() => {
 
             <!-- Pending affiliation: open the hosted Wompi link / QR -->
             <section
-                v-if="pendingAffiliation"
+                v-if="affiliationToShow"
                 data-testid="affiliation-panel"
                 class="card"
                 style="padding: 24px; background: var(--tier-mid)"
@@ -234,7 +255,7 @@ onMounted(() => {
                 </p>
                 <div class="flex items-center gap-3" style="flex-wrap: wrap">
                     <AppButton
-                        :href="subscription!.affiliation_url!"
+                        :href="affiliationToShow.url"
                         data-testid="affiliation-open-link"
                         variant="primary"
                         size="md"
@@ -254,19 +275,22 @@ onMounted(() => {
                     </AppButton>
                 </div>
                 <img
-                    v-if="subscription!.affiliation_qr_url && !qrError"
-                    :src="subscription!.affiliation_qr_url!"
+                    v-if="affiliationToShow.qr && !qrError"
+                    :src="affiliationToShow.qr"
                     alt="Código QR de afiliación"
                     style="margin-top: 16px; width: 160px; height: 160px; border-radius: var(--r-lg)"
                     @error="qrError = true"
                 />
             </section>
 
-            <!-- Plan picker -->
-            <section v-if="showPlanPicker" class="stack" style="gap: 12px">
+            <!-- Plan picker (subscribe or switch plans) -->
+            <section v-if="plans.length > 0" class="stack" style="gap: 12px">
                 <h2 class="serif" style="font-size: 1.1rem; color: var(--on-surface)">
                     {{ subscription ? 'Cambiar de plan' : 'Elegí tu plan' }}
                 </h2>
+                <p v-if="hasActive" style="color: var(--on-surface-variant); font-size: 0.9rem">
+                    Al cambiar de plan tendrás que afiliar tu tarjeta de nuevo en Wompi.
+                </p>
                 <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px">
                     <div
                         v-for="plan in plans"
@@ -280,13 +304,23 @@ onMounted(() => {
                             {{ formatCents(plan.price_monthly_cents) }}
                         </span>
                         <AppButton
+                            v-if="isCurrentPlan(plan)"
+                            :data-testid="`current-plan-${plan.slug}`"
+                            variant="secondary"
+                            size="sm"
+                            :disabled="true"
+                        >
+                            Plan actual
+                        </AppButton>
+                        <AppButton
+                            v-else
                             :data-testid="`subscribe-btn-${plan.slug}`"
                             variant="primary"
                             size="sm"
                             :loading="subscribing === plan.slug"
                             @click="subscribe(plan)"
                         >
-                            Suscribirme
+                            {{ subscription ? 'Cambiar a este plan' : 'Suscribirme' }}
                         </AppButton>
                     </div>
                 </div>

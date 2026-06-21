@@ -66,4 +66,25 @@ test.describe('Tenant billing UI (Phase 6b)', () => {
         // tatiana never reaches `active` here -> the cancel action must be absent.
         await expect(page.locator('[data-testid="cancel-subscription-btn"]')).toHaveCount(0)
     })
+
+    test('an active owner can switch plans and is sent to re-affiliate', async ({ page }) => {
+        // rosa-eterna is the active demo tenant (the picker is offered for switching while active).
+        const ACTIVE_BASE = process.env.POS_ACTIVE_TENANT_BASE_URL ?? 'http://rosa-eterna.eternova.localhost'
+        await page.goto(`${ACTIVE_BASE}/login`)
+        await page.waitForSelector('input[type="email"]', { timeout: 10_000 })
+        await page.fill('input[type="email"]', 'caro@rosaeterna.com')
+        await page.fill('input[type="password"]', 'DemoPro123!')
+        await page.click('button[type="submit"]')
+        await page.waitForURL('**/admin/**', { timeout: 15_000 })
+
+        await page.goto(`${ACTIVE_BASE}/admin/billing`)
+        await expect(page.locator('[data-testid="billing-page"]')).toBeVisible({ timeout: 15_000 })
+
+        // While active, the current plan is marked and the picker stays available for switching.
+        await expect(page.locator('[data-testid^="current-plan-"]')).toBeVisible({ timeout: 10_000 })
+
+        // Switch to a different plan -> the affiliation panel appears even though the sub is active.
+        await page.locator('[data-testid^="subscribe-btn-"]').first().click()
+        await expect(page.locator('[data-testid="affiliation-panel"]')).toBeVisible({ timeout: 15_000 })
+    })
 })
