@@ -60,7 +60,12 @@ final class QuotationPdfTest extends TestCase
             'business_name'          => $businessName,
             'primary_color'          => '#7c545d',
             'secondary_color'        => '#5a4b71',
+            // Pin country + currency together: the factory otherwise randomizes the
+            // country (SV/CO), and the locale drives the number's decimal glyph
+            // (es-SV "185.00" vs es-CO "185,00"). USD billing implies SV here.
+            'country_code'           => 'SV',
             'currency'               => 'USD',
+            'language'               => 'es',
             'quotation_tax_rate_bps' => 1300,
             'quotation_valid_days'   => 15,
         ]);
@@ -122,7 +127,9 @@ final class QuotationPdfTest extends TestCase
     {
         $this->assertSame('USD 15.00', QuotationPdfViewModel::formatCents(1500, 'USD'));
         $this->assertSame('USD 1,500.00', QuotationPdfViewModel::formatCents(150000, 'USD'));
-        $this->assertSame('COP 0.01', QuotationPdfViewModel::formatCents(1, 'COP'));
+        // COP is a zero-decimal currency: 1 minor unit is 1 peso, not "0.01".
+        $this->assertSame('COP 1', QuotationPdfViewModel::formatCents(1, 'COP'));
+        $this->assertSame('COP 150.000', QuotationPdfViewModel::formatCents(150000, 'COP', 'es-CO'));
         $this->assertSame('USD 0.00', QuotationPdfViewModel::formatCents(0, 'USD'));
     }
 

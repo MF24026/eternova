@@ -1,6 +1,12 @@
 @php
+    use App\Support\Money\Format;
+
     $brand = config('saas.name', 'Eternova');
-    $money = static fn (int $cents): string => number_format($cents / 100, 2);
+    // Locale drives grouping/decimals; the currency is the invoice's own snapshot
+    // (never derived from the tenant — see i18n billing rule).
+    $locale = $invoice->tenant ? Format::localeForTenant($invoice->tenant) : 'es-SV';
+    $currency = $invoice->currency ?: 'USD';
+    $money = static fn (int $cents): string => Format::number($cents, $currency, $locale);
     $plan = $invoice->subscription?->plan;
 @endphp
 <!DOCTYPE html>

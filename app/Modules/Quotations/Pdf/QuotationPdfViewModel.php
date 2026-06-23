@@ -6,6 +6,7 @@ namespace App\Modules\Quotations\Pdf;
 
 use App\Modules\Quotations\Models\Quotation;
 use App\Modules\Tenancy\Models\Tenant;
+use App\Support\Money\Format;
 use Illuminate\Support\Collection;
 
 /**
@@ -92,32 +93,33 @@ final readonly class QuotationPdfViewModel
 
         // ── Line items ────────────────────────────────────────────────────
         $currency    = $this->currency;
+        $locale      = Format::localeForTenant($tenant);
         $this->items = $quotation->items->map(
             fn ($item) => [
                 'description' => $item->description,
                 'quantity'    => $item->quantity,
-                'unit_price'  => self::formatCents($item->unit_price_cents, $currency),
-                'line_total'  => self::formatCents($item->line_total_cents, $currency),
+                'unit_price'  => self::formatCents($item->unit_price_cents, $currency, $locale),
+                'line_total'  => self::formatCents($item->line_total_cents, $currency, $locale),
             ]
         );
 
         // ── Totals ────────────────────────────────────────────────────────
-        $this->subtotal = self::formatCents($quotation->subtotal_cents, $currency);
+        $this->subtotal = self::formatCents($quotation->subtotal_cents, $currency, $locale);
 
         $this->discount = $quotation->discount_cents > 0
-            ? self::formatCents($quotation->discount_cents, $currency)
+            ? self::formatCents($quotation->discount_cents, $currency, $locale)
             : null;
 
         if ($quotation->tax_rate_bps > 0) {
             $ratePct        = $quotation->tax_rate_bps / 100;
             $this->taxLabel = sprintf('IVA (%.0f%%)', $ratePct);
-            $this->tax      = self::formatCents($quotation->tax_cents, $currency);
+            $this->tax      = self::formatCents($quotation->tax_cents, $currency, $locale);
         } else {
             $this->taxLabel = null;
             $this->tax      = null;
         }
 
-        $this->total = self::formatCents($quotation->total_cents, $currency);
+        $this->total = self::formatCents($quotation->total_cents, $currency, $locale);
 
         // ── Notes & terms ─────────────────────────────────────────────────
         $this->notes = $quotation->notes;
@@ -127,16 +129,16 @@ final readonly class QuotationPdfViewModel
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /**
-     * Format an integer centavos value as a human-readable currency string.
+     * Format an integer minor-unit value as a human-readable currency string.
      *
-     * Output example: "USD 1,500.00" — currency code prefix is intentional
-     * for LatAm documents where the symbol alone is ambiguous ($ = USD/SV/CO/MX).
+     * Output example: "USD 1,500.00" / "COP 150.000" — currency code prefix is
+     * intentional for LatAm documents where the symbol alone is ambiguous
+     * ($ = USD/SV/CO/MX). Decimals follow the currency (COP/CLP carry none) and
+     * grouping follows the tenant's locale, so the number reads natively per region.
      */
-    public static function formatCents(int $cents, string $currency): string
+    public static function formatCents(int $cents, string $currency, string $locale = 'es-SV'): string
     {
-        $amount = $cents / 100;
-
-        return sprintf('%s %s', $currency, number_format($amount, 2, '.', ','));
+        return sprintf('%s %s', $currency, Format::number($cents, $currency, $locale));
     }
 
     /**
