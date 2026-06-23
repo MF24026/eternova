@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Billing\Notifications;
 
 use App\Modules\Billing\Models\Invoice;
+use App\Support\Money\Format;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -25,7 +26,8 @@ final class InvoiceReadyNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $amount = number_format($this->invoice->total_cents / 100, 2);
+        $locale = $this->invoice->tenant ? Format::localeForTenant($this->invoice->tenant) : 'es-SV';
+        $amount = Format::number($this->invoice->total_cents, $this->invoice->currency ?: 'USD', $locale);
 
         $mail = (new MailMessage)
             ->subject("Tu factura {$this->invoice->number}")
