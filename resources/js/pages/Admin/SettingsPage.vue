@@ -419,7 +419,7 @@ onBeforeRouteLeave(async () => {
                         </div>
                         <AppInput v-model="taxRatePercent" label="Tasa de IVA (%)" type="number" help-text="Porcentaje sobre el subtotal" :error="errors.tax?.rate_bps" data-testid="input-tax-rate" />
                         <AppInput v-model="settings.tax.id_label" label="Etiqueta de identificación fiscal" help-text="Ej. NIT, RFC, RUC" :error="errors.tax?.id_label" />
-                        <AppInput v-model="settings.tax.id_number" label="Número de identificación fiscal" :error="errors.tax?.id_number" />
+                        <AppInput v-model="settings.tax.id_number" label="Número de identificación fiscal" :error="errors.tax?.id_number" data-testid="input-tax-id" />
                     </div>
                 </div>
             </template>

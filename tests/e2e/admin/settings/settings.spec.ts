@@ -180,4 +180,34 @@ test.describe('Settings page (S8-E3/E4)', () => {
         await page.click('[data-testid="tab-cotizaciones"]')
         await expect(page.locator('[data-testid="panel-cotizaciones"]')).toBeVisible()
     })
+
+    test('rejects an invalid fiscal id and accepts a valid DUI (SV)', async ({ page }) => {
+        await login(page)
+        await gotoSettings(page)
+
+        // The tab strip scrolls horizontally; on mobile the Impuestos tab's centre
+        // is overlapped by neighbouring tabs / the sticky topbar, so a coordinate
+        // click is intercepted. Dispatch the click straight to the tab to switch
+        // panels — the fiscal-id interactions below are still real clicks.
+        await page.locator('[data-testid="tab-impuestos"]').dispatchEvent('click')
+        await expect(page.locator('[data-testid="panel-impuestos"]')).toBeVisible()
+
+        // The save button lives in a sticky footer that the mobile topbar/footer
+        // overlaps for a coordinate click; dispatch the click so it reaches the
+        // real save() handler (real request -> real 422 -> real error binding).
+        const saveBtn = page.locator('[data-testid="btn-save"]')
+
+        // Wrong DUI check digit -> inline error, no success toast.
+        await page.fill('[data-testid="input-tax-id"] input', '04210323-5')
+        await saveBtn.dispatchEvent('click')
+        await expect(page.locator('[data-testid="panel-impuestos"] .text-error').first())
+            .toBeVisible({ timeout: 8_000 })
+        await expect(page.locator('text=Cambios guardados')).toHaveCount(0)
+
+        // Valid DUI -> saves.
+        await page.fill('[data-testid="input-tax-id"] input', '04210323-4')
+        await saveBtn.dispatchEvent('click')
+        await expect(page.locator('text=Cambios guardados')).toBeVisible({ timeout: 8_000 })
+        await expect(page.locator('[data-testid="panel-impuestos"] .text-error')).toHaveCount(0)
+    })
 })

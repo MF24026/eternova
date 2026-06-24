@@ -1,6 +1,7 @@
 @php
     use App\Support\Money\Format;
 
+    $taxIdentity = $taxIdentity ?? null;
     $brand = config('saas.name', 'Eternova');
     // Locale drives grouping/decimals; the currency is the invoice's own snapshot
     // (never derived from the tenant — see i18n billing rule).
@@ -41,6 +42,9 @@
                 <div class="label">Facturado a</div>
                 <div>{{ $invoice->tenant?->business_name ?? $invoice->tenant?->name }}</div>
                 <div>{{ $invoice->tenant?->email }}</div>
+                @if ($taxIdentity)
+                    <div>{{ $taxIdentity['label'] }}: {{ $taxIdentity['number'] }}</div>
+                @endif
             </td>
             <td class="right">
                 <div class="label">Factura</div>

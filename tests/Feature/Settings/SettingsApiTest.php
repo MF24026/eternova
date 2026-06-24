@@ -130,6 +130,40 @@ final class SettingsApiTest extends TestCase
         $response->assertStatus(422)->assertJsonValidationErrorFor('rate_bps');
     }
 
+    public function test_update_tax_rejects_invalid_fiscal_id_for_sv(): void
+    {
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant(['country_code' => 'SV']);
+
+        $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
+            'enabled'   => true,
+            'rate_bps'  => 1300,
+            'id_label'  => 'DUI',
+            'id_number' => '04210323-5', // wrong DUI check digit
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrorFor('id_number');
+    }
+
+    public function test_update_tax_accepts_and_persists_a_valid_dui(): void
+    {
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant(['country_code' => 'SV']);
+
+        $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
+            'enabled'   => true,
+            'rate_bps'  => 1300,
+            'id_label'  => 'DUI',
+            'id_number' => '04210323-4',
+        ])->assertOk();
+
+        $stored = BranchSetting::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->where('group', 'tax')
+            ->where('key', 'id_number')
+            ->value('value');
+
+        $this->assertSame('04210323-4', $stored);
+    }
+
     public function test_owner_can_toggle_notifications(): void
     {
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
