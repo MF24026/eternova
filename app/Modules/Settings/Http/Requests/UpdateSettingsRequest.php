@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Settings\Http\Requests;
 
 use App\Modules\Settings\Services\SettingsService;
+use App\Support\TaxId\Rules\ValidTaxId;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -65,7 +66,7 @@ final class UpdateSettingsRequest extends FormRequest
                 'enabled'   => ['required', 'boolean'],
                 'rate_bps'  => ['required', 'integer', 'min:0', 'max:9999'],
                 'id_label'  => ['nullable', 'string', 'max:20'],
-                'id_number' => ['nullable', 'string', 'max:40'],
+                'id_number' => ['nullable', 'string', 'max:40', new ValidTaxId($this->tenantCountryCode())],
             ],
             'orders' => [
                 'auto_confirm'         => ['required', 'boolean'],
@@ -144,5 +145,18 @@ final class UpdateSettingsRequest extends FormRequest
     public function group(): string
     {
         return (string) $this->route('group');
+    }
+
+    /**
+     * Country code of the acting tenant, driving the fiscal-id validation rule.
+     * Falls back to SV (the platform's home market) when no tenant is resolved.
+     */
+    private function tenantCountryCode(): string
+    {
+        $tenant = current_tenant();
+
+        return is_string($tenant?->country_code) && $tenant->country_code !== ''
+            ? $tenant->country_code
+            : 'SV';
     }
 }
