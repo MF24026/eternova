@@ -38,7 +38,6 @@ final class ChargeFailedNotification extends Notification
         return [
             'type' => 'billing.charge_failed',
             'subscription_id' => $this->subscription->id,
-            'retry_count' => $this->subscription->retry_count,
         ];
     }
 

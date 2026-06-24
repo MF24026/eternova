@@ -51,8 +51,6 @@ final class TransactionUpdatedHandler
         $subscription->forceFill([
             'next_billing_at' => now()->addMonth(),
             'last_paid_at' => now(),
-            'retry_count' => 0,
-            'next_retry_at' => null,
             'past_due_since' => null,
         ])->save();
 
