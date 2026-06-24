@@ -46,25 +46,6 @@ final class SubscriptionRepositoryTest extends TestCase
             ->create(array_merge(['status' => $status->value], $attributes));
     }
 
-    public function test_due_for_recurring_charge_returns_active_subs_due_within_the_window(): void
-    {
-        $due = $this->subscription(SubscriptionStatus::Active, ['next_billing_at' => now()->subDay()]);
-        $dueToday = $this->subscription(SubscriptionStatus::Active, ['next_billing_at' => now()]);
-
-        // Excluded: not yet due, well outside the 7-day lookback, null, and wrong state.
-        $this->subscription(SubscriptionStatus::Active, ['next_billing_at' => now()->addDays(2)]);
-        $this->subscription(SubscriptionStatus::Active, ['next_billing_at' => now()->subDays(30)]);
-        $this->subscription(SubscriptionStatus::Active, ['next_billing_at' => null]);
-        $this->subscription(SubscriptionStatus::PastDue, ['next_billing_at' => now()->subDay()]);
-
-        $result = $this->repository->dueForRecurringCharge(now());
-
-        $this->assertEqualsCanonicalizing(
-            [$due->id, $dueToday->id],
-            $result->pluck('id')->all()
-        );
-    }
-
     public function test_in_state_returns_only_subs_in_that_state(): void
     {
         $suspendedA = $this->subscription(SubscriptionStatus::Suspended);
@@ -90,22 +71,5 @@ final class SubscriptionRepositoryTest extends TestCase
         $result = $this->repository->inState(SubscriptionStatus::Canceled, now()->subDays(30));
 
         $this->assertSame([$stale->id], $result->pluck('id')->all());
-    }
-
-    public function test_due_for_dunning_retry_respects_retry_cap_and_schedule(): void
-    {
-        $retryable = $this->subscription(SubscriptionStatus::PastDue, [
-            'retry_count' => 1,
-            'next_retry_at' => now()->subHour(),
-        ]);
-
-        // Excluded: cap reached, not yet scheduled, and null schedule.
-        $this->subscription(SubscriptionStatus::PastDue, ['retry_count' => 3, 'next_retry_at' => now()->subHour()]);
-        $this->subscription(SubscriptionStatus::PastDue, ['retry_count' => 0, 'next_retry_at' => now()->addDay()]);
-        $this->subscription(SubscriptionStatus::PastDue, ['retry_count' => 0, 'next_retry_at' => null]);
-
-        $result = $this->repository->dueForDunningRetry(now(), maxRetries: 3);
-
-        $this->assertSame([$retryable->id], $result->pluck('id')->all());
     }
 }

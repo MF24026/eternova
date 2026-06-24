@@ -113,7 +113,7 @@ final class WompiGateway implements PaymentGatewayInterface
         try {
             return $this->authorized()->post("{$this->baseUrl}/EnlacePagoRecurrente/{$linkId}")->successful();
         } catch (\Throwable $e) {
-            $this->logException('recurring_cancel_exception', $e, \Illuminate\Support\Str::uuid()->toString());
+            $this->logException('recurring_cancel_exception', $e, Str::uuid()->toString());
 
             return false;
         }
@@ -126,7 +126,7 @@ final class WompiGateway implements PaymentGatewayInterface
 
             return $response->successful() ? (array) $response->json() : null;
         } catch (\Throwable $e) {
-            $this->logException('recurring_get_exception', $e, \Illuminate\Support\Str::uuid()->toString());
+            $this->logException('recurring_get_exception', $e, Str::uuid()->toString());
 
             return null;
         }

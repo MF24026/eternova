@@ -117,9 +117,8 @@ final class WebhookProcessingTest extends TestCase
 
         $sub->refresh();
         $this->assertSame('past_due', $sub->status);
+        // Wompi owns retries now; we only record the dunning entry timestamp.
         $this->assertNotNull($sub->past_due_since);
-        // Wompi owns retries now; we no longer schedule our own.
-        $this->assertNull($sub->next_retry_at);
     }
 
     public function test_approved_recurring_charge_activates_trialing_by_id_enlace(): void

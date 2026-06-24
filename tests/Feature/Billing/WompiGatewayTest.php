@@ -185,6 +185,30 @@ final class WompiGatewayTest extends TestCase
         Http::assertSent(fn ($r) => str_ends_with($r->url(), '/EnlacePagoRecurrente/enlace-1') && $r->method() === 'POST');
     }
 
+    public function test_get_recurring_link_returns_the_enlace_payload(): void
+    {
+        Http::fake($this->withAuth([
+            '*/EnlacePagoRecurrente/enlace-1' => Http::response([
+                'idEnlace' => 'enlace-1',
+                'estaActivo' => true,
+                'estaProductivo' => false,
+            ], 200),
+        ]));
+
+        $link = $this->gateway()->getRecurringLink('enlace-1');
+
+        $this->assertIsArray($link);
+        $this->assertSame('enlace-1', $link['idEnlace']);
+        Http::assertSent(fn ($r) => str_ends_with($r->url(), '/EnlacePagoRecurrente/enlace-1') && $r->method() === 'GET');
+    }
+
+    public function test_get_recurring_link_returns_null_when_not_found(): void
+    {
+        Http::fake($this->withAuth(['*/EnlacePagoRecurrente/*' => Http::response(['mensaje' => 'no existe'], 404)]));
+
+        $this->assertNull($this->gateway()->getRecurringLink('missing'));
+    }
+
     public function test_get_transaction_normalizes_es_aprobada_to_a_status(): void
     {
         Http::fake($this->withAuth([
