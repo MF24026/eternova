@@ -4,6 +4,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { ArrowRight, Loader2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { extractFieldErrors, extractErrorMessage } from '@/utils/errors'
+import { useFieldValidation } from '@/composables/useFieldValidation'
+import { required, email as emailRule } from '@/utils/validators'
 import AuthShell from '@/components/layout/AuthShell.vue'
 
 const router = useRouter()
@@ -16,7 +18,19 @@ const submitting = ref(false)
 const generalError = ref('')
 const fieldErrors = ref<Record<string, string>>({})
 
+// Client-side on-blur feedback. The server response stays the source of truth
+// (its field errors merge into the display); this just catches the obvious
+// mistakes before a round-trip.
+const v = useFieldValidation({
+    email: [required, emailRule],
+    password: [required],
+})
+
 async function handleSubmit() {
+    if (!v.validateAll({ email: email.value, password: password.value })) {
+        return
+    }
+
     submitting.value = true
     generalError.value = ''
     fieldErrors.value = {}
@@ -54,9 +68,10 @@ async function handleSubmit() {
                     class="field"
                     placeholder="tu@correo.com"
                     autocomplete="email"
-                    :aria-invalid="!!fieldErrors.email"
+                    :aria-invalid="!!(v.errors.email || fieldErrors.email)"
+                    @blur="v.validateField('email', email)"
                 >
-                <p v-if="fieldErrors.email" class="auth-field-error" role="alert">{{ fieldErrors.email }}</p>
+                <p v-if="v.errors.email || fieldErrors.email" class="auth-field-error" role="alert" data-testid="error-email">{{ v.errors.email || fieldErrors.email }}</p>
             </div>
 
             <div class="auth-field-group">
@@ -68,9 +83,10 @@ async function handleSubmit() {
                     class="field"
                     placeholder="••••••••"
                     autocomplete="current-password"
-                    :aria-invalid="!!fieldErrors.password"
+                    :aria-invalid="!!(v.errors.password || fieldErrors.password)"
+                    @blur="v.validateField('password', password)"
                 >
-                <p v-if="fieldErrors.password" class="auth-field-error" role="alert">{{ fieldErrors.password }}</p>
+                <p v-if="v.errors.password || fieldErrors.password" class="auth-field-error" role="alert" data-testid="error-password">{{ v.errors.password || fieldErrors.password }}</p>
                 <router-link :to="{ name: 'forgot-password' }" class="auth-forgot-link" data-testid="forgot-link">
                     Olvidaste tu contrasena?
                 </router-link>
