@@ -88,6 +88,28 @@ test.describe('Login flow', () => {
         await expect(alert).toContainText(/credencial/i)
     })
 
+    test('client-side validation flags a bad email on blur and blocks an empty submit', async ({ page }) => {
+        await page.goto(`${baseURL}/login`)
+        await waitForApp(page)
+
+        // Invalid email + blur -> inline error appears with no round-trip.
+        await page.getByLabel('Correo electronico').fill('not-an-email')
+        await page.getByLabel('Contrasena').click()
+        await expect(page.getByTestId('error-email')).toContainText(/correo/i)
+
+        // Fix it -> the error clears on the next blur.
+        await page.getByLabel('Correo electronico').fill('valid@example.com')
+        await page.getByLabel('Contrasena').click()
+        await expect(page.getByTestId('error-email')).toHaveCount(0)
+
+        // Empty submit -> required errors block it and we stay on /login.
+        await page.getByLabel('Correo electronico').fill('')
+        await page.getByRole('button', { name: 'Entrar' }).click()
+        await expect(page).toHaveURL(`${baseURL}/login`)
+        await expect(page.getByTestId('error-email')).toContainText(/obligatorio/i)
+        await expect(page.getByTestId('error-password')).toContainText(/obligatorio/i)
+    })
+
     test('logout returns to login page', async ({ page, request }) => {
         const user = await createUser(request)
 
