@@ -283,6 +283,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
             :subtotal-cents="store.subtotalCents"
             :tax-cents="store.taxCents"
             :total-cents="store.totalCents"
+            :tax="store.taxConfig"
             :is-submitting="isSubmitting"
             :format-cents="formatCents"
             :selected-customer-name="selectedCustomerName"
