@@ -306,6 +306,7 @@ watch(() => route.name, () => maybeStartTour())
                     <button
                         type="button"
                         class="admin-topbar-user"
+                        :aria-label="currentUser?.name ? `Cuenta de ${currentUser.name}` : 'Cuenta'"
                         :aria-expanded="userMenuOpen"
                         aria-haspopup="menu"
                         @click="userMenuOpen = !userMenuOpen"

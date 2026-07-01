@@ -64,8 +64,10 @@ test.describe('Login flow', () => {
         await page.waitForURL(`${baseURL}/admin/dashboard`, { timeout: 15_000 })
         await expect(page).toHaveURL(`${baseURL}/admin/dashboard`)
 
-        // The user name must be visible somewhere in the dashboard
-        await expect(page.getByText(user.name, { exact: false })).toBeVisible({ timeout: 10_000 })
+        // The account menu button carries the logged-in user's name as its
+        // accessible name (aria-label), so this holds on mobile too — where the
+        // topbar hides the name text by design.
+        await expect(page.getByRole('button', { name: new RegExp(user.name) })).toBeVisible({ timeout: 10_000 })
     })
 
     test('login with invalid credentials shows inline error', async ({ page, request }) => {
