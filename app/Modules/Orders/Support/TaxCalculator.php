@@ -29,16 +29,16 @@ final class TaxCalculator
 
         if ($inclusive) {
             // net = round-half-up(base * 10000 / (10000 + bps)); tax = base - net.
-            $divisor = 10_000 + $rateBps;
-            $net     = intdiv($base * 10_000 + intdiv($divisor, 2), $divisor);
-            $tax     = $base - $net;
+            $divisor  = 10_000 + $rateBps;
+            $net      = intdiv($base * 10_000 + intdiv($divisor, 2), $divisor);
+            $taxCents = $base - $net;
 
-            return new TaxBreakdown($net, $tax, $discount, $base, $rateBps);
+            return new TaxBreakdown($net, $taxCents, $discount, $base, $rateBps);
         }
 
         // Exclusive: floor tax, add on top (matches QuotationService::calculateTotals).
-        $tax = intdiv($base * $rateBps, 10_000);
+        $taxCents = intdiv($base * $rateBps, 10_000);
 
-        return new TaxBreakdown($itemsCents, $tax, $discount, $base + $tax, $rateBps);
+        return new TaxBreakdown($itemsCents, $taxCents, $discount, $base + $taxCents, $rateBps);
     }
 }
