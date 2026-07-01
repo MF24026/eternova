@@ -30,8 +30,10 @@ use InvalidArgumentException;
  * If ANY product variant has insufficient stock, the entire order is rolled back —
  * no partial orders, no phantom rows in order_items.
  *
- * Tax handling (v1): tax_cents = 0 for all orders.
- * TODO(#80): read a per-tenant tax_rate from tenant Settings when that module ships.
+ * Tax handling: createFromPos computes IVA from the branch tax settings
+ * (BranchSetting::resolvedGroup('tax')) via TaxCalculator, persisting the
+ * breakdown plus a tax_rate_bps snapshot. Reservation- and quotation-derived
+ * orders keep their own tax handling and are not touched here.
  *
  * Cancel / restock (v1): cancel() sets status=cancelled only. It does NOT restock.
  * Rationale: auto-restock on cancel opens a window for fraudulent "cancel to get free

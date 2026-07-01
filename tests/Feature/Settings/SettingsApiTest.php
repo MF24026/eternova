@@ -123,8 +123,9 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
-            'enabled'  => true,
-            'rate_bps' => 10000, // over the 9999 max
+            'enabled'            => true,
+            'rate_bps'           => 10000, // over the 9999 max
+            'prices_include_tax' => false,
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrorFor('rate_bps');
@@ -135,10 +136,11 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant(['country_code' => 'SV']);
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
-            'enabled'   => true,
-            'rate_bps'  => 1300,
-            'id_label'  => 'DUI',
-            'id_number' => '04210323-5', // wrong DUI check digit
+            'enabled'            => true,
+            'rate_bps'           => 1300,
+            'id_label'           => 'DUI',
+            'id_number'          => '04210323-5', // wrong DUI check digit
+            'prices_include_tax' => false,
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrorFor('id_number');
