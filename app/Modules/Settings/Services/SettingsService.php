@@ -131,9 +131,14 @@ final class SettingsService
      */
     private function handleBrandUploads(Tenant $tenant, array $files): array
     {
-        $changes = [];
-        $disk    = Storage::disk('public');
-        $dir     = "tenants/{$tenant->id}/brand";
+        $changes  = [];
+        $diskName = config('tenant-settings.brand_disk', 'public');
+        $disk     = Storage::disk($diskName);
+        $dir      = "tenants/{$tenant->id}/brand";
+        // url('') gives the disk's public base (APP_URL/storage for local,
+        // the r2.dev/custom-domain origin for R2) — used to map a stored URL
+        // back to its object key for deletion.
+        $base = rtrim($disk->url(''), '/') . '/';
 
         foreach (['logo' => 'logo_url', 'favicon' => 'favicon_url'] as $field => $column) {
             $file = $files[$field] ?? null;
@@ -142,14 +147,24 @@ final class SettingsService
                 continue;
             }
 
-            // Remove the previous asset if it lived on our public disk.
+            // Remove the previous asset if it lived on our brand disk.
             $previous = $tenant->{$column};
-            if (is_string($previous) && str_starts_with($previous, '/storage/')) {
-                $disk->delete(substr($previous, strlen('/storage/')));
+            if (is_string($previous) && $previous !== '') {
+                if (str_starts_with($previous, $base)) {
+                    $disk->delete(substr($previous, strlen($base)));
+                } elseif (str_starts_with($previous, '/storage/')) {
+                    // Legacy value stored before brand_disk was configurable.
+                    $disk->delete(substr($previous, strlen('/storage/')));
+                }
             }
 
-            $path = $file->store($dir, 'public');
-            $changes[$column] = '/storage/' . $path;
+            // S3/R2 disks need the absolute public URL; the local "public" disk
+            // keeps its origin-portable /storage relative path. Either way the
+            // stored value is used verbatim by every reader.
+            $path = $file->store($dir, $diskName);
+            $changes[$column] = config("filesystems.disks.{$diskName}.driver") === 's3'
+                ? $disk->url($path)
+                : '/storage/' . $path;
         }
 
         return $changes;

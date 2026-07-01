@@ -60,6 +60,45 @@ return [
             'report' => false,
         ],
 
+        /*
+        | Cloudflare R2 — PUBLIC bucket (no egress fees). R2_URL points at the
+        | bucket's public r2.dev URL (or a custom domain in prod), so url()
+        | resolves to a cacheable public link. Use for public assets only:
+        | product images, branding. NEVER for PII — see r2_private.
+        */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_DEFAULT_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+            'report' => false,
+        ],
+
+        /*
+        | Cloudflare R2 — PRIVATE bucket. No public URL: objects are reachable
+        | only through signed temporary URLs. Use for sensitive files (expense
+        | receipts / PII). Reuses the same R2 credentials + endpoint; the API
+        | token must be scoped to include R2_PRIVATE_BUCKET.
+        */
+        'r2_private' => [
+            'driver' => 's3',
+            // Dedicated private-bucket token; falls back to the main R2 creds
+            // when one token is scoped to both buckets.
+            'key' => env('R2_PRIVATE_ACCESS_KEY_ID', env('R2_ACCESS_KEY_ID')),
+            'secret' => env('R2_PRIVATE_SECRET_ACCESS_KEY', env('R2_SECRET_ACCESS_KEY')),
+            'region' => env('R2_DEFAULT_REGION', 'auto'),
+            'bucket' => env('R2_PRIVATE_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*

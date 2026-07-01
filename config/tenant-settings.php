@@ -22,6 +22,12 @@ declare(strict_types=1);
 
 return [
 
+    // Disk for tenant brand assets (logo/favicon). These are public-facing
+    // (storefront, invoices, receipts), so the disk must produce publicly
+    // reachable URLs — local 'public' or an R2/S3 public bucket. The full URL
+    // is stored on the tenant row, so readers use it verbatim.
+    'brand_disk' => env('SETTINGS_BRAND_DISK', 'public'),
+
     // Group identifiers exposed by the Settings module (drives tabs + validation).
     'groups' => ['contact', 'tax', 'orders', 'notifications'],
 

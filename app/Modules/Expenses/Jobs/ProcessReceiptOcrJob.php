@@ -111,7 +111,24 @@ final class ProcessReceiptOcrJob implements ShouldQueue
         $expense->update(['ocr_status' => 'processing']);
 
         $disk = config('expenses.receipt_disk');
-        $absolutePath = Storage::disk($disk)->path($expense->receipt_path);
+
+        // OCR drivers read a local file path. Object-storage disks (R2/S3)
+        // expose no local path, so stream the receipt down to a temporary file
+        // for them and remove it once extraction is done (even on failure).
+        $tempPath = null;
+        if (config("filesystems.disks.{$disk}.driver") === 'local') {
+            $absolutePath = Storage::disk($disk)->path($expense->receipt_path);
+        } else {
+            $extension = pathinfo($expense->receipt_path, PATHINFO_EXTENSION);
+            $tempPath = tempnam(sys_get_temp_dir(), 'ocr_');
+            if ($extension !== '') {
+                $withExt = $tempPath.'.'.$extension;
+                rename($tempPath, $withExt);
+                $tempPath = $withExt;
+            }
+            file_put_contents($tempPath, Storage::disk($disk)->get($expense->receipt_path));
+            $absolutePath = $tempPath;
+        }
 
         try {
             $result = $driver->extract($absolutePath);
@@ -146,6 +163,10 @@ final class ProcessReceiptOcrJob implements ShouldQueue
 
             // Swallow: do not let the job fail and trigger queue retries for
             // structural OCR failures that will never recover.
+        } finally {
+            if ($tempPath !== null && is_file($tempPath)) {
+                @unlink($tempPath);
+            }
         }
         // Any other Throwable bubbles up → queue retries per $tries / $backoff.
     }
