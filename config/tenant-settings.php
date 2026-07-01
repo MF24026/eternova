@@ -37,8 +37,8 @@ return [
 
         // Tax — IVA toggle + rate (basis points) + local tax-id label/number.
         'tax' => [
-            'enabled'            => true,
-            'rate_bps'           => 1300,   // 13% IVA (El Salvador default)
+            'enabled'            => false,  // off until each tenant opts in (conservative rollout)
+            'rate_bps'           => 1300,   // 13% IVA (El Salvador) — applied once enabled
             'id_label'           => null,   // e.g. 'NIT' (SV), 'RFC' (MX), 'NIT' (CO)
             'id_number'          => null,
             'prices_include_tax' => false,  // false = IVA added on top; true = price already includes IVA

@@ -139,6 +139,14 @@ final class OrderServiceTest extends TestCase
     {
         ['branch' => $branch, 'variant' => $variant] = $this->setupTenantContext(stockQuantity: 5);
 
+        // Enable IVA for this tenant so this test exercises the tax math. The
+        // coded default is off-until-opt-in, so we opt in explicitly here.
+        \App\Modules\Settings\Models\BranchSetting::writeDefault('tax', [
+            'enabled'            => true,
+            'rate_bps'           => 1300,
+            'prices_include_tax' => false,
+        ]);
+
         // Two items of the same variant, price 1500 each
         $order = $this->service->createFromPos(
             branch: $branch,
@@ -146,7 +154,7 @@ final class OrderServiceTest extends TestCase
             paymentMethod: 'card',
         );
 
-        // 3 × 1500 = 4500 subtotal; coded-default tax is 13% (1300 bps) exclusive.
+        // 3 × 1500 = 4500 subtotal; enabled tax is 13% (1300 bps) exclusive.
         // floor(4500 × 1300 / 10_000) = 585 tax; 4500 + 585 = 5085 total.
         $this->assertSame(4500, $order->subtotal_cents);
         $this->assertSame(585, $order->tax_cents);
