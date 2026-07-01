@@ -38,7 +38,8 @@ onBeforeUnmount(() => {
         v-if="store.open"
         ref="root"
         class="notif-panel"
-        role="menu"
+        role="region"
+        aria-label="Notificaciones"
         data-testid="notif-panel"
     >
         <header class="notif-panel-head">

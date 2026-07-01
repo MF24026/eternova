@@ -309,7 +309,7 @@ watch(() => route.name, () => maybeStartTour())
                         data-notif-bell
                         data-testid="notif-bell"
                         :aria-expanded="notifications.open"
-                        aria-haspopup="menu"
+                        aria-haspopup="true"
                         @click="notifications.toggle()"
                     >
                         <Bell :size="20" />
@@ -446,16 +446,6 @@ watch(() => route.name, () => maybeStartTour())
 
 .admin-topbar-search {
     display: none;
-}
-
-.admin-topbar-dot {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 99px;
-    background: var(--primary);
 }
 
 .notif-badge {
