@@ -1,10 +1,9 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
+import { BASE_URL } from '../../support/env'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost'
 
 // Breakpoints under test
 const VIEWPORTS = {

@@ -1,6 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8080'
+import { BASE_URL as baseURL } from '../support/env'
 
 async function waitForApp(page: Page): Promise<void> {
     await page.waitForFunction(

@@ -1,10 +1,10 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
+import { BASE_URL as baseURL, tenantBaseURL } from '../../support/env'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8080'
 const apiBase = `${baseURL}/api/v1`
 
 interface CreatedUser {
@@ -70,7 +70,7 @@ async function createTenant(request: APIRequestContext, user: CreatedUser): Prom
 }
 
 function tenantApiBase(tenant: CreatedTenant): string {
-    return `http://${tenant.slug}.eternova.localhost:8080/api/v1`
+    return `${tenantBaseURL(tenant.slug)}/api/v1`
 }
 
 async function createProduct(
@@ -108,7 +108,7 @@ test.describe('Products admin CRUD', () => {
     test('create product with 2 options generates 4 variants in UI', async ({ page, request }) => {
         const user   = await createUser(request)
         const tenant = await createTenant(request, user)
-        const tenantBase = `http://${tenant.slug}.eternova.localhost:8080`
+        const tenantBase = tenantBaseURL(tenant.slug)
 
         // Login via API to get session cookie
         await page.goto(`${tenantBase}/login`)
@@ -176,7 +176,7 @@ test.describe('Products admin CRUD', () => {
         const user    = await createUser(request)
         const tenant  = await createTenant(request, user)
         const product = await createProduct(request, user, tenant, { name: 'Original Name' })
-        const tenantBase = `http://${tenant.slug}.eternova.localhost:8080`
+        const tenantBase = tenantBaseURL(tenant.slug)
 
         await page.goto(`${tenantBase}/login`)
         await page.waitForLoadState('networkidle')
@@ -213,7 +213,7 @@ test.describe('Products admin CRUD', () => {
         const tenant = await createTenant(request, user)
         await createProduct(request, user, tenant, { name: 'Rosa Eterna E2E Search' })
         await createProduct(request, user, tenant, { name: 'Peluche Distinto E2E' })
-        const tenantBase = `http://${tenant.slug}.eternova.localhost:8080`
+        const tenantBase = tenantBaseURL(tenant.slug)
 
         await page.goto(`${tenantBase}/login`)
         await page.waitForLoadState('networkidle')
@@ -242,7 +242,7 @@ test.describe('Products admin CRUD', () => {
         const user    = await createUser(request)
         const tenant  = await createTenant(request, user)
         await createProduct(request, user, tenant, { name: 'Borrar Este Producto E2E' })
-        const tenantBase = `http://${tenant.slug}.eternova.localhost:8080`
+        const tenantBase = tenantBaseURL(tenant.slug)
 
         await page.goto(`${tenantBase}/login`)
         await page.waitForLoadState('networkidle')
@@ -275,7 +275,7 @@ test.describe('Products admin CRUD', () => {
         const tenant  = await createTenant(request, user)
         // Create first product to occupy the slug
         await createProduct(request, user, tenant, { name: 'Slug Dupe Test' })
-        const tenantBase = `http://${tenant.slug}.eternova.localhost:8080`
+        const tenantBase = tenantBaseURL(tenant.slug)
 
         await page.goto(`${tenantBase}/login`)
         await page.waitForLoadState('networkidle')
