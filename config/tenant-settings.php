@@ -37,10 +37,11 @@ return [
 
         // Tax — IVA toggle + rate (basis points) + local tax-id label/number.
         'tax' => [
-            'enabled'   => true,
-            'rate_bps'  => 1300,   // 13% IVA (El Salvador default)
-            'id_label'  => null,   // e.g. 'NIT' (SV), 'RFC' (MX), 'NIT' (CO)
-            'id_number' => null,
+            'enabled'            => true,
+            'rate_bps'           => 1300,   // 13% IVA (El Salvador default)
+            'id_label'           => null,   // e.g. 'NIT' (SV), 'RFC' (MX), 'NIT' (CO)
+            'id_number'          => null,
+            'prices_include_tax' => false,  // false = IVA added on top; true = price already includes IVA
         ],
 
         // Orders — operational defaults for the order workflow.
