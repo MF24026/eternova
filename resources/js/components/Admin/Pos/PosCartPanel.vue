@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { User } from 'lucide-vue-next'
 import PosCartLine from './PosCartLine.vue'
 import PosPaymentSelector from './PosPaymentSelector.vue'
+import type { TaxConfig } from '@/components/Admin/Pos/computeTax'
 import type { PosCartLine as CartLine, PosPaymentMethod } from '@/types/domain/POS'
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
     subtotalCents: number
     taxCents: number
     totalCents: number
+    tax: TaxConfig
     isSubmitting: boolean
     formatCents: (cents: number) => string
     selectedCustomerName: string | null
@@ -109,18 +111,17 @@ const cobrarLabel = computed(() =>
                 <span>Subtotal</span>
                 <span class="tabular-nums">{{ formatCents(subtotalCents) }}</span>
             </div>
-            <!--
-                IVA row shown as $0.00 intentionally.
-                Tax logic is a backend TODO — backend currently returns tax_cents: 0.
-                Showing the row keeps the layout design-ready for when tax lands.
-            -->
-            <div class="flex justify-between text-on-surface-variant">
-                <span>IVA</span>
-                <span class="tabular-nums">{{ formatCents(taxCents) }}</span>
+            <div
+                v-if="tax.enabled"
+                class="flex justify-between text-on-surface-variant"
+                data-testid="pos-cart-iva-row"
+            >
+                <span>{{ tax.prices_include_tax ? `IVA incluido (${tax.rate_bps / 100}%)` : `IVA (${tax.rate_bps / 100}%)` }}</span>
+                <span class="tabular-nums" data-testid="pos-cart-iva-amount">{{ formatCents(taxCents) }}</span>
             </div>
             <div class="flex justify-between items-center pt-2">
                 <span class="font-semibold text-base text-on-surface">Total</span>
-                <span class="serif text-3xl text-primary tabular-nums">
+                <span class="serif text-3xl text-primary tabular-nums" data-testid="pos-cart-total-amount">
                     {{ formatCents(totalCents) }}
                 </span>
             </div>

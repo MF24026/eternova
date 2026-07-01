@@ -1,3 +1,8 @@
+import type { Paginated } from '@/types/api'
+import type { TaxConfig } from '@/components/Admin/Pos/computeTax'
+
+export type { TaxConfig }
+
 export type PosPaymentMethod = 'cash' | 'card' | 'transfer' | 'other'
 
 export interface PosBranch {
@@ -140,4 +145,10 @@ export interface PosReceipt {
 
 export interface PosReceiptResponse {
     data: PosReceipt
+}
+
+// ── Products endpoint response (includes top-level tax config) ───────────────
+
+export interface PosProductsResponse extends Paginated<PosProduct> {
+    tax: TaxConfig
 }

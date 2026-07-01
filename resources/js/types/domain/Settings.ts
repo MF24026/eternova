@@ -36,6 +36,7 @@ export interface ContactSettings {
 export interface TaxSettings {
     enabled: boolean
     rate_bps: number
+    prices_include_tax: boolean
     id_label: string | null
     id_number: string | null
 }
