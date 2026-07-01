@@ -103,7 +103,9 @@ final class PosReceiptTest extends TestCase
         $this->assertNotEmpty($data['order_number']);
         $this->assertSame('cash', $data['payment_method']);
         $this->assertSame('paid', $data['payment_status']);
-        $this->assertSame(5000, $data['total_cents']); // 2500 * 2
+        // 2500 × 2 = 5000 subtotal; coded-default tax is 13% (1300 bps) exclusive.
+        // floor(5000 × 1300 / 10_000) = 650 tax; 5000 + 650 = 5650 total.
+        $this->assertSame(5650, $data['total_cents']);
 
         // Business info from tenant
         $this->assertSame('Flores del Valle', $data['business']['name']);
@@ -120,7 +122,7 @@ final class PosReceiptTest extends TestCase
 
         // Totals
         $this->assertSame(5000, $data['subtotal_cents']);
-        $this->assertSame(0, $data['tax_cents']);
+        $this->assertSame(650, $data['tax_cents']);
     }
 
     public function test_receipt_is_tenant_isolated(): void

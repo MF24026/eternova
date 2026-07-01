@@ -146,10 +146,12 @@ final class OrderServiceTest extends TestCase
             paymentMethod: 'card',
         );
 
-        $this->assertSame(4500, $order->subtotal_cents);   // 3 × 1500
-        $this->assertSame(0, $order->tax_cents);            // v1: always 0
+        // 3 × 1500 = 4500 subtotal; coded-default tax is 13% (1300 bps) exclusive.
+        // floor(4500 × 1300 / 10_000) = 585 tax; 4500 + 585 = 5085 total.
+        $this->assertSame(4500, $order->subtotal_cents);
+        $this->assertSame(585, $order->tax_cents);
         $this->assertSame(0, $order->discount_cents);
-        $this->assertSame(4500, $order->total_cents);
+        $this->assertSame(5085, $order->total_cents);
     }
 
     public function test_walk_in_sale_has_null_customer(): void

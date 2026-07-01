@@ -12,6 +12,8 @@ use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderStatusHistory;
 use App\Modules\Orders\Repositories\OrderRepositoryInterface;
+use App\Modules\Orders\Support\TaxCalculator;
+use App\Modules\Settings\Models\BranchSetting;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use App\Modules\Tenancy\Scopes\TenantScope;
@@ -101,28 +103,29 @@ final readonly class OrderService
 
             [$subtotalCents, $itemRows] = $this->buildItemRows($resolvedItems);
 
-            // Tax v1: always zero.
-            // TODO(#80): derive from tenant Settings tax_rate when that module ships.
-            $taxCents = 0;
-            $discountCents = 0;
-            $totalCents = $subtotalCents + $taxCents - $discountCents;
+            // Tax: resolve the branch's tax settings and compute the breakdown.
+            // Server is authoritative; the POS preview only mirrors this.
+            $discountCents = 0; // POS has no discount UI yet
+            $tax           = BranchSetting::resolvedGroup('tax', $branch->id);
+            $breakdown     = (new TaxCalculator())->compute($subtotalCents, $discountCents, $tax);
 
             $order = $this->orders->create([
-                'tenant_id' => $tenant->id,
-                'branch_id' => $branch->id,
-                'customer_id' => $customer?->id,
-                'order_number' => $orderNumber,
+                'tenant_id'      => $tenant->id,
+                'branch_id'      => $branch->id,
+                'customer_id'    => $customer?->id,
+                'order_number'   => $orderNumber,
                 'tracking_token' => $this->generateTrackingToken(),
-                'status' => 'preparing',
-                'source' => 'pos',
-                'subtotal_cents' => $subtotalCents,
-                'tax_cents' => $taxCents,
-                'discount_cents' => $discountCents,
-                'total_cents' => $totalCents,
+                'status'         => 'preparing',
+                'source'         => 'pos',
+                'subtotal_cents' => $breakdown->subtotalCents,
+                'tax_cents'      => $breakdown->taxCents,
+                'tax_rate_bps'   => $breakdown->rateBpsApplied,
+                'discount_cents' => $breakdown->discountCents,
+                'total_cents'    => $breakdown->totalCents,
                 'payment_method' => $paymentMethod,
                 'payment_status' => 'paid',
-                'notes' => $notes,
-                'user_id' => $user?->id,
+                'notes'          => $notes,
+                'user_id'        => $user?->id,
             ]);
 
             foreach ($itemRows as $row) {
@@ -161,13 +164,14 @@ final readonly class OrderService
             ]);
 
             Log::info('POS order created', [
-                'order_id' => $order->id,
+                'order_id'    => $order->id,
                 'order_number' => $order->order_number,
-                'tenant_id' => $tenant->id,
-                'branch_id' => $branch->id,
-                'total_cents' => $totalCents,
-                'item_count' => count($itemRows),
-                'user_id' => $user?->id,
+                'tenant_id'   => $tenant->id,
+                'branch_id'   => $branch->id,
+                'total_cents' => $order->total_cents,
+                'tax_rate_bps' => $order->tax_rate_bps,
+                'item_count'  => count($itemRows),
+                'user_id'     => $user?->id,
             ]);
 
             return $order->load('items');
