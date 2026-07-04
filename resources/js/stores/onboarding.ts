@@ -68,6 +68,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
             currency: 'USD',
             language: 'es',
             timezone: 'America/El_Salvador',
+            starter_template: 'floreria',
         }
         createdTenantSlug.value = null
         tempBearerToken.value = null

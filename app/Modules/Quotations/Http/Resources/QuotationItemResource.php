@@ -28,13 +28,13 @@ final class QuotationItemResource extends BaseResource
         $item = $this->resource;
 
         return [
-            'id'               => $item->id,
-            'product_id'       => $item->product_id,
-            'description'      => $item->description,
-            'quantity'         => $item->quantity,
+            'id' => $item->id,
+            'product_id' => $item->product_id,
+            'description' => $item->description,
+            'quantity' => $item->quantity,
             'unit_price_cents' => $item->unit_price_cents,
             'line_total_cents' => $item->line_total_cents,
-            'sort_order'       => $item->sort_order,
+            'sort_order' => $item->sort_order,
         ];
     }
 }

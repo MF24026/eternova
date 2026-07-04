@@ -71,9 +71,9 @@ final class EloquentQuotationRepository implements QuotationRepositoryInterface
             $term = (string) $filters['search'];
             $query->where(static function ($q) use ($term): void {
                 $q->where('quotation_number', 'like', "%{$term}%")
-                  ->orWhereHas('customer', static function ($cq) use ($term): void {
-                      $cq->where('name', 'like', "%{$term}%");
-                  });
+                    ->orWhereHas('customer', static function ($cq) use ($term): void {
+                        $cq->where('name', 'like', "%{$term}%");
+                    });
             });
         }
 
@@ -89,11 +89,11 @@ final class EloquentQuotationRepository implements QuotationRepositoryInterface
     public function statusCounts(array $filters): array
     {
         $zero = [
-            'draft'    => 0,
-            'sent'     => 0,
+            'draft' => 0,
+            'sent' => 0,
             'accepted' => 0,
             'rejected' => 0,
-            'expired'  => 0,
+            'expired' => 0,
         ];
 
         $query = Quotation::query();
@@ -114,9 +114,9 @@ final class EloquentQuotationRepository implements QuotationRepositoryInterface
             $term = (string) $filters['search'];
             $query->where(static function ($q) use ($term): void {
                 $q->where('quotation_number', 'like', "%{$term}%")
-                  ->orWhereHas('customer', static function ($cq) use ($term): void {
-                      $cq->where('name', 'like', "%{$term}%");
-                  });
+                    ->orWhereHas('customer', static function ($cq) use ($term): void {
+                        $cq->where('name', 'like', "%{$term}%");
+                    });
             });
         }
 
@@ -164,8 +164,8 @@ final class EloquentQuotationRepository implements QuotationRepositoryInterface
             // We set last_sequence=1 directly rather than inserting 0 and then
             // incrementing, to avoid a second write.
             QuotationSequence::create([
-                'tenant_id'     => $tenant->id,
-                'year'          => $year,
+                'tenant_id' => $tenant->id,
+                'year' => $year,
                 'last_sequence' => 1,
             ]);
 

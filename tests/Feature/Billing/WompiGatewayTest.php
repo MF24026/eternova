@@ -10,6 +10,7 @@ use App\Modules\Billing\Gateways\Data\RecurringPlanData;
 use App\Modules\Billing\Gateways\Support\WompiErrorTranslator;
 use App\Modules\Billing\Gateways\WompiGateway;
 use App\Modules\Billing\Support\CircuitBreaker;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Psr\Log\AbstractLogger;
@@ -35,7 +36,7 @@ final class WompiGatewayTest extends TestCase
             apiSecret: 'api_secret_test',
             authBaseUrl: 'https://id.wompi.test',
             baseUrl: 'https://api.wompi.test',
-            errorTranslator: new WompiErrorTranslator(),
+            errorTranslator: new WompiErrorTranslator,
             apiBreaker: new CircuitBreaker('wompi-sv-test:'.uniqid(), threshold: 99, cooldownSeconds: 60),
             logger: $logger,
         );
@@ -44,7 +45,7 @@ final class WompiGatewayTest extends TestCase
     /**
      * The OAuth token endpoint fake, merged into every API fake so accessToken() resolves.
      *
-     * @return array<string, \Illuminate\Http\Client\Response>
+     * @return array<string, Response>
      */
     private function withAuth(array $endpoints): array
     {

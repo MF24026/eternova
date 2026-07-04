@@ -177,14 +177,14 @@ final class TenantProvisioningTest extends TestCase
         $this->assertCount(6, $products);
 
         // Each product has variants, each variant has starting inventory at the main branch.
-        $product  = $products->firstWhere('name', 'Torta Personalizada');
+        $product = $products->firstWhere('name', 'Torta Personalizada');
         $variants = ProductVariant::withoutGlobalScopes()->where('product_id', $product->id)->get();
         $this->assertCount(3, $variants);
 
         $this->assertDatabaseHas('branch_inventory', [
-            'branch_id'          => $branch->id,
+            'branch_id' => $branch->id,
             'product_variant_id' => $variants->first()->id,
-            'quantity'           => 20,
+            'quantity' => 20,
         ]);
     }
 

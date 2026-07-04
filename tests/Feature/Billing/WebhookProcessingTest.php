@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Billing;
 
 use App\Modules\Billing\Jobs\ProcessWompiWebhookEvent;
-use App\Modules\Billing\Models\BillingAuditLog;
 use App\Modules\Billing\Models\Subscription;
 use App\Modules\Billing\Models\WebhookLog;
 use App\Modules\Plans\Models\Plan;

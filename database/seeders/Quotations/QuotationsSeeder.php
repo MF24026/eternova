@@ -63,11 +63,11 @@ final class QuotationsSeeder extends Seeder
      * @var array<string, list<string>>
      */
     private const STATUS_CHAIN = [
-        'draft'    => ['draft'],
-        'sent'     => ['draft', 'sent'],
+        'draft' => ['draft'],
+        'sent' => ['draft', 'sent'],
         'accepted' => ['draft', 'sent', 'accepted'],
         'rejected' => ['draft', 'sent', 'rejected'],
-        'expired'  => ['draft', 'sent', 'expired'],
+        'expired' => ['draft', 'sent', 'expired'],
     ];
 
     /**
@@ -76,11 +76,11 @@ final class QuotationsSeeder extends Seeder
      * @var array<string, array{min: int, max: int}>
      */
     private const CREATED_AT_RANGE = [
-        'draft'    => ['min' =>  0, 'max' =>  6],
-        'sent'     => ['min' =>  2, 'max' => 12],
-        'accepted' => ['min' =>  7, 'max' => 25],
-        'rejected' => ['min' =>  7, 'max' => 25],
-        'expired'  => ['min' => 20, 'max' => 40],
+        'draft' => ['min' => 0, 'max' => 6],
+        'sent' => ['min' => 2, 'max' => 12],
+        'accepted' => ['min' => 7, 'max' => 25],
+        'rejected' => ['min' => 7, 'max' => 25],
+        'expired' => ['min' => 20, 'max' => 40],
     ];
 
     /** Spanish note for the initial creation history row. */
@@ -97,10 +97,10 @@ final class QuotationsSeeder extends Seeder
      * @var array<string, list<string|null>>
      */
     private const TRANSITION_NOTES = [
-        'sent'     => ['Enviada al cliente por WhatsApp', 'Cotizacion enviada por correo', null],
+        'sent' => ['Enviada al cliente por WhatsApp', 'Cotizacion enviada por correo', null],
         'accepted' => ['Cliente acepto la cotizacion', 'Aprobada por el cliente', null],
         'rejected' => ['Cliente declino la propuesta', 'Rechazada — precio fuera de presupuesto', null],
-        'expired'  => ['Vencida automaticamente sin respuesta', 'Sin respuesta del cliente', null],
+        'expired' => ['Vencida automaticamente sin respuesta', 'Sin respuesta del cliente', null],
     ];
 
     /**
@@ -150,7 +150,7 @@ final class QuotationsSeeder extends Seeder
             return;
         }
 
-        $branchId    = $this->resolveMainBranchId($tenant);
+        $branchId = $this->resolveMainBranchId($tenant);
         $staffUserId = $this->resolveOwnerUserId($tenant);
 
         if ($staffUserId === null) {
@@ -160,9 +160,9 @@ final class QuotationsSeeder extends Seeder
         }
 
         $customerIds = $this->resolveCustomerIds($tenant);
-        $templates   = self::LINE_TEMPLATES[$tenant->slug] ?? self::LINE_TEMPLATES['rosa-eterna'];
-        $year        = now()->year;
-        $highestSeq  = 0;
+        $templates = self::LINE_TEMPLATES[$tenant->slug] ?? self::LINE_TEMPLATES['rosa-eterna'];
+        $year = now()->year;
+        $highestSeq = 0;
 
         foreach (self::STATUS_PLAN as $seqIndex => $finalStatus) {
             $seq = $seqIndex + 1;
@@ -174,10 +174,10 @@ final class QuotationsSeeder extends Seeder
             $quotationNumber = sprintf('COT-%d-%04d', $year, $seq);
 
             $createdAtRange = self::CREATED_AT_RANGE[$finalStatus];
-            $daysBack       = random_int($createdAtRange['min'], $createdAtRange['max']);
-            $createdAt      = Carbon::now()->subDays($daysBack)->subHours(random_int(0, 23));
+            $daysBack = random_int($createdAtRange['min'], $createdAtRange['max']);
+            $createdAt = Carbon::now()->subDays($daysBack)->subHours(random_int(0, 23));
 
-            $issueDate  = $createdAt->copy()->toDateString();
+            $issueDate = $createdAt->copy()->toDateString();
             // ~1-in-4 quotations have no expiry; the rest expire 15 days after issue.
             $validUntil = ($seq % 4 === 0)
                 ? null
@@ -201,34 +201,34 @@ final class QuotationsSeeder extends Seeder
             $taxRateBps = ($seq % 2 === 0) ? 1300 : 0;
 
             $taxableBase = max(0, $subtotalCents - $discountCents);
-            $taxCents    = intdiv($taxableBase * $taxRateBps, 10000);
-            $totalCents  = $taxableBase + $taxCents;
+            $taxCents = intdiv($taxableBase * $taxRateBps, 10000);
+            $totalCents = $taxableBase + $taxCents;
 
             $customerId = $this->pickCustomerId($customerIds, $finalStatus, $seq);
 
             $updatedAt = $this->resolveUpdatedAt($createdAt, $finalStatus);
 
             $quotationId = DB::table('quotations')->insertGetId([
-                'tenant_id'          => $tenant->id,
-                'branch_id'          => ($seq % 7 === 0) ? null : $branchId,
-                'customer_id'        => $customerId,
-                'quotation_number'   => $quotationNumber,
-                'issue_date'         => $issueDate,
-                'valid_until'        => $validUntil,
-                'subtotal_cents'     => $subtotalCents,
-                'discount_cents'     => $discountCents,
-                'tax_rate_bps'       => $taxRateBps,
-                'tax_cents'          => $taxCents,
-                'total_cents'        => $totalCents,
-                'status'             => $finalStatus,
-                'notes'              => $this->maybeNotes($seq),
-                'terms'              => $this->maybeTerms($tenant, $seq),
+                'tenant_id' => $tenant->id,
+                'branch_id' => ($seq % 7 === 0) ? null : $branchId,
+                'customer_id' => $customerId,
+                'quotation_number' => $quotationNumber,
+                'issue_date' => $issueDate,
+                'valid_until' => $validUntil,
+                'subtotal_cents' => $subtotalCents,
+                'discount_cents' => $discountCents,
+                'tax_rate_bps' => $taxRateBps,
+                'tax_cents' => $taxCents,
+                'total_cents' => $totalCents,
+                'status' => $finalStatus,
+                'notes' => $this->maybeNotes($seq),
+                'terms' => $this->maybeTerms($tenant, $seq),
                 'converted_order_id' => null,   // conversion is a runtime action; never fabricate
-                'assigned_to'        => ($seq % 2 === 0) ? $staffUserId : null,
-                'created_by'         => $staffUserId,
-                'created_at'         => $createdAt->toDateTimeString(),
-                'updated_at'         => $updatedAt->toDateTimeString(),
-                'deleted_at'         => null,
+                'assigned_to' => ($seq % 2 === 0) ? $staffUserId : null,
+                'created_by' => $staffUserId,
+                'created_at' => $createdAt->toDateTimeString(),
+                'updated_at' => $updatedAt->toDateTimeString(),
+                'deleted_at' => null,
             ]);
 
             // Backfill quotation_id into the item rows and insert.
@@ -256,14 +256,14 @@ final class QuotationsSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'year' => $year],
             [
                 'last_sequence' => $highestSeq,
-                'updated_at'    => now()->toDateTimeString(),
-                'created_at'    => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+                'created_at' => now()->toDateTimeString(),
             ],
         );
 
         $this->command->info(
             "QuotationsSeeder: {$tenant->slug} — {$highestSeq} quotations seeded "
-            . "(all five statuses, sequence advanced to {$highestSeq}).",
+            ."(all five statuses, sequence advanced to {$highestSeq}).",
         );
     }
 
@@ -276,7 +276,7 @@ final class QuotationsSeeder extends Seeder
      * and return them alongside the subtotal (sum of line_total_cents).
      *
      * @param  list<string>  $templates
-     * @return array{list<array<string, mixed>>, int}  [itemRows, subtotalCents]
+     * @return array{list<array<string, mixed>>, int} [itemRows, subtotalCents]
      */
     private function buildLineItems(
         string $tenantId,
@@ -285,26 +285,26 @@ final class QuotationsSeeder extends Seeder
         int $seq,
     ): array {
         $lineCount = random_int(1, 4);
-        $rows      = [];
-        $subtotal  = 0;
+        $rows = [];
+        $subtotal = 0;
 
         for ($i = 0; $i < $lineCount; $i++) {
-            $quantity       = random_int(1, 6);
+            $quantity = random_int(1, 6);
             $unitPriceCents = random_int(1500, 25000);
             $lineTotalCents = $quantity * $unitPriceCents;
-            $subtotal      += $lineTotalCents;
+            $subtotal += $lineTotalCents;
 
             $rows[] = [
-                'tenant_id'        => $tenantId,
+                'tenant_id' => $tenantId,
                 // quotation_id intentionally absent here; caller backfills after insert.
-                'product_id'       => null,   // free-text snapshot lines for the demo
-                'description'      => $templates[($seq + $i) % count($templates)],
-                'quantity'         => $quantity,
+                'product_id' => null,   // free-text snapshot lines for the demo
+                'description' => $templates[($seq + $i) % count($templates)],
+                'quantity' => $quantity,
                 'unit_price_cents' => $unitPriceCents,
                 'line_total_cents' => $lineTotalCents,
-                'sort_order'       => $i,
-                'created_at'       => $createdAt->toDateTimeString(),
-                'updated_at'       => $createdAt->toDateTimeString(),
+                'sort_order' => $i,
+                'created_at' => $createdAt->toDateTimeString(),
+                'updated_at' => $createdAt->toDateTimeString(),
             ];
         }
 
@@ -330,24 +330,24 @@ final class QuotationsSeeder extends Seeder
     ): array {
         $chain = self::STATUS_CHAIN[$finalStatus] ?? ['draft'];
 
-        $rows        = [];
+        $rows = [];
         $currentTime = $createdAt->copy();
         $timeSpanSecs = max(3600, (int) $createdAt->diffInSeconds(now()));
-        $stepSecs     = (int) ($timeSpanSecs / max(count($chain), 1));
+        $stepSecs = (int) ($timeSpanSecs / max(count($chain), 1));
 
         // First row: creation entry (from_status = null, to_status = draft).
         $rows[] = [
-            'tenant_id'    => $tenantId,
+            'tenant_id' => $tenantId,
             'quotation_id' => $quotationId,
-            'from_status'  => null,
-            'to_status'    => $chain[0],
-            'user_id'      => $userId,
-            'note'         => self::CREATION_NOTES[array_rand(self::CREATION_NOTES)],
-            'created_at'   => $currentTime->toDateTimeString(),
+            'from_status' => null,
+            'to_status' => $chain[0],
+            'user_id' => $userId,
+            'note' => self::CREATION_NOTES[array_rand(self::CREATION_NOTES)],
+            'created_at' => $currentTime->toDateTimeString(),
         ];
 
         for ($i = 1; $i < count($chain); $i++) {
-            $advance     = $stepSecs + random_int(0, (int) max($stepSecs * 0.5, 600));
+            $advance = $stepSecs + random_int(0, (int) max($stepSecs * 0.5, 600));
             $currentTime = $currentTime->copy()->addSeconds($advance);
 
             if ($currentTime->isFuture()) {
@@ -361,13 +361,13 @@ final class QuotationsSeeder extends Seeder
             $rowUserId = ($toStatus === 'expired') ? null : $userId;
 
             $rows[] = [
-                'tenant_id'    => $tenantId,
+                'tenant_id' => $tenantId,
                 'quotation_id' => $quotationId,
-                'from_status'  => $chain[$i - 1],
-                'to_status'    => $toStatus,
-                'user_id'      => $rowUserId,
-                'note'         => $notePool[array_rand($notePool)],
-                'created_at'   => $currentTime->toDateTimeString(),
+                'from_status' => $chain[$i - 1],
+                'to_status' => $toStatus,
+                'user_id' => $rowUserId,
+                'note' => $notePool[array_rand($notePool)],
+                'created_at' => $currentTime->toDateTimeString(),
             ];
         }
 
@@ -401,7 +401,7 @@ final class QuotationsSeeder extends Seeder
         }
 
         return 'Anticipo del 50% para confirmar. Saldo contra entrega. '
-            . 'Cotizacion valida por 15 dias a partir de la fecha de emision.';
+            .'Cotizacion valida por 15 dias a partir de la fecha de emision.';
     }
 
     // -------------------------------------------------------------------------
@@ -412,9 +412,9 @@ final class QuotationsSeeder extends Seeder
     {
         $updated = match ($finalStatus) {
             'accepted', 'rejected' => $createdAt->copy()->addDays(random_int(1, 10)),
-            'expired'              => $createdAt->copy()->addDays(15),
-            'sent'                 => $createdAt->copy()->addHours(random_int(1, 48)),
-            default                => $createdAt->copy()->addMinutes(random_int(0, 120)),
+            'expired' => $createdAt->copy()->addDays(15),
+            'sent' => $createdAt->copy()->addHours(random_int(1, 48)),
+            default => $createdAt->copy()->addMinutes(random_int(0, 120)),
         };
 
         return $updated->isFuture() ? Carbon::now() : $updated;

@@ -33,7 +33,7 @@ final class QuotationSchemaTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $owner  = User::factory()->forTenant($tenant, role: 'owner')->create();
+        $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -48,7 +48,7 @@ final class QuotationSchemaTest extends TestCase
             ->forTenant($tenant)
             ->create([
                 'subtotal_cents' => 50000,
-                'total_cents'    => 50000,
+                'total_cents' => 50000,
             ]);
 
         // ->fresh() is required: factory create() does not hydrate DB column defaults
@@ -134,7 +134,7 @@ final class QuotationSchemaTest extends TestCase
             ->forTenant($tenant)
             ->create([
                 'converted_order_id' => $order->id,
-                'status'             => 'accepted',
+                'status' => 'accepted',
             ]);
 
         $this->assertTrue($quotation->convertedOrder->is($order));
@@ -199,11 +199,11 @@ final class QuotationSchemaTest extends TestCase
         $this->setupTenant();
 
         $quotation = Quotation::factory()->create([
-            'subtotal_cents'  => 12345,
-            'discount_cents'  => 1000,
-            'tax_cents'       => 1500,
-            'total_cents'     => 12845,
-            'tax_rate_bps'    => 1300,
+            'subtotal_cents' => 12345,
+            'discount_cents' => 1000,
+            'tax_cents' => 1500,
+            'total_cents' => 12845,
+            'tax_rate_bps' => 1300,
         ]);
 
         $this->assertIsInt($quotation->subtotal_cents);
@@ -221,7 +221,7 @@ final class QuotationSchemaTest extends TestCase
         $item = QuotationItem::factory()->forQuotation($quotation)->create([
             'unit_price_cents' => 5000,
             'line_total_cents' => 10000,
-            'quantity'         => 2,
+            'quantity' => 2,
         ]);
 
         $this->assertIsInt($item->unit_price_cents);
@@ -234,7 +234,7 @@ final class QuotationSchemaTest extends TestCase
         $this->setupTenant();
 
         $draft = Quotation::factory()->create(['status' => 'draft']);
-        $sent  = Quotation::factory()->create(['status' => 'sent']);
+        $sent = Quotation::factory()->create(['status' => 'sent']);
 
         $this->assertTrue($draft->isDraft());
         $this->assertFalse($sent->isDraft());
@@ -257,8 +257,8 @@ final class QuotationSchemaTest extends TestCase
 
         $tenant->update([
             'quotation_tax_rate_bps' => 1300,
-            'quotation_valid_days'   => 30,
-            'quotation_terms'        => 'Payment due within 30 days.',
+            'quotation_valid_days' => 30,
+            'quotation_terms' => 'Payment due within 30 days.',
         ]);
 
         $tenant->refresh();
@@ -273,7 +273,7 @@ final class QuotationSchemaTest extends TestCase
         $this->setupTenant();
 
         $quotation = Quotation::factory()->create();
-        $history   = QuotationStatusHistory::factory()
+        $history = QuotationStatusHistory::factory()
             ->forQuotation($quotation)
             ->initial()
             ->create();

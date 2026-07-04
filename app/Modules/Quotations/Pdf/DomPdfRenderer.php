@@ -39,7 +39,7 @@ final class DomPdfRenderer implements QuotationPdfRenderer
         if ($tenant === null) {
             throw new PdfException(
                 "Cannot render PDF for quotation #{$quotation->id}: tenant relation is null. "
-                . 'Ensure the quotation has a valid tenant_id.',
+                .'Ensure the quotation has a valid tenant_id.',
             );
         }
 
@@ -78,14 +78,14 @@ final class DomPdfRenderer implements QuotationPdfRenderer
     private function dompdfOptions(): array
     {
         return [
-            'defaultPaperSize'        => config('pdf.dompdf.paper_size', 'letter'),
+            'defaultPaperSize' => config('pdf.dompdf.paper_size', 'letter'),
             'defaultPaperOrientation' => config('pdf.dompdf.paper_orient', 'portrait'),
-            'isRemoteEnabled'         => (bool) config('pdf.dompdf.enable_remote', false),
-            'chroot'                  => config('pdf.dompdf.chroot', storage_path('app')),
-            'isHtml5ParserEnabled'    => true,
-            'isPhpEnabled'            => false,   // no PHP execution inside templates
-            'dpi'                     => 150,
-            'fontHeightRatio'         => 1.1,
+            'isRemoteEnabled' => (bool) config('pdf.dompdf.enable_remote', false),
+            'chroot' => config('pdf.dompdf.chroot', storage_path('app')),
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,   // no PHP execution inside templates
+            'dpi' => 150,
+            'fontHeightRatio' => 1.1,
         ];
     }
 }

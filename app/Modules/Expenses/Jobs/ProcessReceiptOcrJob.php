@@ -70,7 +70,7 @@ final class ProcessReceiptOcrJob implements ShouldQueue
      */
     public static function dispatch(Expense $expense): void
     {
-        static::dispatchJob((int) $expense->id);
+        self::dispatchJob((int) $expense->id);
     }
 
     /**
@@ -101,8 +101,8 @@ final class ProcessReceiptOcrJob implements ShouldQueue
         // bail out without touching the row.
         if (in_array($expense->ocr_status, ['done', 'failed'], strict: true)) {
             Log::info('ProcessReceiptOcrJob: already processed; skipping', [
-                'expense_id'  => $expense->id,
-                'ocr_status'  => $expense->ocr_status,
+                'expense_id' => $expense->id,
+                'ocr_status' => $expense->ocr_status,
             ]);
 
             return;
@@ -136,19 +136,19 @@ final class ProcessReceiptOcrJob implements ShouldQueue
             // Pre-fill draft fields from OCR suggestions.
             // is_verified stays false — the staff member must confirm in E7.
             $expense->update([
-                'ocr_status'   => 'done',
-                'ocr_data'     => $result->toArray(),
+                'ocr_status' => 'done',
+                'ocr_data' => $result->toArray(),
                 'amount_cents' => $result->amountCents ?? 0,
-                'vendor'       => $result->vendor,
+                'vendor' => $result->vendor,
                 'expense_date' => $result->date ?? now()->toDateString(),
             ]);
 
             Log::info('ProcessReceiptOcrJob: OCR complete', [
-                'expense_id'   => $expense->id,
-                'tenant_id'    => $expense->tenant_id,
-                'vendor'       => $result->vendor,
+                'expense_id' => $expense->id,
+                'tenant_id' => $expense->tenant_id,
+                'vendor' => $result->vendor,
                 'amount_cents' => $result->amountCents,
-                'confidence'   => $result->confidence,
+                'confidence' => $result->confidence,
             ]);
         } catch (OcrException $e) {
             // Structural failure — do not retry. Mark as failed so the UI
@@ -157,8 +157,8 @@ final class ProcessReceiptOcrJob implements ShouldQueue
 
             Log::warning('ProcessReceiptOcrJob: OCR extraction failed', [
                 'expense_id' => $expense->id,
-                'tenant_id'  => $expense->tenant_id,
-                'error'      => $e->getMessage(),
+                'tenant_id' => $expense->tenant_id,
+                'error' => $e->getMessage(),
             ]);
 
             // Swallow: do not let the job fail and trigger queue retries for
@@ -188,7 +188,7 @@ final class ProcessReceiptOcrJob implements ShouldQueue
 
         Log::error('ProcessReceiptOcrJob: all retries exhausted', [
             'expense_id' => $this->expenseId,
-            'error'      => $e->getMessage(),
+            'error' => $e->getMessage(),
         ]);
     }
 

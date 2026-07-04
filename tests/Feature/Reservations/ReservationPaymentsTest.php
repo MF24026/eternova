@@ -11,8 +11,8 @@ use App\Modules\Reservations\Services\ReservationService;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use DomainException;
-use InvalidArgumentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 /**
@@ -52,17 +52,17 @@ final class ReservationPaymentsTest extends TestCase
     ): array {
         $tenant = Tenant::factory()->create(['reservation_deposit_pct' => 30]);
         $branch = Branch::factory()->forTenant($tenant)->create();
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenant);
 
         $reservation = Reservation::factory()
             ->forBranch($branch)
             ->create([
-                'total_cents'             => $totalCents,
-                'deposit_required_cents'  => $depositRequiredCents,
-                'deposit_paid_cents'      => $depositPaidCents,
-                'status'                  => $status,
+                'total_cents' => $totalCents,
+                'deposit_required_cents' => $depositRequiredCents,
+                'deposit_paid_cents' => $depositPaidCents,
+                'status' => $status,
             ]);
 
         return compact('tenant', 'branch', 'reservation', 'user');
@@ -390,17 +390,17 @@ final class ReservationPaymentsTest extends TestCase
         // derive the default from the tenant's pct (30%) and then apply the rule.
         $tenant = Tenant::factory()->create(['reservation_deposit_pct' => 30]);
         $branch = Branch::factory()->forTenant($tenant)->create();
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenant);
 
         $reservation = Reservation::factory()
             ->forBranch($branch)
             ->create([
-                'total_cents'            => 10000,
+                'total_cents' => 10000,
                 'deposit_required_cents' => 0,
-                'deposit_paid_cents'     => 0,
-                'status'                 => 'inquiry',
+                'deposit_paid_cents' => 0,
+                'status' => 'inquiry',
             ]);
 
         // Without payment the deposit check will block — confirm with force to verify
@@ -416,17 +416,17 @@ final class ReservationPaymentsTest extends TestCase
         // deposit_required_cents = 0, no payments → auto-set to 3000, then block.
         $tenant = Tenant::factory()->create(['reservation_deposit_pct' => 30]);
         $branch = Branch::factory()->forTenant($tenant)->create();
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenant);
 
         $reservation = Reservation::factory()
             ->forBranch($branch)
             ->create([
-                'total_cents'            => 10000,
+                'total_cents' => 10000,
                 'deposit_required_cents' => 0,
-                'deposit_paid_cents'     => 0,
-                'status'                 => 'inquiry',
+                'deposit_paid_cents' => 0,
+                'status' => 'inquiry',
             ]);
 
         $this->expectException(DomainException::class);
@@ -459,9 +459,9 @@ final class ReservationPaymentsTest extends TestCase
         $this->setupTenant();
 
         $reservation = Reservation::factory()->create([
-            'total_cents'            => 10000,
+            'total_cents' => 10000,
             'deposit_required_cents' => 3000,
-            'deposit_paid_cents'     => 1000,
+            'deposit_paid_cents' => 1000,
         ]);
 
         $this->assertSame(2000, $reservation->depositOutstandingCents());
@@ -472,9 +472,9 @@ final class ReservationPaymentsTest extends TestCase
         $this->setupTenant();
 
         $reservation = Reservation::factory()->create([
-            'total_cents'            => 10000,
+            'total_cents' => 10000,
             'deposit_required_cents' => 3000,
-            'deposit_paid_cents'     => 3000,
+            'deposit_paid_cents' => 3000,
         ]);
 
         $this->assertSame(0, $reservation->depositOutstandingCents());
@@ -486,9 +486,9 @@ final class ReservationPaymentsTest extends TestCase
         $this->setupTenant();
 
         $reservation = Reservation::factory()->create([
-            'total_cents'            => 10000,
+            'total_cents' => 10000,
             'deposit_required_cents' => 3000,
-            'deposit_paid_cents'     => 5000,
+            'deposit_paid_cents' => 5000,
         ]);
 
         $this->assertSame(0, $reservation->depositOutstandingCents());
@@ -501,7 +501,7 @@ final class ReservationPaymentsTest extends TestCase
         // Tenant A setup
         $tenantA = Tenant::factory()->create();
         $branchA = Branch::factory()->forTenant($tenantA)->create();
-        $userA   = User::factory()->forTenant($tenantA, role: 'staff')->create();
+        $userA = User::factory()->forTenant($tenantA, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenantA);
 
@@ -558,7 +558,7 @@ final class ReservationPaymentsTest extends TestCase
         // Two reservations in the same tenant. Paying one must not bleed into the other.
         $tenant = Tenant::factory()->create();
         $branch = Branch::factory()->forTenant($tenant)->create();
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenant);
 

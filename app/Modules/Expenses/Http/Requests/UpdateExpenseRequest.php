@@ -26,15 +26,15 @@ final class UpdateExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'description'         => ['sometimes', 'required', 'string', 'max:500'],
-            'amount_cents'        => ['sometimes', 'required', 'integer', 'min:0'],
-            'expense_date'        => ['sometimes', 'required', 'date'],
+            'description' => ['sometimes', 'required', 'string', 'max:500'],
+            'amount_cents' => ['sometimes', 'required', 'integer', 'min:0'],
+            'expense_date' => ['sometimes', 'required', 'date'],
             'expense_category_id' => ['sometimes', 'nullable', 'integer', tenant_exists('expense_categories')],
-            'branch_id'           => ['sometimes', 'nullable', 'string', tenant_exists('branches')],
-            'vendor'              => ['sometimes', 'nullable', 'string', 'max:255'],
-            'payment_method'      => ['sometimes', 'nullable', 'string', 'in:cash,card,transfer,other'],
-            'notes'               => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'is_verified'         => ['sometimes', 'nullable', 'boolean'],
+            'branch_id' => ['sometimes', 'nullable', 'string', tenant_exists('branches')],
+            'vendor' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'payment_method' => ['sometimes', 'nullable', 'string', 'in:cash,card,transfer,other'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'is_verified' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
 }

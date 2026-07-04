@@ -56,7 +56,7 @@ final class DashboardSummaryTest extends TestCase
         Order::factory()->forTenant($tenant)->forBranch($branch)->cancelled()->create(['total_cents' => 5000]); // excluded
         Order::factory()->forTenant($tenant)->forBranch($branch)->create([
             'total_cents' => 8000,
-            'created_at'  => now()->subDays(2),
+            'created_at' => now()->subDays(2),
         ]); // not today
 
         $summary = $this->service->summary(14);
@@ -86,7 +86,7 @@ final class DashboardSummaryTest extends TestCase
         $product = Product::factory()->forTenant($tenant)->create();
 
         $lowVariant = ProductVariant::factory()->forProduct($product)->create(['min_stock_alert' => 5]);
-        $okVariant  = ProductVariant::factory()->forProduct($product)->create(['min_stock_alert' => 5]);
+        $okVariant = ProductVariant::factory()->forProduct($product)->create(['min_stock_alert' => 5]);
         $offVariant = ProductVariant::factory()->forProduct($product)->create(['min_stock_alert' => 0]);
 
         BranchInventory::factory()->forBranch($branch)->forVariant($lowVariant)->withStock(3)->create();  // 3 <= 5 → low

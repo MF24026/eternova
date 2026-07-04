@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Modules\Quotations\Pdf\DomPdfRenderer;
 
 return [
 
@@ -34,7 +35,7 @@ return [
     |
     */
     'drivers' => [
-        'dompdf' => \App\Modules\Quotations\Pdf\DomPdfRenderer::class,
+        'dompdf' => DomPdfRenderer::class,
         // 'browsershot' => \App\Modules\Quotations\Pdf\BrowsershotRenderer::class,
     ],
 
@@ -59,10 +60,10 @@ return [
     |
     */
     'dompdf' => [
-        'paper_size'    => env('PDF_PAPER_SIZE', 'letter'),
-        'paper_orient'  => env('PDF_PAPER_ORIENT', 'portrait'),
+        'paper_size' => env('PDF_PAPER_SIZE', 'letter'),
+        'paper_orient' => env('PDF_PAPER_ORIENT', 'portrait'),
         'enable_remote' => (bool) env('PDF_ENABLE_REMOTE', false),
-        'chroot'        => storage_path('app'),
+        'chroot' => storage_path('app'),
     ],
 
 ];

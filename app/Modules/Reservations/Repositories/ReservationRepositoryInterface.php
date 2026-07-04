@@ -65,7 +65,7 @@ interface ReservationRepositoryInterface
      *   - search       string — reservation_number LIKE
      *
      * @param  array<string, mixed>  $filters
-     * @return array<string, int>   status => count
+     * @return array<string, int> status => count
      */
     public function statusCounts(array $filters): array;
 }

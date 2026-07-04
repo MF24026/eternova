@@ -32,9 +32,9 @@ final class SettingsService
      * @var array<string, list<string>>
      */
     private const TENANT_COLUMN_MAP = [
-        'brand'        => ['business_name', 'primary_color', 'secondary_color'],
-        'locale'       => ['currency', 'country_code', 'language', 'timezone'],
-        'quotations'   => ['quotation_tax_rate_bps', 'quotation_valid_days', 'quotation_terms'],
+        'brand' => ['business_name', 'primary_color', 'secondary_color'],
+        'locale' => ['currency', 'country_code', 'language', 'timezone'],
+        'quotations' => ['quotation_tax_rate_bps', 'quotation_valid_days', 'quotation_terms'],
         'reservations' => ['reservation_deposit_pct', 'reservation_occasions'],
     ];
 
@@ -62,30 +62,30 @@ final class SettingsService
     {
         return [
             'brand' => [
-                'business_name'   => $tenant->business_name,
-                'primary_color'   => $tenant->primary_color,
+                'business_name' => $tenant->business_name,
+                'primary_color' => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
-                'logo_url'        => $tenant->logo_url,
-                'favicon_url'     => $tenant->favicon_url,
+                'logo_url' => $tenant->logo_url,
+                'favicon_url' => $tenant->favicon_url,
             ],
             'locale' => [
-                'currency'     => $tenant->currency,
+                'currency' => $tenant->currency,
                 'country_code' => $tenant->country_code,
-                'language'     => $tenant->language,
-                'timezone'     => $tenant->timezone,
+                'language' => $tenant->language,
+                'timezone' => $tenant->timezone,
             ],
             'quotations' => [
                 'quotation_tax_rate_bps' => (int) $tenant->quotation_tax_rate_bps,
-                'quotation_valid_days'   => (int) $tenant->quotation_valid_days,
-                'quotation_terms'        => $tenant->quotation_terms,
+                'quotation_valid_days' => (int) $tenant->quotation_valid_days,
+                'quotation_terms' => $tenant->quotation_terms,
             ],
             'reservations' => [
                 'reservation_deposit_pct' => (int) $tenant->reservation_deposit_pct,
-                'reservation_occasions'   => $tenant->reservation_occasions ?? [],
+                'reservation_occasions' => $tenant->reservation_occasions ?? [],
             ],
-            'contact'       => BranchSetting::resolvedGroup('contact'),
-            'tax'           => BranchSetting::resolvedGroup('tax'),
-            'orders'        => BranchSetting::resolvedGroup('orders'),
+            'contact' => BranchSetting::resolvedGroup('contact'),
+            'tax' => BranchSetting::resolvedGroup('tax'),
+            'orders' => BranchSetting::resolvedGroup('orders'),
             'notifications' => BranchSetting::resolvedGroup('notifications'),
         ];
     }
@@ -94,7 +94,7 @@ final class SettingsService
      * Persist one settings group. Routes to the tenant row or branch_settings
      * depending on the group. Brand additionally handles logo/favicon uploads.
      *
-     * @param  array<string, mixed>  $data   already-validated payload
+     * @param  array<string, mixed>  $data  already-validated payload
      * @param  array<string, UploadedFile|null>  $files  optional 'logo' / 'favicon'
      */
     public function updateGroup(Tenant $tenant, string $group, array $data, array $files = []): void
@@ -131,14 +131,14 @@ final class SettingsService
      */
     private function handleBrandUploads(Tenant $tenant, array $files): array
     {
-        $changes  = [];
+        $changes = [];
         $diskName = config('tenant-settings.brand_disk', 'public');
-        $disk     = Storage::disk($diskName);
-        $dir      = "tenants/{$tenant->id}/brand";
+        $disk = Storage::disk($diskName);
+        $dir = "tenants/{$tenant->id}/brand";
         // url('') gives the disk's public base (APP_URL/storage for local,
         // the r2.dev/custom-domain origin for R2) — used to map a stored URL
         // back to its object key for deletion.
-        $base = rtrim($disk->url(''), '/') . '/';
+        $base = rtrim($disk->url(''), '/').'/';
 
         foreach (['logo' => 'logo_url', 'favicon' => 'favicon_url'] as $field => $column) {
             $file = $files[$field] ?? null;
@@ -164,7 +164,7 @@ final class SettingsService
             $path = $file->store($dir, $diskName);
             $changes[$column] = config("filesystems.disks.{$diskName}.driver") === 's3'
                 ? $disk->url($path)
-                : '/storage/' . $path;
+                : '/storage/'.$path;
         }
 
         return $changes;

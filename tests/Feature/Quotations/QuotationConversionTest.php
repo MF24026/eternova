@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Quotations;
 
 use App\Models\User;
+use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderStatusHistory;
 use App\Modules\Quotations\Jobs\ExpireQuotationsJob;
@@ -53,10 +54,10 @@ final class QuotationConversionTest extends TestCase
     {
         $tenant = Tenant::factory()->create([
             'quotation_tax_rate_bps' => 0,
-            'quotation_valid_days'   => 15,
+            'quotation_valid_days' => 15,
         ]);
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $owner  = User::factory()->forTenant($tenant, role: 'owner')->create();
+        $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -72,12 +73,12 @@ final class QuotationConversionTest extends TestCase
     {
         return $this->service->create(array_merge([
             'issue_date' => now()->toDateString(),
-            'items'      => [
+            'items' => [
                 ['description' => 'Arreglo floral', 'quantity' => 2,  'unit_price_cents' => 5000, 'sort_order' => 0],
                 ['description' => 'Delivery',        'quantity' => 1,  'unit_price_cents' => 1500, 'sort_order' => 1],
             ],
             'discount_cents' => 0,
-            'tax_rate_bps'   => 0,
+            'tax_rate_bps' => 0,
         ], $overrides));
     }
 
@@ -137,7 +138,7 @@ final class QuotationConversionTest extends TestCase
     {
         ['tenant' => $tenant] = $this->setupTenant();
 
-        $customer  = \App\Modules\Customers\Models\Customer::factory()->forTenant($tenant)->create();
+        $customer = Customer::factory()->forTenant($tenant)->create();
         $quotation = $this->createDraftQuotation(['customer_id' => $customer->id]);
 
         $accepted = $this->service->accept(quotation: $quotation, convertToOrder: true);
@@ -175,7 +176,7 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = $this->createDraftQuotation();
-        $accepted  = $this->service->accept(quotation: $quotation, convertToOrder: true);
+        $accepted = $this->service->accept(quotation: $quotation, convertToOrder: true);
 
         $order = Order::withoutGlobalScopes()->find($accepted->converted_order_id);
 
@@ -197,7 +198,7 @@ final class QuotationConversionTest extends TestCase
 
         // subtotal = 10000, tax = 1300, total = 11300
         $quotation = $this->createDraftQuotation([
-            'items'        => [['description' => 'Flores', 'quantity' => 1, 'unit_price_cents' => 10000]],
+            'items' => [['description' => 'Flores', 'quantity' => 1, 'unit_price_cents' => 10000]],
             'tax_rate_bps' => 1300,
         ]);
 
@@ -323,7 +324,7 @@ final class QuotationConversionTest extends TestCase
     {
         $tenant = Tenant::factory()->create([
             'quotation_tax_rate_bps' => 0,
-            'quotation_valid_days'   => 15,
+            'quotation_valid_days' => 15,
         ]);
         // No branch created — not even a main one
         app()->instance('currentTenant', $tenant);
@@ -343,11 +344,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'draft',
+            'status' => 'draft',
             'valid_until' => now()->subDay()->toDateString(), // yesterday
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $this->assertSame('expired', $quotation->fresh()->status);
     }
@@ -357,11 +358,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'sent',
+            'status' => 'sent',
             'valid_until' => now()->subDays(3)->toDateString(),
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $this->assertSame('expired', $quotation->fresh()->status);
     }
@@ -371,11 +372,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'accepted',
+            'status' => 'accepted',
             'valid_until' => now()->subDay()->toDateString(),
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $this->assertSame('accepted', $quotation->fresh()->status);
     }
@@ -385,11 +386,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'rejected',
+            'status' => 'rejected',
             'valid_until' => now()->subDay()->toDateString(),
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $this->assertSame('rejected', $quotation->fresh()->status);
     }
@@ -399,11 +400,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'expired',
+            'status' => 'expired',
             'valid_until' => now()->subDay()->toDateString(),
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         // Still expired — no duplicate history row expected
         $this->assertSame('expired', $quotation->fresh()->status);
@@ -422,11 +423,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'draft',
+            'status' => 'draft',
             'valid_until' => now()->toDateString(), // today = still valid
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $this->assertSame('draft', $quotation->fresh()->status);
     }
@@ -436,11 +437,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'draft',
+            'status' => 'draft',
             'valid_until' => null, // no expiry date
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $this->assertSame('draft', $quotation->fresh()->status);
     }
@@ -450,11 +451,11 @@ final class QuotationConversionTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $quotation = Quotation::factory()->forTenant($tenant)->create([
-            'status'      => 'sent',
+            'status' => 'sent',
             'valid_until' => now()->subDay()->toDateString(),
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $historyRow = QuotationStatusHistory::withoutGlobalScope(TenantScope::class)
             ->where('quotation_id', $quotation->id)
@@ -491,7 +492,7 @@ final class QuotationConversionTest extends TestCase
             'status' => 'draft', 'valid_until' => now()->toDateString(),
         ]);
 
-        (new ExpireQuotationsJob())->handle();
+        (new ExpireQuotationsJob)->handle();
 
         $this->assertSame('expired', $qA1->fresh()->status, 'Tenant A qA1 must be expired');
         $this->assertSame('expired', $qA2->fresh()->status, 'Tenant A qA2 must be expired');
@@ -537,7 +538,7 @@ final class QuotationConversionTest extends TestCase
 
         // Verify the Order row exists and has the expected source
         $orderId = $response->json('data.converted_order_id');
-        $order   = Order::withoutGlobalScopes()->find($orderId);
+        $order = Order::withoutGlobalScopes()->find($orderId);
         $this->assertNotNull($order);
         $this->assertSame('quotation', $order->source);
         $this->assertSame('pending', $order->status);

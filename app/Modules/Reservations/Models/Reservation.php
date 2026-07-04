@@ -36,6 +36,7 @@ final class Reservation extends Model
 
     /** @use HasFactory<ReservationFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     protected static function newFactory(): ReservationFactory

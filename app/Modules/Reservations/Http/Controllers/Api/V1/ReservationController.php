@@ -6,7 +6,6 @@ namespace App\Modules\Reservations\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Modules\Orders\Http\Resources\OrderResource;
 use App\Modules\Reservations\Http\Requests\RecordPaymentRequest;
 use App\Modules\Reservations\Http\Requests\StoreReservationRequest;
 use App\Modules\Reservations\Http\Requests\TransitionReservationRequest;
@@ -63,13 +62,13 @@ final class ReservationController extends Controller
         $this->authorize('viewAny', Reservation::class);
 
         $filters = [
-            'branch_id'   => $request->query('branch_id'),
-            'status'      => $request->query('status'),
+            'branch_id' => $request->query('branch_id'),
+            'status' => $request->query('status'),
             'customer_id' => $request->query('customer_id'),
-            'date_from'   => $request->query('date_from'),
-            'date_to'     => $request->query('date_to'),
-            'search'      => $request->query('search'),
-            'per_page'    => $request->query('per_page', '20'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'search' => $request->query('search'),
+            'per_page' => $request->query('per_page', '20'),
         ];
 
         // Eager-load to avoid N+1 on the list page.
@@ -168,15 +167,15 @@ final class ReservationController extends Controller
             }
         } catch (DomainException $e) {
             Log::warning('Reservation transition rejected', [
-                'reservation_id'     => $reservation->id,
+                'reservation_id' => $reservation->id,
                 'reservation_number' => $reservation->reservation_number,
-                'requested_status'   => $toStatus,
-                'current_status'     => $reservation->status,
-                'message'            => $e->getMessage(),
+                'requested_status' => $toStatus,
+                'current_status' => $reservation->status,
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'reservations.invalid_transition',
             ], 422);
         }
@@ -215,14 +214,14 @@ final class ReservationController extends Controller
             );
         } catch (DomainException|InvalidArgumentException $e) {
             Log::warning('Reservation payment rejected', [
-                'reservation_id'     => $reservation->id,
+                'reservation_id' => $reservation->id,
                 'reservation_number' => $reservation->reservation_number,
-                'amount_cents'       => $data['amount_cents'],
-                'message'            => $e->getMessage(),
+                'amount_cents' => $data['amount_cents'],
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'reservations.payment_rejected',
             ], 422);
         }
@@ -260,20 +259,20 @@ final class ReservationController extends Controller
             );
         } catch (DomainException $e) {
             Log::warning('Reservation conversion rejected', [
-                'reservation_id'     => $reservation->id,
+                'reservation_id' => $reservation->id,
                 'reservation_number' => $reservation->reservation_number,
-                'message'            => $e->getMessage(),
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'reservations.cannot_convert',
             ], 422);
         }
 
         return response()->json([
             'data' => [
-                'order_id'     => $order->id,
+                'order_id' => $order->id,
                 'order_number' => $order->order_number,
             ],
         ]);
@@ -342,14 +341,14 @@ final class ReservationController extends Controller
             );
         } catch (DomainException $e) {
             Log::warning('Reservation cancellation rejected', [
-                'reservation_id'     => $reservation->id,
+                'reservation_id' => $reservation->id,
                 'reservation_number' => $reservation->reservation_number,
-                'current_status'     => $reservation->status,
-                'message'            => $e->getMessage(),
+                'current_status' => $reservation->status,
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'reservations.cannot_cancel',
             ], 422);
         }

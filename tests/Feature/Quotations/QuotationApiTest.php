@@ -55,10 +55,10 @@ final class QuotationApiTest extends TestCase
     {
         $tenant = Tenant::factory()->create([
             'quotation_tax_rate_bps' => 0,
-            'quotation_valid_days'   => 15,
+            'quotation_valid_days' => 15,
         ]);
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $owner  = User::factory()->forTenant($tenant, role: 'owner')->create();
+        $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -77,7 +77,7 @@ final class QuotationApiTest extends TestCase
         return $this->quotationService->create(
             data: array_merge([
                 'issue_date' => now()->toDateString(),
-                'items'      => [
+                'items' => [
                     ['description' => 'Arreglo floral', 'quantity' => 2, 'unit_price_cents' => 5000],
                 ],
             ], $overrides),
@@ -132,7 +132,7 @@ final class QuotationApiTest extends TestCase
             ->assertJsonStructure([
                 'data',
                 'links' => ['first', 'last', 'prev', 'next'],
-                'meta'  => ['current_page', 'per_page', 'total', 'tenant_id'],
+                'meta' => ['current_page', 'per_page', 'total', 'tenant_id'],
                 'status_counts',
             ]);
 
@@ -259,7 +259,7 @@ final class QuotationApiTest extends TestCase
         ]);
 
         $from = now()->subDays(5)->toDateString();
-        $to   = now()->addDays(5)->toDateString();
+        $to = now()->addDays(5)->toDateString();
 
         $response = $this->tenantGetJson($tenant, $owner, "/api/v1/quotations?date_from={$from}&date_to={$to}")
             ->assertOk();
@@ -326,7 +326,7 @@ final class QuotationApiTest extends TestCase
     {
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
-        $customer  = Customer::factory()->forTenant($tenant)->create();
+        $customer = Customer::factory()->forTenant($tenant)->create();
 
         $quotation = $this->createQuotation($tenant, $owner, ['customer_id' => $customer->id]);
 
@@ -360,7 +360,7 @@ final class QuotationApiTest extends TestCase
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/quotations', [
             'issue_date' => now()->toDateString(),
-            'items'      => [
+            'items' => [
                 ['description' => 'Bouquet especial', 'quantity' => 3, 'unit_price_cents' => 4500],
             ],
         ])->assertStatus(201)
@@ -394,7 +394,7 @@ final class QuotationApiTest extends TestCase
 
         $this->tenantPostJson($tenant, $owner, '/api/v1/quotations', [
             'issue_date' => now()->toDateString(),
-            'items'      => [],
+            'items' => [],
         ])->assertStatus(422)
             ->assertJsonValidationErrors(['items']);
     }
@@ -417,10 +417,10 @@ final class QuotationApiTest extends TestCase
         // tax_rate_bps = 1300 (13%) → tax = intdiv(18000 * 1300, 10000) = 2340
         // total = 18000 + 2340 = 20340
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/quotations', [
-            'issue_date'     => now()->toDateString(),
+            'issue_date' => now()->toDateString(),
             'discount_cents' => 2000,
-            'tax_rate_bps'   => 1300,
-            'items'          => [
+            'tax_rate_bps' => 1300,
+            'items' => [
                 ['description' => 'Item', 'quantity' => 2, 'unit_price_cents' => 10000],
             ],
         ])->assertStatus(201);
@@ -443,7 +443,7 @@ final class QuotationApiTest extends TestCase
 
         $response = $this->tenantPutJson($tenant, $owner, "/api/v1/quotations/{$quotation->id}", [
             'issue_date' => now()->toDateString(),
-            'items'      => [
+            'items' => [
                 ['description' => 'New item A', 'quantity' => 2, 'unit_price_cents' => 5000],
                 ['description' => 'New item B', 'quantity' => 1, 'unit_price_cents' => 3000],
             ],
@@ -466,7 +466,7 @@ final class QuotationApiTest extends TestCase
 
         $this->tenantPutJson($tenant, $owner, "/api/v1/quotations/{$quotation->id}", [
             'issue_date' => now()->toDateString(),
-            'items'      => $this->defaultItems(),
+            'items' => $this->defaultItems(),
         ])->assertStatus(422)
             ->assertJsonPath('error_code', 'quotations.not_editable');
 
@@ -497,7 +497,7 @@ final class QuotationApiTest extends TestCase
     public function test_staff_cannot_delete_quotation(): void
     {
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
-        $staff     = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $staff = User::factory()->forTenant($tenant, role: 'staff')->create();
         $quotation = $this->createQuotation($tenant, $owner);
 
         $this->tenantDeleteJson($tenant, $staff, "/api/v1/quotations/{$quotation->id}")
@@ -533,8 +533,8 @@ final class QuotationApiTest extends TestCase
 
         $this->assertDatabaseHas('quotation_status_history', [
             'quotation_id' => $quotation->id,
-            'to_status'    => 'sent',
-            'note'         => 'Enviado al cliente por correo',
+            'to_status' => 'sent',
+            'note' => 'Enviado al cliente por correo',
         ]);
     }
 
@@ -643,7 +643,7 @@ final class QuotationApiTest extends TestCase
 
         $response = $this->tenantPutJson($tenantB, $ownerB, "/api/v1/quotations/{$quotationA->id}", [
             'issue_date' => now()->toDateString(),
-            'items'      => $this->defaultItems(),
+            'items' => $this->defaultItems(),
         ]);
         $this->assertContains($response->status(), [403, 404]);
     }

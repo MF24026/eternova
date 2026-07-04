@@ -65,11 +65,11 @@ final readonly class QuotationService
      * @var array<string, list<string>>
      */
     private const TRANSITIONS = [
-        'draft'    => ['sent', 'accepted', 'rejected', 'expired'],
-        'sent'     => ['accepted', 'rejected', 'expired'],
+        'draft' => ['sent', 'accepted', 'rejected', 'expired'],
+        'sent' => ['accepted', 'rejected', 'expired'],
         'accepted' => [],
         'rejected' => [],
-        'expired'  => [],
+        'expired' => [],
     ];
 
     // ── Creation ─────────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ final readonly class QuotationService
         $tenant = $this->resolveTenant();
 
         return DB::transaction(function () use ($data, $actor, $tenant): Quotation {
-            $number    = $this->quotations->nextQuotationNumber($tenant);
+            $number = $this->quotations->nextQuotationNumber($tenant);
             $issueDate = Carbon::parse($data['issue_date'] ?? now());
 
             // Apply tenant defaults when the caller did not override them.
@@ -109,30 +109,30 @@ final readonly class QuotationService
 
             $terms = $data['terms'] ?? $tenant->quotation_terms;
 
-            $lines   = $this->normaliseLines($data['items'] ?? []);
-            $totals  = $this->calculateTotals(
+            $lines = $this->normaliseLines($data['items'] ?? []);
+            $totals = $this->calculateTotals(
                 lines: $lines,
                 discountCents: (int) ($data['discount_cents'] ?? 0),
                 taxRateBps: $taxRateBps,
             );
 
             $quotation = $this->quotations->create([
-                'tenant_id'        => $tenant->id,
-                'branch_id'        => $data['branch_id'] ?? null,
-                'customer_id'      => $data['customer_id'] ?? null,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $data['branch_id'] ?? null,
+                'customer_id' => $data['customer_id'] ?? null,
                 'quotation_number' => $number,
-                'issue_date'       => $issueDate->toDateString(),
-                'valid_until'      => $validUntil,
-                'subtotal_cents'   => $totals['subtotal_cents'],
-                'discount_cents'   => $totals['discount_cents'],
-                'tax_rate_bps'     => $taxRateBps,
-                'tax_cents'        => $totals['tax_cents'],
-                'total_cents'      => $totals['total_cents'],
-                'status'           => 'draft',
-                'notes'            => $data['notes'] ?? null,
-                'terms'            => $terms,
-                'assigned_to'      => $data['assigned_to'] ?? null,
-                'created_by'       => $actor?->id,
+                'issue_date' => $issueDate->toDateString(),
+                'valid_until' => $validUntil,
+                'subtotal_cents' => $totals['subtotal_cents'],
+                'discount_cents' => $totals['discount_cents'],
+                'tax_rate_bps' => $taxRateBps,
+                'tax_cents' => $totals['tax_cents'],
+                'total_cents' => $totals['total_cents'],
+                'status' => 'draft',
+                'notes' => $data['notes'] ?? null,
+                'terms' => $terms,
+                'assigned_to' => $data['assigned_to'] ?? null,
+                'created_by' => $actor?->id,
             ]);
 
             $this->persistLines($quotation, $lines);
@@ -140,14 +140,14 @@ final readonly class QuotationService
             $this->recordInitialHistory($quotation, $actor);
 
             Log::info('Quotation created', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'tenant_id'        => $quotation->tenant_id,
-                'subtotal_cents'   => $quotation->subtotal_cents,
-                'discount_cents'   => $quotation->discount_cents,
-                'tax_cents'        => $quotation->tax_cents,
-                'total_cents'      => $quotation->total_cents,
-                'actor_id'         => $actor?->id,
+                'tenant_id' => $quotation->tenant_id,
+                'subtotal_cents' => $quotation->subtotal_cents,
+                'discount_cents' => $quotation->discount_cents,
+                'tax_cents' => $quotation->tax_cents,
+                'total_cents' => $quotation->total_cents,
+                'actor_id' => $actor?->id,
             ]);
 
             return $quotation;
@@ -184,7 +184,7 @@ final readonly class QuotationService
                 ? (int) $data['tax_rate_bps']
                 : (int) $quotation->tax_rate_bps;
 
-            $lines  = $this->normaliseLines($data['items'] ?? []);
+            $lines = $this->normaliseLines($data['items'] ?? []);
             $totals = $this->calculateTotals(
                 lines: $lines,
                 discountCents: (int) ($data['discount_cents'] ?? 0),
@@ -192,18 +192,18 @@ final readonly class QuotationService
             );
 
             $updateData = [
-                'branch_id'      => $data['branch_id'] ?? $quotation->branch_id,
-                'customer_id'    => $data['customer_id'] ?? $quotation->customer_id,
-                'issue_date'     => $data['issue_date'] ?? $quotation->issue_date?->toDateString(),
-                'valid_until'    => $data['valid_until'] ?? $quotation->valid_until?->toDateString(),
+                'branch_id' => $data['branch_id'] ?? $quotation->branch_id,
+                'customer_id' => $data['customer_id'] ?? $quotation->customer_id,
+                'issue_date' => $data['issue_date'] ?? $quotation->issue_date?->toDateString(),
+                'valid_until' => $data['valid_until'] ?? $quotation->valid_until?->toDateString(),
                 'subtotal_cents' => $totals['subtotal_cents'],
                 'discount_cents' => $totals['discount_cents'],
-                'tax_rate_bps'   => $taxRateBps,
-                'tax_cents'      => $totals['tax_cents'],
-                'total_cents'    => $totals['total_cents'],
-                'notes'          => array_key_exists('notes', $data) ? $data['notes'] : $quotation->notes,
-                'terms'          => array_key_exists('terms', $data) ? $data['terms'] : $quotation->terms,
-                'assigned_to'    => array_key_exists('assigned_to', $data) ? $data['assigned_to'] : $quotation->assigned_to,
+                'tax_rate_bps' => $taxRateBps,
+                'tax_cents' => $totals['tax_cents'],
+                'total_cents' => $totals['total_cents'],
+                'notes' => array_key_exists('notes', $data) ? $data['notes'] : $quotation->notes,
+                'terms' => array_key_exists('terms', $data) ? $data['terms'] : $quotation->terms,
+                'assigned_to' => array_key_exists('assigned_to', $data) ? $data['assigned_to'] : $quotation->assigned_to,
             ];
 
             $this->quotations->update($quotation, $updateData);
@@ -213,14 +213,14 @@ final readonly class QuotationService
             $this->persistLines($quotation, $lines);
 
             Log::info('Quotation updated', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'tenant_id'        => $quotation->tenant_id,
-                'subtotal_cents'   => $totals['subtotal_cents'],
-                'discount_cents'   => $totals['discount_cents'],
-                'tax_cents'        => $totals['tax_cents'],
-                'total_cents'      => $totals['total_cents'],
-                'actor_id'         => $actor?->id,
+                'tenant_id' => $quotation->tenant_id,
+                'subtotal_cents' => $totals['subtotal_cents'],
+                'discount_cents' => $totals['discount_cents'],
+                'tax_cents' => $totals['tax_cents'],
+                'total_cents' => $totals['total_cents'],
+                'actor_id' => $actor?->id,
             ]);
 
             return $quotation->fresh()->load('items');
@@ -256,18 +256,18 @@ final readonly class QuotationService
 
         // Clamp discount so the taxable base is never negative.
         $clampedDiscount = min($discountCents, $subtotal);
-        $taxableBase     = $subtotal - $clampedDiscount;
+        $taxableBase = $subtotal - $clampedDiscount;
 
         // intdiv truncates towards zero — equivalent to floor() for non-negative
         // integers and avoids any float intermediary or banker's rounding.
         $taxCents = intdiv($taxableBase * $taxRateBps, 10_000);
-        $total    = $taxableBase + $taxCents;
+        $total = $taxableBase + $taxCents;
 
         return [
             'subtotal_cents' => $subtotal,
             'discount_cents' => $clampedDiscount,
-            'tax_cents'      => $taxCents,
-            'total_cents'    => $total,
+            'tax_cents' => $taxCents,
+            'total_cents' => $total,
         ];
     }
 
@@ -298,22 +298,22 @@ final readonly class QuotationService
             $quotation->update(['status' => $toStatus]);
 
             QuotationStatusHistory::create([
-                'tenant_id'    => $quotation->tenant_id,
+                'tenant_id' => $quotation->tenant_id,
                 'quotation_id' => $quotation->id,
-                'from_status'  => $fromStatus,
-                'to_status'    => $toStatus,
-                'user_id'      => $actor?->id,
-                'note'         => $note,
+                'from_status' => $fromStatus,
+                'to_status' => $toStatus,
+                'user_id' => $actor?->id,
+                'note' => $note,
             ]);
         });
 
         Log::info('Quotation status transitioned', [
-            'quotation_id'     => $quotation->id,
+            'quotation_id' => $quotation->id,
             'quotation_number' => $quotation->quotation_number,
-            'tenant_id'        => $quotation->tenant_id,
-            'from_status'      => $fromStatus,
-            'to_status'        => $toStatus,
-            'actor_id'         => $actor?->id,
+            'tenant_id' => $quotation->tenant_id,
+            'from_status' => $fromStatus,
+            'to_status' => $toStatus,
+            'actor_id' => $actor?->id,
         ]);
 
         return $quotation->fresh()->load('statusHistory');
@@ -414,20 +414,20 @@ final readonly class QuotationService
     public function recordInitialHistory(Quotation $quotation, ?User $actor = null): void
     {
         QuotationStatusHistory::create([
-            'tenant_id'    => $quotation->tenant_id,
+            'tenant_id' => $quotation->tenant_id,
             'quotation_id' => $quotation->id,
-            'from_status'  => null,
-            'to_status'    => $quotation->status,
-            'user_id'      => $actor?->id,
-            'note'         => 'Cotizacion creada',
+            'from_status' => null,
+            'to_status' => $quotation->status,
+            'user_id' => $actor?->id,
+            'note' => 'Cotizacion creada',
         ]);
 
         Log::info('Quotation initial history recorded', [
-            'quotation_id'     => $quotation->id,
+            'quotation_id' => $quotation->id,
             'quotation_number' => $quotation->quotation_number,
-            'tenant_id'        => $quotation->tenant_id,
-            'initial_status'   => $quotation->status,
-            'actor_id'         => $actor?->id,
+            'tenant_id' => $quotation->tenant_id,
+            'initial_status' => $quotation->status,
+            'actor_id' => $actor?->id,
         ]);
     }
 
@@ -486,13 +486,13 @@ final readonly class QuotationService
             $quotation->update(['converted_order_id' => $order->id]);
 
             Log::info('Quotation converted to order', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'tenant_id'        => $quotation->tenant_id,
-                'order_id'         => $order->id,
-                'order_number'     => $order->order_number,
-                'total_cents'      => $quotation->total_cents,
-                'actor_id'         => $actor?->id,
+                'tenant_id' => $quotation->tenant_id,
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'total_cents' => $quotation->total_cents,
+                'actor_id' => $actor?->id,
             ]);
 
             return $quotation->fresh()->load('statusHistory');
@@ -598,11 +598,11 @@ final readonly class QuotationService
 
         foreach ($items as $i => $item) {
             $normalised[] = [
-                'description'      => (string) ($item['description'] ?? ''),
-                'quantity'         => (int) ($item['quantity'] ?? 1),
+                'description' => (string) ($item['description'] ?? ''),
+                'quantity' => (int) ($item['quantity'] ?? 1),
                 'unit_price_cents' => (int) ($item['unit_price_cents'] ?? 0),
-                'sort_order'       => (int) ($item['sort_order'] ?? $i),
-                'product_id'       => isset($item['product_id']) ? (int) $item['product_id'] : null,
+                'sort_order' => (int) ($item['sort_order'] ?? $i),
+                'product_id' => isset($item['product_id']) ? (int) $item['product_id'] : null,
             ];
         }
 
@@ -622,14 +622,14 @@ final readonly class QuotationService
     {
         foreach ($lines as $line) {
             QuotationItem::create([
-                'tenant_id'        => $quotation->tenant_id,
-                'quotation_id'     => $quotation->id,
-                'product_id'       => $line['product_id'],
-                'description'      => $line['description'],
-                'quantity'         => $line['quantity'],
+                'tenant_id' => $quotation->tenant_id,
+                'quotation_id' => $quotation->id,
+                'product_id' => $line['product_id'],
+                'description' => $line['description'],
+                'quantity' => $line['quantity'],
                 'unit_price_cents' => $line['unit_price_cents'],
                 'line_total_cents' => $line['quantity'] * $line['unit_price_cents'],
-                'sort_order'       => $line['sort_order'],
+                'sort_order' => $line['sort_order'],
             ]);
         }
     }

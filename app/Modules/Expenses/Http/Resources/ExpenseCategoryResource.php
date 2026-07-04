@@ -27,12 +27,12 @@ final class ExpenseCategoryResource extends BaseResource
         $category = $this->resource;
 
         return [
-            'id'             => $category->id,
-            'name'           => $category->name,
-            'type'           => $category->type,
-            'is_active'      => $category->is_active,
+            'id' => $category->id,
+            'name' => $category->name,
+            'type' => $category->type,
+            'is_active' => $category->is_active,
             'expenses_count' => $this->whenCounted('expenses'),
-            'created_at'     => $category->created_at?->toIso8601String(),
+            'created_at' => $category->created_at?->toIso8601String(),
         ];
     }
 }

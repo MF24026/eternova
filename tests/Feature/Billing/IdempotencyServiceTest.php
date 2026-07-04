@@ -23,7 +23,7 @@ final class IdempotencyServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new IdempotencyService();
+        $this->service = new IdempotencyService;
         $this->tenantId = Tenant::factory()->create()->id;
     }
 

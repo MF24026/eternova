@@ -32,9 +32,9 @@ final class UpdateReservationSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'deposit_pct'   => ['required', 'integer', 'min:0', 'max:100'],
-            'occasions'     => ['nullable', 'array', 'max:30'],
-            'occasions.*'   => ['required', 'string', 'min:1', 'max:100'],
+            'deposit_pct' => ['required', 'integer', 'min:0', 'max:100'],
+            'occasions' => ['nullable', 'array', 'max:30'],
+            'occasions.*' => ['required', 'string', 'min:1', 'max:100'],
         ];
     }
 }

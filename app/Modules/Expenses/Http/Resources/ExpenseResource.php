@@ -34,26 +34,26 @@ final class ExpenseResource extends BaseResource
         $expense = $this->resource;
 
         return [
-            'id'            => $expense->id,
-            'description'   => $expense->description,
-            'amount_cents'  => $expense->amount_cents,
-            'expense_date'  => $expense->expense_date?->toDateString(),
-            'vendor'        => $expense->vendor,
+            'id' => $expense->id,
+            'description' => $expense->description,
+            'amount_cents' => $expense->amount_cents,
+            'expense_date' => $expense->expense_date?->toDateString(),
+            'vendor' => $expense->vendor,
             'payment_method' => $expense->payment_method,
-            'ocr_status'    => $expense->ocr_status,
-            'is_verified'   => $expense->is_verified,
-            'ocr_data'      => $expense->ocr_data,
-            'receipt_url'   => $expense->receipt_path
+            'ocr_status' => $expense->ocr_status,
+            'is_verified' => $expense->is_verified,
+            'ocr_data' => $expense->ocr_data,
+            'receipt_url' => $expense->receipt_path
                 ? $this->resolveReceiptUrl($expense->receipt_path)
                 : null,
-            'notes'         => $expense->notes,
-            'created_at'    => $expense->created_at?->toIso8601String(),
-            'updated_at'    => $expense->updated_at?->toIso8601String(),
+            'notes' => $expense->notes,
+            'created_at' => $expense->created_at?->toIso8601String(),
+            'updated_at' => $expense->updated_at?->toIso8601String(),
 
             'category' => $this->when(
                 $expense->relationLoaded('category') && $expense->category !== null,
                 static fn () => [
-                    'id'   => $expense->category?->id,
+                    'id' => $expense->category?->id,
                     'name' => $expense->category?->name,
                     'type' => $expense->category?->type,
                 ],
@@ -62,7 +62,7 @@ final class ExpenseResource extends BaseResource
             'branch' => $this->when(
                 $expense->relationLoaded('branch') && $expense->branch !== null,
                 static fn () => [
-                    'id'   => $expense->branch?->id,
+                    'id' => $expense->branch?->id,
                     'name' => $expense->branch?->name,
                 ],
             ),
@@ -70,7 +70,7 @@ final class ExpenseResource extends BaseResource
             'creator' => $this->when(
                 $expense->relationLoaded('creator') && $expense->creator !== null,
                 static fn () => [
-                    'id'   => $expense->creator?->id,
+                    'id' => $expense->creator?->id,
                     'name' => $expense->creator?->name,
                 ],
             ),

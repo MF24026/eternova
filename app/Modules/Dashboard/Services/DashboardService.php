@@ -30,33 +30,33 @@ final class DashboardService
      */
     public function summary(int $rangeDays): array
     {
-        $tenantId   = current_tenant()->id;
-        $today      = now()->toDateString();
+        $tenantId = current_tenant()->id;
+        $today = now()->toDateString();
         $monthStart = now()->startOfMonth()->toDateString();
-        $monthEnd   = now()->endOfMonth()->toDateString();
+        $monthEnd = now()->endOfMonth()->toDateString();
         $seriesFrom = now()->subDays($rangeDays - 1)->startOfDay();
 
         return [
             'kpis' => [
-                'today_sales_cents'    => (int) Order::query()
+                'today_sales_cents' => (int) Order::query()
                     ->whereDate('created_at', $today)
                     ->where('status', '!=', 'cancelled')
                     ->sum('total_cents'),
 
-                'pending_orders'       => Order::query()
+                'pending_orders' => Order::query()
                     ->whereIn('status', self::PENDING_STATUSES)
                     ->count(),
 
-                'low_stock_count'      => $this->lowStockCount($tenantId),
+                'low_stock_count' => $this->lowStockCount($tenantId),
 
                 'month_expenses_cents' => (int) Expense::query()
                     ->whereBetween('expense_date', [$monthStart, $monthEnd])
                     ->sum('amount_cents'),
             ],
-            'sales_series'  => $this->salesSeries($tenantId, $seriesFrom, $rangeDays),
-            'top_products'  => $this->topProducts($tenantId, $monthStart),
+            'sales_series' => $this->salesSeries($tenantId, $seriesFrom, $rangeDays),
+            'top_products' => $this->topProducts($tenantId, $monthStart),
             'recent_orders' => $this->recentOrders(),
-            'range_days'    => $rangeDays,
+            'range_days' => $rangeDays,
         ];
     }
 
@@ -95,7 +95,7 @@ final class DashboardService
         for ($i = 0; $i < $days; $i++) {
             $date = $from->copy()->addDays($i)->toDateString();
             $series[] = [
-                'date'        => $date,
+                'date' => $date,
                 'total_cents' => (int) ($byDate[$date] ?? 0),
             ];
         }
@@ -124,7 +124,7 @@ final class DashboardService
             ->limit(5)
             ->get()
             ->map(static fn (object $row): array => [
-                'name'  => (string) $row->name,
+                'name' => (string) $row->name,
                 'units' => (int) $row->units,
             ])
             ->all();
@@ -143,12 +143,12 @@ final class DashboardService
             ->limit(5)
             ->get(['id', 'order_number', 'customer_id', 'total_cents', 'status', 'created_at'])
             ->map(static fn (Order $order): array => [
-                'id'            => $order->id,
-                'order_number'  => $order->order_number,
+                'id' => $order->id,
+                'order_number' => $order->order_number,
                 'customer_name' => $order->customer?->name,
-                'total_cents'   => (int) $order->total_cents,
-                'status'        => $order->status,
-                'created_at'    => $order->created_at?->toIso8601String(),
+                'total_cents' => (int) $order->total_cents,
+                'status' => $order->status,
+                'created_at' => $order->created_at?->toIso8601String(),
             ])
             ->all();
     }
