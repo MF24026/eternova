@@ -108,26 +108,26 @@ final readonly class OrderService
             // Tax: resolve the branch's tax settings and compute the breakdown.
             // Server is authoritative; the POS preview only mirrors this.
             $discountCents = 0; // POS has no discount UI yet
-            $tax           = BranchSetting::resolvedGroup('tax', $branch->id);
-            $breakdown     = (new TaxCalculator())->compute($subtotalCents, $discountCents, $tax);
+            $tax = BranchSetting::resolvedGroup('tax', $branch->id);
+            $breakdown = (new TaxCalculator)->compute($subtotalCents, $discountCents, $tax);
 
             $order = $this->orders->create([
-                'tenant_id'      => $tenant->id,
-                'branch_id'      => $branch->id,
-                'customer_id'    => $customer?->id,
-                'order_number'   => $orderNumber,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
+                'customer_id' => $customer?->id,
+                'order_number' => $orderNumber,
                 'tracking_token' => $this->generateTrackingToken(),
-                'status'         => 'preparing',
-                'source'         => 'pos',
+                'status' => 'preparing',
+                'source' => 'pos',
                 'subtotal_cents' => $breakdown->subtotalCents,
-                'tax_cents'      => $breakdown->taxCents,
-                'tax_rate_bps'   => $breakdown->rateBpsApplied,
+                'tax_cents' => $breakdown->taxCents,
+                'tax_rate_bps' => $breakdown->rateBpsApplied,
                 'discount_cents' => $breakdown->discountCents,
-                'total_cents'    => $breakdown->totalCents,
+                'total_cents' => $breakdown->totalCents,
                 'payment_method' => $paymentMethod,
                 'payment_status' => 'paid',
-                'notes'          => $notes,
-                'user_id'        => $user?->id,
+                'notes' => $notes,
+                'user_id' => $user?->id,
             ]);
 
             foreach ($itemRows as $row) {
@@ -166,14 +166,14 @@ final readonly class OrderService
             ]);
 
             Log::info('POS order created', [
-                'order_id'    => $order->id,
+                'order_id' => $order->id,
                 'order_number' => $order->order_number,
-                'tenant_id'   => $tenant->id,
-                'branch_id'   => $branch->id,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
                 'total_cents' => $order->total_cents,
                 'tax_rate_bps' => $order->tax_rate_bps,
-                'item_count'  => count($itemRows),
-                'user_id'     => $user?->id,
+                'item_count' => count($itemRows),
+                'user_id' => $user?->id,
             ]);
 
             return $order->load('items');

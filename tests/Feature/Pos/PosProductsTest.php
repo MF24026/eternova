@@ -179,8 +179,8 @@ final class PosProductsTest extends TestCase
 
         // setupTenant() already binds currentTenant — writeDefault() requires it.
         BranchSetting::writeDefault('tax', [
-            'enabled'            => true,
-            'rate_bps'           => 1300,
+            'enabled' => true,
+            'rate_bps' => 1300,
             'prices_include_tax' => false,
         ]);
 

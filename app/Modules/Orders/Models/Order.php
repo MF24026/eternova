@@ -68,10 +68,10 @@ final class Order extends Model
      */
     protected $casts = [
         'subtotal_cents' => 'integer',
-        'tax_cents'      => 'integer',
-        'tax_rate_bps'   => 'integer',
+        'tax_cents' => 'integer',
+        'tax_rate_bps' => 'integer',
         'discount_cents' => 'integer',
-        'total_cents'    => 'integer',
+        'total_cents' => 'integer',
     ];
 
     /**

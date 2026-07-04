@@ -14,6 +14,7 @@ use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
 use App\Modules\Orders\Services\OrderService;
+use App\Modules\Settings\Models\BranchSetting;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use App\Modules\Tenancy\Scopes\TenantScope;
@@ -141,9 +142,9 @@ final class OrderServiceTest extends TestCase
 
         // Enable IVA for this tenant so this test exercises the tax math. The
         // coded default is off-until-opt-in, so we opt in explicitly here.
-        \App\Modules\Settings\Models\BranchSetting::writeDefault('tax', [
-            'enabled'            => true,
-            'rate_bps'           => 1300,
+        BranchSetting::writeDefault('tax', [
+            'enabled' => true,
+            'rate_bps' => 1300,
             'prices_include_tax' => false,
         ]);
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Orders;
 
+use App\Models\User;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\ProductVariant;
 use App\Modules\Inventory\Services\InventoryService;
@@ -34,7 +35,7 @@ final class CreateFromPosTaxTest extends TestCase
     {
         parent::setUp();
 
-        $this->service          = app(OrderService::class);
+        $this->service = app(OrderService::class);
         $this->inventoryService = app(InventoryService::class);
     }
 
@@ -48,8 +49,8 @@ final class CreateFromPosTaxTest extends TestCase
      */
     private function posFixture(int $unitPriceCents): array
     {
-        $tenant  = Tenant::factory()->create();
-        $branch  = Branch::factory()->forTenant($tenant)->create();
+        $tenant = Tenant::factory()->create();
+        $branch = Branch::factory()->forTenant($tenant)->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -61,7 +62,7 @@ final class CreateFromPosTaxTest extends TestCase
             ->withPrice($unitPriceCents)
             ->create();
 
-        $user = \App\Models\User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         $this->inventoryService->recordEntry($branch, $variant, 10, $user);
 
@@ -77,8 +78,8 @@ final class CreateFromPosTaxTest extends TestCase
     {
         [$branch, $variant] = $this->posFixture(unitPriceCents: 10_000);
         BranchSetting::writeDefault('tax', [
-            'enabled'            => true,
-            'rate_bps'           => 1300,
+            'enabled' => true,
+            'rate_bps' => 1300,
             'prices_include_tax' => false,
         ]);
 
@@ -102,8 +103,8 @@ final class CreateFromPosTaxTest extends TestCase
     {
         [$branch, $variant] = $this->posFixture(unitPriceCents: 11_300);
         BranchSetting::writeDefault('tax', [
-            'enabled'            => true,
-            'rate_bps'           => 1300,
+            'enabled' => true,
+            'rate_bps' => 1300,
             'prices_include_tax' => true,
         ]);
 
@@ -128,7 +129,7 @@ final class CreateFromPosTaxTest extends TestCase
     {
         [$branch, $variant] = $this->posFixture(unitPriceCents: 10_000);
         BranchSetting::writeDefault('tax', [
-            'enabled'  => false,
+            'enabled' => false,
             'rate_bps' => 1300,
         ]);
 

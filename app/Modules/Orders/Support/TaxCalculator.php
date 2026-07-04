@@ -15,8 +15,8 @@ final class TaxCalculator
 {
     public function compute(int $itemsCents, int $discountCents, array $tax): TaxBreakdown
     {
-        $enabled   = (bool) ($tax['enabled'] ?? false);
-        $rateBps   = (int) ($tax['rate_bps'] ?? 0);
+        $enabled = (bool) ($tax['enabled'] ?? false);
+        $rateBps = (int) ($tax['rate_bps'] ?? 0);
         $inclusive = (bool) ($tax['prices_include_tax'] ?? false);
 
         $discount = min(max(0, $discountCents), max(0, $itemsCents));
@@ -29,8 +29,8 @@ final class TaxCalculator
 
         if ($inclusive) {
             // net = round-half-up(base * 10000 / (10000 + bps)); tax = base - net.
-            $divisor  = 10_000 + $rateBps;
-            $net      = intdiv($base * 10_000 + intdiv($divisor, 2), $divisor);
+            $divisor = 10_000 + $rateBps;
+            $net = intdiv($base * 10_000 + intdiv($divisor, 2), $divisor);
             $taxCents = $base - $net;
 
             return new TaxBreakdown($net, $taxCents, $discount, $base, $rateBps);

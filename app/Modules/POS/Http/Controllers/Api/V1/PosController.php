@@ -100,8 +100,8 @@ final class PosController extends Controller
             ->additional([
                 'stock' => $stockMap,
                 'tax' => [
-                    'enabled'            => (bool) ($tax['enabled'] ?? false),
-                    'rate_bps'           => (int) ($tax['rate_bps'] ?? 0),
+                    'enabled' => (bool) ($tax['enabled'] ?? false),
+                    'rate_bps' => (int) ($tax['rate_bps'] ?? 0),
                     'prices_include_tax' => (bool) ($tax['prices_include_tax'] ?? false),
                 ],
             ]);
