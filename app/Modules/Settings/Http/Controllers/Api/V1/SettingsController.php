@@ -37,7 +37,7 @@ final class SettingsController extends Controller
         return response()->json([
             'data' => $this->settings->resolveAll($tenant),
             'meta' => [
-                'groups'  => SettingsService::groups(),
+                'groups' => SettingsService::groups(),
                 'catalog' => $this->settings->catalog(),
             ],
         ]);
@@ -58,7 +58,7 @@ final class SettingsController extends Controller
             group: $group,
             data: $request->validated(),
             files: [
-                'logo'    => $request->file('logo'),
+                'logo' => $request->file('logo'),
                 'favicon' => $request->file('favicon'),
             ],
         );

@@ -24,15 +24,15 @@ final class MePlanTest extends TestCase
     public function test_me_includes_the_current_tenants_plan_limits(): void
     {
         $plan = Plan::factory()->create([
-            'slug'   => 'pro',
-            'name'   => 'Pro',
+            'slug' => 'pro',
+            'name' => 'Pro',
             'limits' => ['pdf_quotations' => true, 'custom_domain' => false, 'max_branches' => 3],
         ]);
 
         $tenant = Tenant::factory()->create();
         Subscription::factory()->active()->create([
             'tenant_id' => $tenant->id,
-            'plan_id'   => $plan->id,
+            'plan_id' => $plan->id,
         ]);
         $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 
@@ -52,7 +52,7 @@ final class MePlanTest extends TestCase
         $plan = Plan::factory()->create(['slug' => 'pro']);
         Subscription::factory()->canceled()->create([
             'tenant_id' => $tenant->id,
-            'plan_id'   => $plan->id,
+            'plan_id' => $plan->id,
         ]);
         $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 

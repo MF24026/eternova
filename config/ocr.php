@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use App\Modules\Expenses\Ocr\FakeOcrDriver;
+use App\Modules\Expenses\Ocr\TesseractOcrDriver;
 
 return [
 
@@ -33,8 +35,8 @@ return [
     |
     */
     'drivers' => [
-        'tesseract' => \App\Modules\Expenses\Ocr\TesseractOcrDriver::class,
-        'fake'      => \App\Modules\Expenses\Ocr\FakeOcrDriver::class,
+        'tesseract' => TesseractOcrDriver::class,
+        'fake' => FakeOcrDriver::class,
     ],
 
     /*
@@ -49,9 +51,9 @@ return [
     |
     */
     'tesseract' => [
-        'binary'    => env('TESSERACT_BINARY', 'tesseract'),
+        'binary' => env('TESSERACT_BINARY', 'tesseract'),
         'languages' => env('TESSERACT_LANGUAGES', 'spa+eng'),
-        'timeout'   => (int) env('TESSERACT_TIMEOUT_SECONDS', 60),
+        'timeout' => (int) env('TESSERACT_TIMEOUT_SECONDS', 60),
     ],
 
 ];

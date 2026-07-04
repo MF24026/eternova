@@ -10,6 +10,7 @@ use App\Modules\Expenses\Models\Expense;
 use App\Modules\Expenses\Ocr\FakeOcrDriver;
 use App\Modules\Expenses\Ocr\OcrDriverInterface;
 use App\Modules\Expenses\Ocr\OcrException;
+use App\Modules\Expenses\Ocr\OcrResult;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,6 +18,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
 use Tests\Support\ActingAsTenantMember;
 use Tests\TestCase;
 
@@ -51,7 +53,7 @@ final class ReceiptUploadTest extends TestCase
 
         $this->tenant = Tenant::factory()->create(['slug' => 'expense-test-tenant']);
         $this->branch = Branch::factory()->forTenant($this->tenant)->create(['is_main' => true]);
-        $this->owner  = User::factory()->forTenant($this->tenant, role: 'owner')->create();
+        $this->owner = User::factory()->forTenant($this->tenant, role: 'owner')->create();
     }
 
     // ── Upload creates DRAFT + dispatches job ─────────────────────────────────
@@ -84,9 +86,9 @@ final class ReceiptUploadTest extends TestCase
 
         // Draft state
         $this->assertDatabaseHas('expenses', [
-            'id'          => $expenseId,
-            'tenant_id'   => $this->tenant->id,
-            'ocr_status'  => 'pending',
+            'id' => $expenseId,
+            'tenant_id' => $this->tenant->id,
+            'ocr_status' => 'pending',
             'is_verified' => false,
             'amount_cents' => 0,
         ]);
@@ -113,7 +115,7 @@ final class ReceiptUploadTest extends TestCase
 
         $expenseId = $response->json('data.id');
         $this->assertDatabaseHas('expenses', [
-            'id'        => $expenseId,
+            'id' => $expenseId,
             'branch_id' => $this->branch->id,
         ]);
     }
@@ -129,7 +131,7 @@ final class ReceiptUploadTest extends TestCase
         $response->assertStatus(201);
 
         $this->assertDatabaseHas('expenses', [
-            'id'         => $response->json('data.id'),
+            'id' => $response->json('data.id'),
             'created_by' => $this->owner->id,
         ]);
     }
@@ -176,8 +178,8 @@ final class ReceiptUploadTest extends TestCase
         $expense = Expense::factory()
             ->forBranch($this->branch)
             ->create([
-                'ocr_status'   => 'pending',
-                'is_verified'  => false,
+                'ocr_status' => 'pending',
+                'is_verified' => false,
                 'receipt_path' => "tenants/{$this->tenant->id}/receipts/test.jpg",
             ]);
 
@@ -213,8 +215,8 @@ final class ReceiptUploadTest extends TestCase
         $expense = Expense::factory()
             ->forBranch($this->branch)
             ->create([
-                'ocr_status'   => 'pending',
-                'is_verified'  => false,
+                'ocr_status' => 'pending',
+                'is_verified' => false,
                 'receipt_path' => "tenants/{$this->tenant->id}/receipts/test.jpg",
             ]);
 
@@ -223,8 +225,9 @@ final class ReceiptUploadTest extends TestCase
 
         // Bind a driver stub that always throws OcrException.
         $this->app->bind(OcrDriverInterface::class, static function (): OcrDriverInterface {
-            return new class implements OcrDriverInterface {
-                public function extract(string $absolutePath): \App\Modules\Expenses\Ocr\OcrResult
+            return new class implements OcrDriverInterface
+            {
+                public function extract(string $absolutePath): OcrResult
                 {
                     throw new OcrException('Simulated OCR failure for test.');
                 }
@@ -291,7 +294,7 @@ final class ReceiptUploadTest extends TestCase
         Bus::fake();
 
         $tenantB = Tenant::factory()->create(['slug' => 'expense-test-tenant-b']);
-        $ownerB  = User::factory()->forTenant($tenantB, role: 'owner')->create();
+        $ownerB = User::factory()->forTenant($tenantB, role: 'owner')->create();
 
         // Upload as tenant B's owner — must create expense for tenant B.
         $file = UploadedFile::fake()->image('receipt.jpg', 400, 300);
@@ -312,7 +315,7 @@ final class ReceiptUploadTest extends TestCase
 
         $expenseId = $response->json('data.id');
         $this->assertDatabaseHas('expenses', [
-            'id'        => $expenseId,
+            'id' => $expenseId,
             'tenant_id' => $tenantB->id,
         ]);
 
@@ -323,11 +326,11 @@ final class ReceiptUploadTest extends TestCase
 
     public function test_user_of_tenant_a_cannot_poll_ocr_status_of_tenant_b_expense(): void
     {
-        $tenantB   = Tenant::factory()->create(['slug' => 'expense-test-tenant-b-iso']);
-        $branchB   = Branch::factory()->forTenant($tenantB)->create();
+        $tenantB = Tenant::factory()->create(['slug' => 'expense-test-tenant-b-iso']);
+        $branchB = Branch::factory()->forTenant($tenantB)->create();
 
         app()->instance('currentTenant', $tenantB);
-        $expenseB  = Expense::factory()->forBranch($branchB)->draft()->create();
+        $expenseB = Expense::factory()->forBranch($branchB)->draft()->create();
 
         // Tenant A's owner tries to access tenant B's expense.
         $response = $this->tenantGetJson(
@@ -373,7 +376,7 @@ final class ReceiptUploadTest extends TestCase
     /**
      * Send a multipart POST to the receipt upload endpoint as the default owner.
      */
-    private function uploadReceipt(UploadedFile $file): \Illuminate\Testing\TestResponse
+    private function uploadReceipt(UploadedFile $file): TestResponse
     {
         return $this->uploadReceiptWithData($file, []);
     }
@@ -383,7 +386,7 @@ final class ReceiptUploadTest extends TestCase
      *
      * @param  array<string, mixed>  $extraData
      */
-    private function uploadReceiptWithData(UploadedFile $file, array $extraData): \Illuminate\Testing\TestResponse
+    private function uploadReceiptWithData(UploadedFile $file, array $extraData): TestResponse
     {
         return $this->actingAs($this->owner)
             ->call(

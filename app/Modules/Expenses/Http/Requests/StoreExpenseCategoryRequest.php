@@ -36,7 +36,7 @@ final class StoreExpenseCategoryRequest extends FormRequest
                 // Unique within this tenant — two different tenants can have the same name.
                 Rule::unique('expense_categories')->where('tenant_id', $tenantId),
             ],
-            'type'      => ['required', 'string', 'in:operating,products,payroll,rent,other'],
+            'type' => ['required', 'string', 'in:operating,products,payroll,rent,other'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

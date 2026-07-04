@@ -10,7 +10,9 @@ use App\Modules\Expenses\Models\ExpenseCategory;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use Database\Seeders\Expenses\ExpenseCategoriesSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -31,7 +33,7 @@ final class ExpenseSchemaTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $owner  = User::factory()->forTenant($tenant, role: 'owner')->create();
+        $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -43,7 +45,7 @@ final class ExpenseSchemaTest extends TestCase
         ['tenant' => $tenant, 'branch' => $branch, 'owner' => $owner] = $this->setupTenant();
 
         $category = ExpenseCategory::factory()->forTenant($tenant)->type('operating')->create([
-            'name'      => 'Operación',
+            'name' => 'Operación',
             'is_active' => true,
         ]);
 
@@ -52,35 +54,35 @@ final class ExpenseSchemaTest extends TestCase
             ->forCategory($category)
             ->createdBy($owner)
             ->create([
-                'description'  => 'Compra de materiales',
+                'description' => 'Compra de materiales',
                 'amount_cents' => 25000,
                 'expense_date' => '2026-06-10',
-                'vendor'       => 'Proveedor SA',
+                'vendor' => 'Proveedor SA',
                 'payment_method' => 'transfer',
-                'is_verified'  => true,
-                'ocr_status'   => 'none',
+                'is_verified' => true,
+                'ocr_status' => 'none',
             ]);
 
         $this->assertDatabaseHas('expenses', [
-            'id'                  => $expense->id,
-            'tenant_id'           => $tenant->id,
-            'branch_id'           => $branch->id,
+            'id' => $expense->id,
+            'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'expense_category_id' => $category->id,
-            'description'         => 'Compra de materiales',
-            'amount_cents'        => 25000,
-            'expense_date'        => '2026-06-10',
-            'vendor'              => 'Proveedor SA',
-            'payment_method'      => 'transfer',
-            'is_verified'         => true,
-            'ocr_status'          => 'none',
-            'created_by'          => $owner->id,
+            'description' => 'Compra de materiales',
+            'amount_cents' => 25000,
+            'expense_date' => '2026-06-10',
+            'vendor' => 'Proveedor SA',
+            'payment_method' => 'transfer',
+            'is_verified' => true,
+            'ocr_status' => 'none',
+            'created_by' => $owner->id,
         ]);
 
         $this->assertDatabaseHas('expense_categories', [
-            'id'        => $category->id,
+            'id' => $category->id,
             'tenant_id' => $tenant->id,
-            'name'      => 'Operación',
-            'type'      => 'operating',
+            'name' => 'Operación',
+            'type' => 'operating',
             'is_active' => true,
         ]);
     }
@@ -173,7 +175,7 @@ final class ExpenseSchemaTest extends TestCase
         $this->assertDatabaseHas('expense_categories', ['tenant_id' => $tenantB->id, 'name' => 'Renta']);
 
         // Duplicate name within the same tenant must fail with a DB integrity violation.
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
         app()->instance('currentTenant', $tenantA);
         ExpenseCategory::factory()->forTenant($tenantA)->create(['name' => 'Renta']);
     }
@@ -187,7 +189,7 @@ final class ExpenseSchemaTest extends TestCase
 
         $this->artisan('db:seed', ['--class' => ExpenseCategoriesSeeder::class]);
 
-        $categories = \Illuminate\Support\Facades\DB::table('expense_categories')
+        $categories = DB::table('expense_categories')
             ->where('tenant_id', $tenant->id)
             ->get();
 
@@ -210,7 +212,7 @@ final class ExpenseSchemaTest extends TestCase
         $this->artisan('db:seed', ['--class' => ExpenseCategoriesSeeder::class]);
         $this->artisan('db:seed', ['--class' => ExpenseCategoriesSeeder::class]);
 
-        $count = \Illuminate\Support\Facades\DB::table('expense_categories')
+        $count = DB::table('expense_categories')
             ->where('tenant_id', $tenant->id)
             ->count();
 
@@ -223,7 +225,7 @@ final class ExpenseSchemaTest extends TestCase
 
         // factory create() does not hydrate DB-applied defaults — call fresh() first.
         $verified = Expense::factory()->forTenant($tenant)->verified()->create()->fresh();
-        $draft    = Expense::factory()->forTenant($tenant)->draft()->create()->fresh();
+        $draft = Expense::factory()->forTenant($tenant)->draft()->create()->fresh();
 
         $this->assertFalse($verified->isDraft());
         $this->assertTrue($draft->isDraft());

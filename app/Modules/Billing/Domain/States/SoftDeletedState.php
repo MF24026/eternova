@@ -13,21 +13,45 @@ use App\Modules\Billing\Enums\SubscriptionStatus;
  */
 final class SoftDeletedState extends SubscriptionState
 {
-    public function name(): SubscriptionStatus { return SubscriptionStatus::SoftDeleted; }
+    public function name(): SubscriptionStatus
+    {
+        return SubscriptionStatus::SoftDeleted;
+    }
 
-    public function canCharge(): bool { return false; }
+    public function canCharge(): bool
+    {
+        return false;
+    }
 
-    public function canCancel(): bool { return false; }
+    public function canCancel(): bool
+    {
+        return false;
+    }
 
-    public function canPause(): bool { return false; }
+    public function canPause(): bool
+    {
+        return false;
+    }
 
-    public function canResume(): bool { return false; }
+    public function canResume(): bool
+    {
+        return false;
+    }
 
-    public function canRefund(): bool { return false; }
+    public function canRefund(): bool
+    {
+        return false;
+    }
 
-    public function isAccessible(): bool { return false; }
+    public function isAccessible(): bool
+    {
+        return false;
+    }
 
-    public function isReadOnly(): bool { return true; }
+    public function isReadOnly(): bool
+    {
+        return true;
+    }
 
     public function allowedTransitions(): array
     {

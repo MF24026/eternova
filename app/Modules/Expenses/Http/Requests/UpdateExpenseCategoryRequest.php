@@ -42,7 +42,7 @@ final class UpdateExpenseCategoryRequest extends FormRequest
                     ->where('tenant_id', $tenantId)
                     ->ignore($category->id),
             ],
-            'type'      => ['sometimes', 'required', 'string', 'in:operating,products,payroll,rent,other'],
+            'type' => ['sometimes', 'required', 'string', 'in:operating,products,payroll,rent,other'],
             'is_active' => ['sometimes', 'nullable', 'boolean'],
         ];
     }

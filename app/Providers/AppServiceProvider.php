@@ -84,7 +84,7 @@ class AppServiceProvider extends ServiceProvider
             ? $notifiable->getEmailForPasswordReset()
             : $notifiable->getAttribute('email');
 
-        return $host . '/reset-password?token=' . $token . '&email=' . urlencode((string) $email);
+        return $host.'/reset-password?token='.$token.'&email='.urlencode((string) $email);
     }
 
     /**
@@ -111,11 +111,11 @@ class AppServiceProvider extends ServiceProvider
      */
     private function resetPasswordMail(object $notifiable, string $token): MailMessage
     {
-        $brand  = $this->resetPasswordBrand($notifiable);
+        $brand = $this->resetPasswordBrand($notifiable);
         $broker = (string) config('auth.defaults.passwords', 'users');
         $expire = (int) config("auth.passwords.{$broker}.expire", 60);
 
-        return (new MailMessage())
+        return (new MailMessage)
             ->subject("Restablece tu contrasena en {$brand}")
             ->greeting('Hola,')
             ->line("Recibimos una solicitud para restablecer la contrasena de tu cuenta en {$brand}.")

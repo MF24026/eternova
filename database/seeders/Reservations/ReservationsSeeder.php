@@ -81,12 +81,12 @@ final class ReservationsSeeder extends Seeder
      * @var array<string, list<string>>
      */
     private const TRANSITION_PATH = [
-        'inquiry'     => ['confirmed'],
-        'confirmed'   => ['in_progress'],
+        'inquiry' => ['confirmed'],
+        'confirmed' => ['in_progress'],
         'in_progress' => ['ready'],
-        'ready'       => ['delivered'],
-        'delivered'   => [],
-        'cancelled'   => [],
+        'ready' => ['delivered'],
+        'delivered' => [],
+        'cancelled' => [],
     ];
 
     /**
@@ -96,12 +96,12 @@ final class ReservationsSeeder extends Seeder
      * @var array<string, array{min: int, max: int}>
      */
     private const CREATED_AT_RANGE = [
-        'delivered'   => ['min' => 14, 'max' => 30],
-        'cancelled'   => ['min' =>  7, 'max' => 20],
-        'ready'       => ['min' =>  5, 'max' => 10],
-        'in_progress' => ['min' =>  3, 'max' =>  8],
-        'confirmed'   => ['min' =>  1, 'max' =>  5],
-        'inquiry'     => ['min' =>  0, 'max' =>  2],
+        'delivered' => ['min' => 14, 'max' => 30],
+        'cancelled' => ['min' => 7, 'max' => 20],
+        'ready' => ['min' => 5, 'max' => 10],
+        'in_progress' => ['min' => 3, 'max' => 8],
+        'confirmed' => ['min' => 1, 'max' => 5],
+        'inquiry' => ['min' => 0, 'max' => 2],
     ];
 
     /**
@@ -111,12 +111,12 @@ final class ReservationsSeeder extends Seeder
      * @var array<string, array{min: int, max: int}>
      */
     private const EVENT_DATE_RANGE = [
-        'inquiry'     => ['min' => 10, 'max' => 60],
-        'confirmed'   => ['min' =>  7, 'max' => 45],
-        'in_progress' => ['min' =>  3, 'max' => 21],
-        'ready'       => ['min' =>  0, 'max' =>  7],
-        'delivered'   => ['min' => -30, 'max' => -1],  // past events
-        'cancelled'   => ['min' => -10, 'max' => 20],  // mix of past and future
+        'inquiry' => ['min' => 10, 'max' => 60],
+        'confirmed' => ['min' => 7, 'max' => 45],
+        'in_progress' => ['min' => 3, 'max' => 21],
+        'ready' => ['min' => 0, 'max' => 7],
+        'delivered' => ['min' => -30, 'max' => -1],  // past events
+        'cancelled' => ['min' => -10, 'max' => 20],  // mix of past and future
     ];
 
     /**
@@ -126,12 +126,12 @@ final class ReservationsSeeder extends Seeder
      * @var array<string, array{min: int, max: int}>
      */
     private const TOTAL_CENTS_RANGE = [
-        'inquiry'     => ['min' =>  5000, 'max' =>  50000],
-        'confirmed'   => ['min' => 15000, 'max'  =>  80000],
+        'inquiry' => ['min' => 5000, 'max' => 50000],
+        'confirmed' => ['min' => 15000, 'max' => 80000],
         'in_progress' => ['min' => 20000, 'max' => 120000],
-        'ready'       => ['min' => 25000, 'max' =>  90000],
-        'delivered'   => ['min' => 30000, 'max' => 120000],
-        'cancelled'   => ['min' =>  5000, 'max' =>  40000],
+        'ready' => ['min' => 25000, 'max' => 90000],
+        'delivered' => ['min' => 30000, 'max' => 120000],
+        'cancelled' => ['min' => 5000, 'max' => 40000],
     ];
 
     /** Spanish notes for the initial creation history row. */
@@ -145,12 +145,12 @@ final class ReservationsSeeder extends Seeder
 
     /** Spanish notes for intermediate status transitions. null = no note (realistic). */
     private const TRANSITION_NOTES = [
-        'inquiry'     => ['Consulta recibida, pendiente de confirmar', 'Cliente interesado, esperando detalles', null],
-        'confirmed'   => ['Adelanto recibido, reserva confirmada', 'Reserva confirmada con el cliente', null, null],
+        'inquiry' => ['Consulta recibida, pendiente de confirmar', 'Cliente interesado, esperando detalles', null],
+        'confirmed' => ['Adelanto recibido, reserva confirmada', 'Reserva confirmada con el cliente', null, null],
         'in_progress' => ['Arreglo en preparacion', 'Se inicio la elaboracion', 'Materiales listos, comenzando', null],
-        'ready'       => ['Pedido listo para entrega', 'Arreglo terminado, esperando al cliente', null],
-        'delivered'   => ['Entregado al cliente', 'Entrega exitosa', null],
-        'cancelled'   => ['Cancelado a solicitud del cliente', 'Sin adelanto — reserva anulada', null],
+        'ready' => ['Pedido listo para entrega', 'Arreglo terminado, esperando al cliente', null],
+        'delivered' => ['Entregado al cliente', 'Entrega exitosa', null],
+        'cancelled' => ['Cancelado a solicitud del cliente', 'Sin adelanto — reserva anulada', null],
     ];
 
     /**
@@ -195,7 +195,7 @@ final class ReservationsSeeder extends Seeder
      */
     private const TENANT_DEPOSIT_PCT = [
         'rosa-eterna' => 30,
-        'tatiana'     => 50,
+        'tatiana' => 50,
     ];
 
     public function run(): void
@@ -236,11 +236,11 @@ final class ReservationsSeeder extends Seeder
             return;
         }
 
-        $customerIds    = $this->resolveCustomerIds($tenant);
-        $occasions      = $this->occasionsFor($tenant);
-        $depositPct     = self::TENANT_DEPOSIT_PCT[$tenant->slug] ?? 30;
-        $year           = now()->year;
-        $highestSeq     = 0;
+        $customerIds = $this->resolveCustomerIds($tenant);
+        $occasions = $this->occasionsFor($tenant);
+        $depositPct = self::TENANT_DEPOSIT_PCT[$tenant->slug] ?? 30;
+        $year = now()->year;
+        $highestSeq = 0;
 
         foreach (self::STATUS_PLAN as $seqIndex => $finalStatus) {
             $seq = $seqIndex + 1;
@@ -253,10 +253,10 @@ final class ReservationsSeeder extends Seeder
 
             // Timestamps: reservation was created in the past; event date may be future or past.
             $createdAtRange = self::CREATED_AT_RANGE[$finalStatus];
-            $daysBack       = random_int($createdAtRange['min'], $createdAtRange['max']);
-            $hoursBack      = random_int(0, 23);
-            $createdAt      = Carbon::now()->subDays($daysBack)->subHours($hoursBack);
-            $updatedAt      = $this->resolveUpdatedAt($createdAt, $finalStatus);
+            $daysBack = random_int($createdAtRange['min'], $createdAtRange['max']);
+            $hoursBack = random_int(0, 23);
+            $createdAt = Carbon::now()->subDays($daysBack)->subHours($hoursBack);
+            $updatedAt = $this->resolveUpdatedAt($createdAt, $finalStatus);
 
             // event_date: future for active reservations, past for delivered/cancelled.
             $eventDateRange = self::EVENT_DATE_RANGE[$finalStatus];
@@ -264,8 +264,8 @@ final class ReservationsSeeder extends Seeder
             $eventDate = Carbon::now()->addDays($eventDaysOffset)->toDateString();
 
             // Money: pick a total, derive deposit_required from it.
-            $totalRange  = self::TOTAL_CENTS_RANGE[$finalStatus];
-            $totalCents  = random_int($totalRange['min'], $totalRange['max']);
+            $totalRange = self::TOTAL_CENTS_RANGE[$finalStatus];
+            $totalCents = random_int($totalRange['min'], $totalRange['max']);
 
             // A few reservations get a custom deposit override (not just pct of total).
             // This exercises the "flexible deposit" path visible in the UI.
@@ -296,7 +296,7 @@ final class ReservationsSeeder extends Seeder
 
             // assigned_to: active reservations are ~half the time assigned to someone.
             $isActiveStatus = in_array($finalStatus, ['confirmed', 'in_progress', 'ready'], true);
-            $assignedTo     = ($isActiveStatus && $seq % 2 === 0 && $staffUserIds->isNotEmpty())
+            $assignedTo = ($isActiveStatus && $seq % 2 === 0 && $staffUserIds->isNotEmpty())
                 ? $staffUserIds->random()
                 : null;
 
@@ -307,25 +307,25 @@ final class ReservationsSeeder extends Seeder
 
             // Insert the reservation row.
             $reservationId = DB::table('reservations')->insertGetId([
-                'tenant_id'               => $tenant->id,
-                'branch_id'               => $branchId,
-                'customer_id'             => $customerId,
-                'reservation_number'      => $reservationNumber,
-                'description'             => $this->buildDescription($tenant, $finalStatus, $occasions),
-                'occasion'                => $occasions[array_rand($occasions)],
-                'event_date'              => $eventDate,
-                'total_cents'             => $totalCents,
-                'deposit_required_cents'  => $depositRequiredCents,
-                'deposit_paid_cents'      => $depositPaidCents,
-                'status'                  => $finalStatus,
-                'special_instructions'    => $this->maybeSpecialInstructions($seq),
-                'admin_notes'             => $this->maybeAdminNotes($seq, $finalStatus),
-                'converted_order_id'      => null,   // conversion is a runtime action; never fabricate
-                'assigned_to'             => $assignedTo,
-                'created_by'              => $createdBy,
-                'created_at'              => $createdAt->toDateTimeString(),
-                'updated_at'              => $updatedAt->toDateTimeString(),
-                'deleted_at'              => null,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branchId,
+                'customer_id' => $customerId,
+                'reservation_number' => $reservationNumber,
+                'description' => $this->buildDescription($tenant, $finalStatus, $occasions),
+                'occasion' => $occasions[array_rand($occasions)],
+                'event_date' => $eventDate,
+                'total_cents' => $totalCents,
+                'deposit_required_cents' => $depositRequiredCents,
+                'deposit_paid_cents' => $depositPaidCents,
+                'status' => $finalStatus,
+                'special_instructions' => $this->maybeSpecialInstructions($seq),
+                'admin_notes' => $this->maybeAdminNotes($seq, $finalStatus),
+                'converted_order_id' => null,   // conversion is a runtime action; never fabricate
+                'assigned_to' => $assignedTo,
+                'created_by' => $createdBy,
+                'created_at' => $createdAt->toDateTimeString(),
+                'updated_at' => $updatedAt->toDateTimeString(),
+                'deleted_at' => null,
             ]);
 
             // Backfill the reservation_id now that we have it.
@@ -355,14 +355,14 @@ final class ReservationsSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'year' => $year],
             [
                 'last_sequence' => $highestSeq,
-                'updated_at'    => now()->toDateTimeString(),
-                'created_at'    => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+                'created_at' => now()->toDateTimeString(),
             ],
         );
 
         $this->command->info(
             "ReservationsSeeder: {$tenant->slug} — {$highestSeq} reservations seeded "
-            . "(deposit_pct={$depositPct}%, sequence advanced to {$highestSeq}).",
+            ."(deposit_pct={$depositPct}%, sequence advanced to {$highestSeq}).",
         );
     }
 
@@ -386,7 +386,7 @@ final class ReservationsSeeder extends Seeder
      * never computed after the fact.
      *
      * @param  Collection<int, int>  $staffUserIds
-     * @return array{int, list<array<string, mixed>>}  [deposit_paid_cents, paymentRows (no reservation_id yet)]
+     * @return array{int, list<array<string, mixed>>} [deposit_paid_cents, paymentRows (no reservation_id yet)]
      */
     private function buildPayments(
         string $tenantId,
@@ -401,15 +401,15 @@ final class ReservationsSeeder extends Seeder
             return [0, []];
         }
 
-        $payments      = [];
-        $recordedBy    = $staffUserIds->isNotEmpty() ? $staffUserIds->random() : null;
+        $payments = [];
+        $recordedBy = $staffUserIds->isNotEmpty() ? $staffUserIds->random() : null;
 
         if ($finalStatus === 'delivered') {
             // Delivered = fully settled. Seed 2 payments: deposit first, remainder at delivery.
-            $firstAmount  = $depositRequiredCents;
+            $firstAmount = $depositRequiredCents;
             $secondAmount = max(0, $totalCents - $firstAmount);
 
-            $firstPaidAt  = $reservationCreatedAt->copy()->addHours(random_int(2, 48));
+            $firstPaidAt = $reservationCreatedAt->copy()->addHours(random_int(2, 48));
             $secondPaidAt = $firstPaidAt->copy()->addDays(random_int(1, 7));
 
             $payments[] = $this->paymentRow(
@@ -451,11 +451,11 @@ final class ReservationsSeeder extends Seeder
             && ($seq % 3 === 0);
 
         if ($addExtraInstalment) {
-            $extraAmount  = random_int(
+            $extraAmount = random_int(
                 (int) ($depositRequiredCents * 0.5),
                 (int) ($totalCents - $depositRequiredCents),
             );
-            $extraPaidAt  = $paidAt->copy()->addDays(random_int(1, 5));
+            $extraPaidAt = $paidAt->copy()->addDays(random_int(1, 5));
 
             $payments[] = $this->paymentRow(
                 tenantId: $tenantId,
@@ -484,15 +484,15 @@ final class ReservationsSeeder extends Seeder
         int $seq,
     ): array {
         return [
-            'tenant_id'      => $tenantId,
+            'tenant_id' => $tenantId,
             // reservation_id is intentionally absent here; caller backfills after insert.
-            'amount_cents'   => $amountCents,
+            'amount_cents' => $amountCents,
             'payment_method' => $this->randomPaymentMethod($seq),
-            'reference'      => null,
-            'recorded_by'    => $recordedBy,
-            'paid_at'        => $paidAt->toDateTimeString(),
-            'created_at'     => $paidAt->toDateTimeString(),
-            'updated_at'     => $paidAt->toDateTimeString(),
+            'reference' => null,
+            'recorded_by' => $recordedBy,
+            'paid_at' => $paidAt->toDateTimeString(),
+            'created_at' => $paidAt->toDateTimeString(),
+            'updated_at' => $paidAt->toDateTimeString(),
         ];
     }
 
@@ -509,7 +509,6 @@ final class ReservationsSeeder extends Seeder
      *   - Last row's to_status MUST equal $finalStatus.
      *   - Timestamps are ascending from reservationCreatedAt toward now().
      *
-     * @param  int|null  $staffUserId
      * @return non-empty-list<array<string, mixed>>
      */
     private function buildStatusHistory(
@@ -521,27 +520,27 @@ final class ReservationsSeeder extends Seeder
     ): array {
         $statusChain = $this->buildStatusChain('inquiry', $finalStatus);
 
-        $rows        = [];
+        $rows = [];
         $currentTime = $reservationCreatedAt->copy();
         $timeSpanSecs = max(3600, (int) $reservationCreatedAt->diffInSeconds(now()));
-        $stepSecs     = (int) ($timeSpanSecs / max(count($statusChain), 1));
+        $stepSecs = (int) ($timeSpanSecs / max(count($statusChain), 1));
 
         // First row: creation entry (from_status = null, to_status = inquiry).
         $creationNote = self::CREATION_NOTES[array_rand(self::CREATION_NOTES)];
 
         $rows[] = [
-            'tenant_id'   => $tenantId,
+            'tenant_id' => $tenantId,
             'reservation_id' => $reservationId,
             'from_status' => null,
-            'to_status'   => $statusChain[0],
-            'user_id'     => $staffUserId,
-            'note'        => $creationNote,
-            'created_at'  => $currentTime->toDateTimeString(),
+            'to_status' => $statusChain[0],
+            'user_id' => $staffUserId,
+            'note' => $creationNote,
+            'created_at' => $currentTime->toDateTimeString(),
         ];
 
         // Subsequent transition rows: one per step in the chain.
         for ($i = 1; $i < count($statusChain); $i++) {
-            $advance     = $stepSecs + random_int(0, (int) max($stepSecs * 0.5, 600));
+            $advance = $stepSecs + random_int(0, (int) max($stepSecs * 0.5, 600));
             $currentTime = $currentTime->copy()->addSeconds($advance);
 
             // Never write a future timestamp on a history row.
@@ -551,16 +550,16 @@ final class ReservationsSeeder extends Seeder
 
             $toStatus = $statusChain[$i];
             $notePool = self::TRANSITION_NOTES[$toStatus] ?? [null];
-            $note     = $notePool[array_rand($notePool)];
+            $note = $notePool[array_rand($notePool)];
 
             $rows[] = [
-                'tenant_id'      => $tenantId,
+                'tenant_id' => $tenantId,
                 'reservation_id' => $reservationId,
-                'from_status'    => $statusChain[$i - 1],
-                'to_status'      => $toStatus,
-                'user_id'        => $staffUserId,
-                'note'           => $note,
-                'created_at'     => $currentTime->toDateTimeString(),
+                'from_status' => $statusChain[$i - 1],
+                'to_status' => $toStatus,
+                'user_id' => $staffUserId,
+                'note' => $note,
+                'created_at' => $currentTime->toDateTimeString(),
             ];
         }
 
@@ -579,7 +578,7 @@ final class ReservationsSeeder extends Seeder
             return [$initial];
         }
 
-        $chain   = [$initial];
+        $chain = [$initial];
         $current = $initial;
 
         while ($current !== $final) {
@@ -632,11 +631,11 @@ final class ReservationsSeeder extends Seeder
      */
     private function applyTenantReservationConfig(Tenant $tenant): void
     {
-        $occasions  = self::TENANT_OCCASIONS[$tenant->slug] ?? null;
+        $occasions = self::TENANT_OCCASIONS[$tenant->slug] ?? null;
         $depositPct = self::TENANT_DEPOSIT_PCT[$tenant->slug] ?? 30;
 
         $tenant->update([
-            'reservation_occasions'  => $occasions,
+            'reservation_occasions' => $occasions,
             'reservation_deposit_pct' => $depositPct,
         ]);
     }
@@ -729,12 +728,12 @@ final class ReservationsSeeder extends Seeder
     private function resolveUpdatedAt(Carbon $createdAt, string $finalStatus): Carbon
     {
         return match ($finalStatus) {
-            'delivered'   => $createdAt->copy()->addDays(random_int(1, 14)),
-            'cancelled'   => $createdAt->copy()->addHours(random_int(1, 48)),
-            'ready'       => $createdAt->copy()->addDays(random_int(1, 5)),
+            'delivered' => $createdAt->copy()->addDays(random_int(1, 14)),
+            'cancelled' => $createdAt->copy()->addHours(random_int(1, 48)),
+            'ready' => $createdAt->copy()->addDays(random_int(1, 5)),
             'in_progress' => $createdAt->copy()->addDays(random_int(1, 3)),
-            'confirmed'   => $createdAt->copy()->addHours(random_int(1, 12)),
-            default       => $createdAt->copy()->addMinutes(random_int(0, 60)),  // inquiry
+            'confirmed' => $createdAt->copy()->addHours(random_int(1, 12)),
+            default => $createdAt->copy()->addMinutes(random_int(0, 60)),  // inquiry
         };
     }
 
@@ -832,9 +831,9 @@ final class ReservationsSeeder extends Seeder
     {
         return match ($seq % 10) {
             0, 1, 2, 3, 4 => 'cash',
-            5, 6           => 'transfer',
-            7              => 'card',
-            default        => 'other',
+            5, 6 => 'transfer',
+            7 => 'card',
+            default => 'other',
         };
     }
 }

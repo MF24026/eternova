@@ -94,12 +94,12 @@ final class OrdersSeeder extends Seeder
      * @var array<string, array{min: int, max: int}>
      */
     private const CREATED_AT_RANGE = [
-        'delivered'  => ['min' => 10, 'max' => 21],
-        'cancelled'  => ['min' =>  8, 'max' => 18],
-        'dispatched' => ['min' =>  3, 'max' =>  8],
-        'ready'      => ['min' =>  2, 'max' =>  5],
-        'preparing'  => ['min' =>  1, 'max' =>  3],
-        'pending'    => ['min' =>  0, 'max' =>  1],
+        'delivered' => ['min' => 10, 'max' => 21],
+        'cancelled' => ['min' => 8, 'max' => 18],
+        'dispatched' => ['min' => 3, 'max' => 8],
+        'ready' => ['min' => 2, 'max' => 5],
+        'preparing' => ['min' => 1, 'max' => 3],
+        'pending' => ['min' => 0, 'max' => 1],
     ];
 
     /**
@@ -113,12 +113,12 @@ final class OrdersSeeder extends Seeder
      * @var array<string, list<string>>
      */
     private const TRANSITION_PATH = [
-        'pending'    => ['preparing'],
-        'preparing'  => ['ready'],
-        'ready'      => ['dispatched', 'delivered'],   // dispatched preferred for most, delivered for pickup
+        'pending' => ['preparing'],
+        'preparing' => ['ready'],
+        'ready' => ['dispatched', 'delivered'],   // dispatched preferred for most, delivered for pickup
         'dispatched' => ['delivered'],
-        'delivered'  => [],
-        'cancelled'  => [],
+        'delivered' => [],
+        'cancelled' => [],
     ];
 
     /** Spanish notes for the initial creation history row. */
@@ -187,7 +187,7 @@ final class OrdersSeeder extends Seeder
         }
 
         $staffUserIds = $this->resolveStaffUserIds($tenant);
-        $customerIds  = $this->provisionDemoCustomers($tenant);
+        $customerIds = $this->provisionDemoCustomers($tenant);
         $userIdForCreation = $staffUserIds->first();  // staff member who "took" the order
 
         $year = now()->year;
@@ -201,7 +201,7 @@ final class OrdersSeeder extends Seeder
             }
 
             $orderNumber = sprintf('CC-%d-%04d', $year, $seq);
-            $orderId     = Str::ulid()->toString();
+            $orderId = Str::ulid()->toString();
             $trackingToken = $this->generateUniqueToken();
 
             // Source follows the business rule: 'pending' orders come from catalog/reservation
@@ -209,8 +209,8 @@ final class OrdersSeeder extends Seeder
             // Non-pending orders default to pos, with ~1-in-5 being catalog.
             $source = match (true) {
                 $finalStatus === 'pending' => 'catalog',
-                $seq % 5 === 0            => 'catalog',
-                default                   => 'pos',
+                $seq % 5 === 0 => 'catalog',
+                default => 'pos',
             };
 
             // Assign ~half of active (preparing/ready/dispatched) orders to a staff member.
@@ -228,8 +228,8 @@ final class OrdersSeeder extends Seeder
             [$paymentStatus, $paymentMethod] = $this->resolvePayment($finalStatus);
 
             // Timestamps: backdate created_at, updated_at >= created_at.
-            $range     = self::CREATED_AT_RANGE[$finalStatus];
-            $daysBack  = random_int($range['min'], $range['max']);
+            $range = self::CREATED_AT_RANGE[$finalStatus];
+            $daysBack = random_int($range['min'], $range['max']);
             $hoursBack = random_int(0, 23);
             $createdAt = Carbon::now()->subDays($daysBack)->subHours($hoursBack);
             $updatedAt = $this->resolveUpdatedAt($createdAt, $finalStatus);
@@ -241,26 +241,26 @@ final class OrdersSeeder extends Seeder
 
             // Insert the order row.
             DB::table('orders')->insert([
-                'id'              => $orderId,
-                'tenant_id'       => $tenant->id,
-                'branch_id'       => $branch->id,
-                'customer_id'     => $customerId,
-                'order_number'    => $orderNumber,
-                'tracking_token'  => $trackingToken,
-                'status'          => $finalStatus,
-                'source'          => $source,
-                'subtotal_cents'  => $subtotalCents,
-                'tax_cents'       => 0,
-                'discount_cents'  => 0,
-                'total_cents'     => $subtotalCents,
-                'payment_method'  => $paymentMethod,
-                'payment_status'  => $paymentStatus,
-                'notes'           => null,
-                'user_id'         => $userIdForCreation,
-                'assigned_to'     => $assignedTo,
-                'created_at'      => $createdAt->toDateTimeString(),
-                'updated_at'      => $updatedAt->toDateTimeString(),
-                'deleted_at'      => null,
+                'id' => $orderId,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
+                'customer_id' => $customerId,
+                'order_number' => $orderNumber,
+                'tracking_token' => $trackingToken,
+                'status' => $finalStatus,
+                'source' => $source,
+                'subtotal_cents' => $subtotalCents,
+                'tax_cents' => 0,
+                'discount_cents' => 0,
+                'total_cents' => $subtotalCents,
+                'payment_method' => $paymentMethod,
+                'payment_status' => $paymentStatus,
+                'notes' => null,
+                'user_id' => $userIdForCreation,
+                'assigned_to' => $assignedTo,
+                'created_at' => $createdAt->toDateTimeString(),
+                'updated_at' => $updatedAt->toDateTimeString(),
+                'deleted_at' => null,
             ]);
 
             // Insert order items.
@@ -304,7 +304,6 @@ final class OrdersSeeder extends Seeder
      *  - The last row's to_status must equal $finalStatus.
      *  - No from==to (assignment-only) rows — only real status changes.
      *
-     * @param  int|null  $staffUserId
      * @return list<array<string, mixed>>
      */
     private function buildStatusHistory(
@@ -321,20 +320,20 @@ final class OrdersSeeder extends Seeder
         // Build the transition chain: from initialStatus to finalStatus.
         $statusChain = $this->buildStatusChain($initialStatus, $finalStatus);
 
-        $rows         = [];
-        $currentTime  = $orderCreatedAt->copy();
+        $rows = [];
+        $currentTime = $orderCreatedAt->copy();
         $timeSpanSecs = max(0, (int) $orderCreatedAt->diffInSeconds(now()));
-        $stepSecs     = $timeSpanSecs > 0 ? (int) ($timeSpanSecs / max(count($statusChain), 1)) : 3600;
+        $stepSecs = $timeSpanSecs > 0 ? (int) ($timeSpanSecs / max(count($statusChain), 1)) : 3600;
 
         // First row: creation entry (from_status = null).
         $rows[] = [
-            'tenant_id'   => $tenantId,
-            'order_id'    => $orderId,
+            'tenant_id' => $tenantId,
+            'order_id' => $orderId,
             'from_status' => null,
-            'to_status'   => $statusChain[0],
-            'user_id'     => $staffUserId,
-            'note'        => self::CREATION_NOTES[array_rand(self::CREATION_NOTES)],
-            'created_at'  => $currentTime->toDateTimeString(),
+            'to_status' => $statusChain[0],
+            'user_id' => $staffUserId,
+            'note' => self::CREATION_NOTES[array_rand(self::CREATION_NOTES)],
+            'created_at' => $currentTime->toDateTimeString(),
         ];
 
         // Subsequent transition rows.
@@ -351,13 +350,13 @@ final class OrdersSeeder extends Seeder
             $note = self::TRANSITION_NOTES[array_rand(self::TRANSITION_NOTES)];
 
             $rows[] = [
-                'tenant_id'   => $tenantId,
-                'order_id'    => $orderId,
+                'tenant_id' => $tenantId,
+                'order_id' => $orderId,
                 'from_status' => $statusChain[$i - 1],
-                'to_status'   => $statusChain[$i],
-                'user_id'     => $staffUserId,
-                'note'        => $note,
-                'created_at'  => $currentTime->toDateTimeString(),
+                'to_status' => $statusChain[$i],
+                'user_id' => $staffUserId,
+                'note' => $note,
+                'created_at' => $currentTime->toDateTimeString(),
             ];
         }
 
@@ -436,17 +435,17 @@ final class OrdersSeeder extends Seeder
      * Build order_items rows for the given order and selected variants.
      *
      * @param  Collection<int, object>  $selectedVariants
-     * @return array{int, list<array<string, mixed>>}  [subtotal_cents, itemRows]
+     * @return array{int, list<array<string, mixed>>} [subtotal_cents, itemRows]
      */
     private function buildOrderItems(string $orderId, Collection $selectedVariants): array
     {
         $subtotalCents = 0;
-        $itemRows      = [];
+        $itemRows = [];
 
         foreach ($selectedVariants as $variant) {
-            $quantity      = random_int(1, 3);
-            $unitPrice     = (int) $variant->price_cents;
-            $totalCents    = $unitPrice * $quantity;
+            $quantity = random_int(1, 3);
+            $unitPrice = (int) $variant->price_cents;
+            $totalCents = $unitPrice * $quantity;
             $subtotalCents += $totalCents;
 
             // product_snapshot: name (product name), variant_options (array), sku.
@@ -455,20 +454,20 @@ final class OrdersSeeder extends Seeder
                 : (array) $variant->options;
 
             $snapshot = json_encode([
-                'name'            => $variant->product_name,
+                'name' => $variant->product_name,
                 'variant_options' => $options ?? [],
-                'sku'             => $variant->sku,
+                'sku' => $variant->sku,
             ]);
 
             $itemRows[] = [
-                'order_id'           => $orderId,
+                'order_id' => $orderId,
                 'product_variant_id' => $variant->id,
-                'quantity'           => $quantity,
-                'unit_price_cents'   => $unitPrice,
-                'total_cents'        => $totalCents,
-                'product_snapshot'   => $snapshot,
-                'created_at'         => now()->toDateTimeString(),
-                'updated_at'         => now()->toDateTimeString(),
+                'quantity' => $quantity,
+                'unit_price_cents' => $unitPrice,
+                'total_cents' => $totalCents,
+                'product_snapshot' => $snapshot,
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
             ];
         }
 
@@ -480,15 +479,15 @@ final class OrdersSeeder extends Seeder
     // -------------------------------------------------------------------------
 
     /**
-     * @return array{string, string|null}  [payment_status, payment_method|null]
+     * @return array{string, string|null} [payment_status, payment_method|null]
      */
     private function resolvePayment(string $status): array
     {
         return match ($status) {
             'delivered', 'dispatched', 'ready' => ['paid', $this->randomPaymentMethod()],
-            'preparing'                         => [random_int(0, 1) ? 'paid' : 'partial', $this->randomPaymentMethod()],
-            'cancelled'                         => ['pending', null],
-            default                             => ['pending', null],  // pending
+            'preparing' => [random_int(0, 1) ? 'paid' : 'partial', $this->randomPaymentMethod()],
+            'cancelled' => ['pending', null],
+            default => ['pending', null],  // pending
         };
     }
 
@@ -497,9 +496,9 @@ final class OrdersSeeder extends Seeder
         // Realistic distribution: cash-heavy florist/gift shop context.
         return match (random_int(1, 10)) {
             1, 2, 3, 4, 5, 6 => 'cash',
-            7, 8               => 'transfer',
-            9                  => 'card',
-            default            => 'other',
+            7, 8 => 'transfer',
+            9 => 'card',
+            default => 'other',
         };
     }
 
@@ -517,10 +516,10 @@ final class OrdersSeeder extends Seeder
     {
         return match ($status) {
             'delivered', 'dispatched' => $createdAt->copy()->addHours(random_int(2, 24)),
-            'cancelled'               => $createdAt->copy()->addHours(random_int(1, 6)),
-            'ready'                   => $createdAt->copy()->addHours(random_int(1, 8)),
-            'preparing'               => $createdAt->copy()->addHours(random_int(1, 4)),
-            default                   => $createdAt->copy()->addMinutes(random_int(0, 30)),
+            'cancelled' => $createdAt->copy()->addHours(random_int(1, 6)),
+            'ready' => $createdAt->copy()->addHours(random_int(1, 8)),
+            'preparing' => $createdAt->copy()->addHours(random_int(1, 4)),
+            default => $createdAt->copy()->addMinutes(random_int(0, 30)),
         };
     }
 
@@ -603,12 +602,12 @@ final class OrdersSeeder extends Seeder
             }
 
             $id = DB::table('customers')->insertGetId(array_merge($def, [
-                'tenant_id'        => $tenant->id,
-                'total_purchases'  => 0,
+                'tenant_id' => $tenant->id,
+                'total_purchases' => 0,
                 'last_purchase_at' => null,
-                'created_at'       => now()->subDays(random_int(30, 90))->toDateTimeString(),
-                'updated_at'       => now()->toDateTimeString(),
-                'deleted_at'       => null,
+                'created_at' => now()->subDays(random_int(30, 90))->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+                'deleted_at' => null,
             ]));
 
             $ids[] = $id;

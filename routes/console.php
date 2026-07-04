@@ -11,7 +11,7 @@ Artisan::command('inspire', function () {
 
 // ── Quotations: expire past-due quotations daily at midnight UTC
 // Runs across ALL tenants (the job uses withoutGlobalScopes internally).
-Schedule::job(new ExpireQuotationsJob())->daily();
+Schedule::job(new ExpireQuotationsJob)->daily();
 
 // ── Billing crons: the daily lifecycle sweep. Wompi owns recurrence + retries, so we no longer
 // self-charge or retry-dunning here; suspend-overdue ages out past_due subscriptions instead.

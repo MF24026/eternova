@@ -44,30 +44,30 @@ final class ReservationResource extends BaseResource
         $service = app(ReservationService::class);
 
         return [
-            'id'                     => $reservation->id,
-            'reservation_number'     => $reservation->reservation_number,
-            'status'                 => $reservation->status,
-            'occasion'               => $reservation->occasion,
-            'description'            => $reservation->description,
-            'event_date'             => $reservation->event_date?->toDateString(),
-            'total_cents'            => $reservation->total_cents,
+            'id' => $reservation->id,
+            'reservation_number' => $reservation->reservation_number,
+            'status' => $reservation->status,
+            'occasion' => $reservation->occasion,
+            'description' => $reservation->description,
+            'event_date' => $reservation->event_date?->toDateString(),
+            'total_cents' => $reservation->total_cents,
             'deposit_required_cents' => $reservation->deposit_required_cents,
-            'deposit_paid_cents'     => $reservation->deposit_paid_cents,
+            'deposit_paid_cents' => $reservation->deposit_paid_cents,
             // Computed: how much the customer still owes on the full total
-            'balance_cents'          => $reservation->remainingBalanceCents(),
+            'balance_cents' => $reservation->remainingBalanceCents(),
             // Computed: how much of the required deposit is still unpaid
             'deposit_outstanding_cents' => $reservation->depositOutstandingCents(),
-            'special_instructions'   => $reservation->special_instructions,
-            'admin_notes'            => $reservation->admin_notes,
-            'converted_order_id'     => $reservation->converted_order_id,
-            'allowed_transitions'    => $service->allowedTransitions($reservation),
-            'created_at'             => $reservation->created_at?->toIso8601String(),
-            'updated_at'             => $reservation->updated_at?->toIso8601String(),
+            'special_instructions' => $reservation->special_instructions,
+            'admin_notes' => $reservation->admin_notes,
+            'converted_order_id' => $reservation->converted_order_id,
+            'allowed_transitions' => $service->allowedTransitions($reservation),
+            'created_at' => $reservation->created_at?->toIso8601String(),
+            'updated_at' => $reservation->updated_at?->toIso8601String(),
 
             'branch' => $this->when(
                 $reservation->relationLoaded('branch') && $reservation->branch !== null,
                 static fn () => [
-                    'id'   => $reservation->branch?->id,
+                    'id' => $reservation->branch?->id,
                     'name' => $reservation->branch?->name,
                 ],
             ),
@@ -75,8 +75,8 @@ final class ReservationResource extends BaseResource
             'customer' => $this->when(
                 $reservation->relationLoaded('customer') && $reservation->customer !== null,
                 static fn () => [
-                    'id'    => $reservation->customer?->id,
-                    'name'  => $reservation->customer?->name,
+                    'id' => $reservation->customer?->id,
+                    'name' => $reservation->customer?->name,
                     'phone' => $reservation->customer?->phone,
                 ],
             ),
@@ -91,7 +91,7 @@ final class ReservationResource extends BaseResource
             'creator' => $this->when(
                 $reservation->relationLoaded('creator') && $reservation->creator !== null,
                 static fn () => [
-                    'id'   => $reservation->creator?->id,
+                    'id' => $reservation->creator?->id,
                     'name' => $reservation->creator?->name,
                 ],
             ),

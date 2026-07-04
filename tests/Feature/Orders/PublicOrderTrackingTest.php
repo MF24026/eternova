@@ -10,7 +10,6 @@ use App\Modules\Catalog\Models\ProductVariant;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Orders\Models\Order;
-use App\Modules\Orders\Models\OrderStatusHistory;
 use App\Modules\Orders\Services\OrderService;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;

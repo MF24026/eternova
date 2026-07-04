@@ -56,7 +56,7 @@ final class ReservationSettingsController extends Controller
         return response()->json([
             'data' => [
                 'deposit_pct' => $tenant?->reservation_deposit_pct ?? 30,
-                'occasions'   => $tenant?->reservation_occasions ?? self::DEFAULT_OCCASIONS,
+                'occasions' => $tenant?->reservation_occasions ?? self::DEFAULT_OCCASIONS,
             ],
         ]);
     }
@@ -75,14 +75,14 @@ final class ReservationSettingsController extends Controller
         $tenant = current_tenant();
 
         $tenant->update([
-            'reservation_deposit_pct'  => (int) $data['deposit_pct'],
-            'reservation_occasions'    => $data['occasions'] ?? null,
+            'reservation_deposit_pct' => (int) $data['deposit_pct'],
+            'reservation_occasions' => $data['occasions'] ?? null,
         ]);
 
         Log::info('Reservation settings updated', [
-            'tenant_id'   => $tenant->id,
+            'tenant_id' => $tenant->id,
             'deposit_pct' => $data['deposit_pct'],
-            'actor_id'    => $request->user()?->id,
+            'actor_id' => $request->user()?->id,
         ]);
 
         $tenant->refresh();
@@ -90,7 +90,7 @@ final class ReservationSettingsController extends Controller
         return response()->json([
             'data' => [
                 'deposit_pct' => $tenant->reservation_deposit_pct,
-                'occasions'   => $tenant->reservation_occasions ?? self::DEFAULT_OCCASIONS,
+                'occasions' => $tenant->reservation_occasions ?? self::DEFAULT_OCCASIONS,
             ],
         ]);
     }

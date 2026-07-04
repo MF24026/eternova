@@ -11,6 +11,4 @@ use RuntimeException;
  * 'pending'). The caller should back off and retry, not start a second concurrent attempt
  * — this is what prevents a double charge when two requests race on the same key.
  */
-final class IdempotencyInProgressException extends RuntimeException
-{
-}
+final class IdempotencyInProgressException extends RuntimeException {}

@@ -74,15 +74,15 @@ final class ExpenseCategoryController extends Controller
 
         $category = ExpenseCategory::create([
             'tenant_id' => $tenantId,
-            'name'      => (string) $data['name'],
-            'type'      => (string) $data['type'],
+            'name' => (string) $data['name'],
+            'type' => (string) $data['type'],
             'is_active' => (bool) ($data['is_active'] ?? true),
         ]);
 
         Log::info('Expense category created', [
             'category_id' => $category->id,
-            'tenant_id'   => $tenantId,
-            'name'        => $category->name,
+            'tenant_id' => $tenantId,
+            'name' => $category->name,
         ]);
 
         return (new ExpenseCategoryResource($category))
@@ -106,8 +106,8 @@ final class ExpenseCategoryController extends Controller
 
         Log::info('Expense category updated', [
             'category_id' => $category->id,
-            'tenant_id'   => $category->tenant_id,
-            'fields'      => array_keys($data),
+            'tenant_id' => $category->tenant_id,
+            'fields' => array_keys($data),
         ]);
 
         return response()->json(['data' => new ExpenseCategoryResource($category)]);
@@ -131,22 +131,22 @@ final class ExpenseCategoryController extends Controller
 
         if ($expenseCount > 0) {
             Log::notice('Expense category delete blocked — category in use', [
-                'category_id'   => $category->id,
-                'tenant_id'     => $category->tenant_id,
+                'category_id' => $category->id,
+                'tenant_id' => $category->tenant_id,
                 'expense_count' => $expenseCount,
             ]);
 
             return response()->json([
-                'message'    => "Cannot delete category \"{$category->name}\" — it has {$expenseCount} associated expense(s). "
-                    . 'Set is_active=false to retire it instead.',
+                'message' => "Cannot delete category \"{$category->name}\" — it has {$expenseCount} associated expense(s). "
+                    .'Set is_active=false to retire it instead.',
                 'error_code' => 'expenses.category_in_use',
             ], 422);
         }
 
         Log::info('Expense category deleted', [
             'category_id' => $category->id,
-            'tenant_id'   => $category->tenant_id,
-            'name'        => $category->name,
+            'tenant_id' => $category->tenant_id,
+            'name' => $category->name,
         ]);
 
         $category->delete();

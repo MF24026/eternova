@@ -21,7 +21,7 @@ return [
     */
 
     'rate_limits' => [
-        'api'   => (int) env('RATE_LIMIT_API', 120),
+        'api' => (int) env('RATE_LIMIT_API', 120),
         'login' => (int) env('RATE_LIMIT_LOGIN', 5),
     ],
 

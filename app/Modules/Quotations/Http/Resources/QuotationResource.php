@@ -46,29 +46,29 @@ final class QuotationResource extends BaseResource
         $service = app(QuotationService::class);
 
         return [
-            'id'                  => $quotation->id,
-            'quotation_number'    => $quotation->quotation_number,
-            'status'              => $quotation->status,
-            'issue_date'          => $quotation->issue_date?->toDateString(),
-            'valid_until'         => $quotation->valid_until?->toDateString(),
-            'subtotal_cents'      => $quotation->subtotal_cents,
-            'discount_cents'      => $quotation->discount_cents,
-            'tax_rate_bps'        => $quotation->tax_rate_bps,
-            'tax_cents'           => $quotation->tax_cents,
-            'total_cents'         => $quotation->total_cents,
-            'notes'               => $quotation->notes,
-            'terms'               => $quotation->terms,
-            'branch_id'           => $quotation->branch_id,
-            'created_by'          => $quotation->created_by,
-            'converted_order_id'  => $quotation->converted_order_id,
+            'id' => $quotation->id,
+            'quotation_number' => $quotation->quotation_number,
+            'status' => $quotation->status,
+            'issue_date' => $quotation->issue_date?->toDateString(),
+            'valid_until' => $quotation->valid_until?->toDateString(),
+            'subtotal_cents' => $quotation->subtotal_cents,
+            'discount_cents' => $quotation->discount_cents,
+            'tax_rate_bps' => $quotation->tax_rate_bps,
+            'tax_cents' => $quotation->tax_cents,
+            'total_cents' => $quotation->total_cents,
+            'notes' => $quotation->notes,
+            'terms' => $quotation->terms,
+            'branch_id' => $quotation->branch_id,
+            'created_by' => $quotation->created_by,
+            'converted_order_id' => $quotation->converted_order_id,
             'allowed_transitions' => $service->allowedTransitions($quotation),
-            'created_at'          => $quotation->created_at?->toIso8601String(),
-            'updated_at'          => $quotation->updated_at?->toIso8601String(),
+            'created_at' => $quotation->created_at?->toIso8601String(),
+            'updated_at' => $quotation->updated_at?->toIso8601String(),
 
             'customer' => $this->when(
                 $quotation->relationLoaded('customer') && $quotation->customer !== null,
                 static fn () => [
-                    'id'   => $quotation->customer?->id,
+                    'id' => $quotation->customer?->id,
                     'name' => $quotation->customer?->name,
                 ],
             ),
@@ -76,7 +76,7 @@ final class QuotationResource extends BaseResource
             'branch' => $this->when(
                 $quotation->relationLoaded('branch') && $quotation->branch !== null,
                 static fn () => [
-                    'id'   => $quotation->branch?->id,
+                    'id' => $quotation->branch?->id,
                     'name' => $quotation->branch?->name,
                 ],
             ),
@@ -84,7 +84,7 @@ final class QuotationResource extends BaseResource
             'creator' => $this->when(
                 $quotation->relationLoaded('creator') && $quotation->creator !== null,
                 static fn () => [
-                    'id'   => $quotation->creator?->id,
+                    'id' => $quotation->creator?->id,
                     'name' => $quotation->creator?->name,
                 ],
             ),

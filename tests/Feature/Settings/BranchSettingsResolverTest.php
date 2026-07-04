@@ -67,13 +67,13 @@ final class BranchSettingsResolverTest extends TestCase
         // but the resolver must already honour it).
         BranchSetting::create([
             'branch_id' => $branch->id,
-            'group'     => 'contact',
-            'key'       => 'phone',
-            'value'     => '+503 7777-7777',
+            'group' => 'contact',
+            'key' => 'phone',
+            'value' => '+503 7777-7777',
         ]);
 
         $default = BranchSetting::resolvedGroup('contact');
-        $scoped  = BranchSetting::resolvedGroup('contact', $branch->id);
+        $scoped = BranchSetting::resolvedGroup('contact', $branch->id);
 
         $this->assertSame('+503 0000-0000', $default['phone']);
         $this->assertSame('+503 7777-7777', $scoped['phone']);
@@ -104,25 +104,25 @@ final class BranchSettingsResolverTest extends TestCase
         $this->bindTenant($tenant);
 
         BranchSetting::writeDefault('tax', [
-            'rate_bps'    => 1000,
-            'evil_key'    => 'nope',
-            'is_admin'    => true,
+            'rate_bps' => 1000,
+            'evil_key' => 'nope',
+            'is_admin' => true,
         ]);
 
         $this->assertDatabaseHas('branch_settings', [
             'tenant_id' => $tenant->id,
-            'group'     => 'tax',
-            'key'       => 'rate_bps',
+            'group' => 'tax',
+            'key' => 'rate_bps',
         ]);
         $this->assertDatabaseMissing('branch_settings', [
             'tenant_id' => $tenant->id,
-            'group'     => 'tax',
-            'key'       => 'evil_key',
+            'group' => 'tax',
+            'key' => 'evil_key',
         ]);
         $this->assertDatabaseMissing('branch_settings', [
             'tenant_id' => $tenant->id,
-            'group'     => 'tax',
-            'key'       => 'is_admin',
+            'group' => 'tax',
+            'key' => 'is_admin',
         ]);
     }
 
@@ -159,7 +159,7 @@ final class BranchSettingsResolverTest extends TestCase
 
     public function test_overrides_are_isolated_per_branch(): void
     {
-        $tenant  = Tenant::factory()->create();
+        $tenant = Tenant::factory()->create();
         $branchA = Branch::factory()->forTenant($tenant)->create();
         $branchB = Branch::factory()->forTenant($tenant)->create();
         $this->bindTenant($tenant);
@@ -167,9 +167,9 @@ final class BranchSettingsResolverTest extends TestCase
         BranchSetting::writeDefault('contact', ['phone' => 'default']);
         BranchSetting::create([
             'branch_id' => $branchA->id,
-            'group'     => 'contact',
-            'key'       => 'phone',
-            'value'     => 'branch-A-only',
+            'group' => 'contact',
+            'key' => 'phone',
+            'value' => 'branch-A-only',
         ]);
 
         $this->assertSame('branch-A-only', BranchSetting::resolvedGroup('contact', $branchA->id)['phone']);
