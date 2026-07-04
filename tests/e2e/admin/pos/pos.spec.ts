@@ -1,12 +1,9 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
+import { BASE_URL } from '../../support/env'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-// Inside Sail containers the app is at localhost:80 (port 8080 is the host-side mapping).
-// Override with PLAYWRIGHT_BASE_URL when running from outside the container.
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost'
 
 interface TestUser {
     email: string

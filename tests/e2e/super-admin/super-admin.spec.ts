@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { BASE_URL as BASE, tenantBaseURL } from '../support/env'
 
 /**
  * SuperAdmin operator console — 7b.
@@ -10,8 +11,7 @@ import { test, expect, type Page } from '@playwright/test'
  * Requires DemoTenantsSeeder + SuperAdminUserSeeder. Run with --workers=1.
  */
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost'
-const TENANT_BASE = process.env.POS_TENANT_BASE_URL ?? 'http://tatiana.eternova.localhost'
+const TENANT_BASE = process.env.POS_TENANT_BASE_URL ?? tenantBaseURL('tatiana')
 const SUPER = { email: 'admin@eternova.app', password: 'ChangeMe123!' }
 const TENANT_OWNER = { email: 'tati@regalostatiana.com', password: 'DemoBasic123!' }
 

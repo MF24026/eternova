@@ -7,6 +7,7 @@
  */
 
 import { test, expect, type APIRequestContext } from '@playwright/test'
+import { BASE_URL as baseURL } from '../../support/env'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as os from 'os'
@@ -15,7 +16,6 @@ import * as os from 'os'
 // Helpers
 // ---------------------------------------------------------------------------
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8080'
 const apiBase = `${baseURL}/api/v1`
 
 interface CreatedUser {

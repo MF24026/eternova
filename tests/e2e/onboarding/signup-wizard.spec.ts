@@ -1,10 +1,9 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
+import { BASE_URL as baseURL } from '../support/env'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8080'
 
 function freshUser() {
     const ts = Date.now()
