@@ -34,13 +34,16 @@ final class CategoryApiTest extends TestCase
     {
         parent::refreshApplication();
 
+        $originalDb = (string) $this->app['config']->get('database.connections.mysql.database');
         $dbName = 'testing_cat_api_'.getmypid();
 
         try {
             $this->app['db']->connection('mysql')
                 ->statement("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         } catch (\Throwable) {
-            $dbName = 'testing';
+            // Insufficient privileges (e.g. CI): fall back to the already-configured
+            // test database rather than a bare "testing".
+            $dbName = $originalDb;
         }
 
         $this->app['config']->set('database.connections.mysql.database', $dbName);

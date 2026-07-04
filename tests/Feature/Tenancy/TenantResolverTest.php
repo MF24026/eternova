@@ -55,15 +55,18 @@ final class TenantResolverTest extends TestCase
     {
         parent::refreshApplication();
 
+        $originalDb = (string) $this->app['config']->get('database.connections.mysql.database');
         $dbName = 'testing_tenancy_'.getmypid();
 
         try {
-            // Use the default "testing" DB to create our dedicated one (idempotent).
+            // Use the current connection to create our dedicated DB (idempotent).
             $this->app['db']->connection('mysql')
                 ->statement("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         } catch (\Throwable) {
-            // If DB creation fails (e.g. insufficient privileges), fall back gracefully.
-            $dbName = 'testing';
+            // Insufficient privileges (e.g. CI, where the DB user cannot CREATE
+            // databases): fall back to the already-configured test database rather
+            // than a bare "testing" that may not exist / be accessible.
+            $dbName = $originalDb;
         }
 
         $this->app['config']->set('database.connections.mysql.database', $dbName);
