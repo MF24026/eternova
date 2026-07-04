@@ -1,7 +1,6 @@
 import api from './api'
 import type {
     PosBranch,
-    PosProduct,
     PosProductsResponse,
     PosCheckoutPayload,
     PosCheckoutResponse,
