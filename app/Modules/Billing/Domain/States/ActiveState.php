@@ -9,21 +9,45 @@ use App\Modules\Billing\Enums\SubscriptionStatus;
 /** Paid and current. The only fully-featured, writable state. */
 final class ActiveState extends SubscriptionState
 {
-    public function name(): SubscriptionStatus { return SubscriptionStatus::Active; }
+    public function name(): SubscriptionStatus
+    {
+        return SubscriptionStatus::Active;
+    }
 
-    public function canCharge(): bool { return true; }
+    public function canCharge(): bool
+    {
+        return true;
+    }
 
-    public function canCancel(): bool { return true; }
+    public function canCancel(): bool
+    {
+        return true;
+    }
 
-    public function canPause(): bool { return true; }
+    public function canPause(): bool
+    {
+        return true;
+    }
 
-    public function canResume(): bool { return false; }
+    public function canResume(): bool
+    {
+        return false;
+    }
 
-    public function canRefund(): bool { return true; }
+    public function canRefund(): bool
+    {
+        return true;
+    }
 
-    public function isAccessible(): bool { return true; }
+    public function isAccessible(): bool
+    {
+        return true;
+    }
 
-    public function isReadOnly(): bool { return false; }
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
 
     public function allowedTransitions(): array
     {

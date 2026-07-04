@@ -60,11 +60,11 @@ final readonly class ExpenseService
         Storage::disk($disk)->put($storagePath, $file->get());
 
         Log::info('Receipt file stored', [
-            'tenant_id'  => $tenant->id,
-            'path'       => $storagePath,
-            'disk'       => $disk,
+            'tenant_id' => $tenant->id,
+            'path' => $storagePath,
+            'disk' => $disk,
             'size_bytes' => $file->getSize(),
-            'actor_id'   => $actor?->id,
+            'actor_id' => $actor?->id,
         ]);
 
         try {
@@ -73,16 +73,16 @@ final readonly class ExpenseService
                 $tenant, $branch, $actor, $storagePath,
             ): Expense {
                 return Expense::create([
-                    'tenant_id'    => $tenant->id,
-                    'branch_id'    => $branch?->id,
-                    'created_by'   => $actor?->id,
+                    'tenant_id' => $tenant->id,
+                    'branch_id' => $branch?->id,
+                    'created_by' => $actor?->id,
                     'receipt_path' => $storagePath,
-                    'ocr_status'   => 'pending',
-                    'is_verified'  => false,
+                    'ocr_status' => 'pending',
+                    'is_verified' => false,
                     // Placeholder values — overwritten by the user in E7 after OCR
                     // pre-fills the draft from suggestions (see ProcessReceiptOcrJob).
                     'expense_date' => now()->toDateString(),
-                    'description'  => 'Factura sin verificar',
+                    'description' => 'Factura sin verificar',
                     'amount_cents' => 0,
                 ]);
             });
@@ -93,8 +93,8 @@ final readonly class ExpenseService
 
             Log::warning('Receipt expense creation failed; orphaned file deleted', [
                 'tenant_id' => $tenant->id,
-                'path'      => $storagePath,
-                'error'     => $e->getMessage(),
+                'path' => $storagePath,
+                'error' => $e->getMessage(),
             ]);
 
             throw $e;
@@ -104,7 +104,7 @@ final readonly class ExpenseService
 
         Log::info('Receipt upload complete; OCR job dispatched', [
             'expense_id' => $expense->id,
-            'tenant_id'  => $tenant->id,
+            'tenant_id' => $tenant->id,
         ]);
 
         return $expense;
@@ -117,6 +117,7 @@ final readonly class ExpenseService
      * the OCR draft pipeline. It is created as is_verified=true, ocr_status=none.
      *
      * @param  array<string, mixed>  $data
+     *
      * @throws RuntimeException When no active tenant context is found.
      */
     public function createManual(array $data, ?User $actor): Expense
@@ -124,25 +125,25 @@ final readonly class ExpenseService
         $tenant = $this->resolveTenant();
 
         $expense = Expense::create([
-            'tenant_id'           => $tenant->id,
-            'branch_id'           => $data['branch_id'] ?? null,
+            'tenant_id' => $tenant->id,
+            'branch_id' => $data['branch_id'] ?? null,
             'expense_category_id' => $data['expense_category_id'] ?? null,
-            'description'         => (string) $data['description'],
-            'amount_cents'        => (int) $data['amount_cents'],
-            'expense_date'        => (string) $data['expense_date'],
-            'vendor'              => $data['vendor'] ?? null,
-            'payment_method'      => $data['payment_method'] ?? null,
-            'notes'               => $data['notes'] ?? null,
-            'ocr_status'          => 'none',
-            'is_verified'         => true,
-            'created_by'          => $actor?->id,
+            'description' => (string) $data['description'],
+            'amount_cents' => (int) $data['amount_cents'],
+            'expense_date' => (string) $data['expense_date'],
+            'vendor' => $data['vendor'] ?? null,
+            'payment_method' => $data['payment_method'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'ocr_status' => 'none',
+            'is_verified' => true,
+            'created_by' => $actor?->id,
         ]);
 
         Log::info('Manual expense created', [
-            'expense_id'  => $expense->id,
-            'tenant_id'   => $tenant->id,
+            'expense_id' => $expense->id,
+            'tenant_id' => $tenant->id,
             'amount_cents' => $expense->amount_cents,
-            'actor_id'    => $actor?->id,
+            'actor_id' => $actor?->id,
         ]);
 
         return $expense;
@@ -176,10 +177,10 @@ final readonly class ExpenseService
         $expense->update($updatable);
 
         Log::info('Expense updated', [
-            'expense_id'  => $expense->id,
-            'tenant_id'   => $expense->tenant_id,
+            'expense_id' => $expense->id,
+            'tenant_id' => $expense->tenant_id,
             'is_verified' => $expense->is_verified,
-            'fields'      => array_keys($updatable),
+            'fields' => array_keys($updatable),
         ]);
 
         return $expense;
@@ -200,8 +201,8 @@ final readonly class ExpenseService
         $expense->delete();
 
         Log::info('Expense soft-deleted', [
-            'expense_id'   => $expense->id,
-            'tenant_id'    => $expense->tenant_id,
+            'expense_id' => $expense->id,
+            'tenant_id' => $expense->tenant_id,
             'receipt_path' => $receiptPath,
         ]);
 
@@ -211,9 +212,9 @@ final readonly class ExpenseService
             } catch (\Throwable $e) {
                 // Best-effort: the soft-delete already completed. Log and move on.
                 Log::warning('Failed to delete receipt file after expense deletion', [
-                    'expense_id'   => $expense->id,
+                    'expense_id' => $expense->id,
                     'receipt_path' => $receiptPath,
-                    'error'        => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -237,7 +238,7 @@ final readonly class ExpenseService
         if (! $tenant instanceof Tenant) {
             throw new RuntimeException(
                 'ExpenseService requires an active tenant context. '
-                . 'Ensure the route runs behind the EnsureTenant middleware.'
+                .'Ensure the route runs behind the EnsureTenant middleware.'
             );
         }
 

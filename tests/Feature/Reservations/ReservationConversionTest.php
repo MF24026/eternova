@@ -7,9 +7,7 @@ namespace Tests\Feature\Reservations;
 use App\Models\User;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Models\Order;
-use App\Modules\Orders\Models\OrderStatusHistory;
 use App\Modules\Reservations\Models\Reservation;
-use App\Modules\Reservations\Models\ReservationStatusHistory;
 use App\Modules\Reservations\Services\ReservationService;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
@@ -56,17 +54,17 @@ final class ReservationConversionTest extends TestCase
     ): array {
         $tenant = Tenant::factory()->create(['reservation_deposit_pct' => 30]);
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenant);
 
         $reservation = Reservation::factory()
             ->forTenant($tenant)
             ->state([
-                'branch_id'          => $withBranch ? $branch->id : null,
-                'total_cents'        => $totalCents,
+                'branch_id' => $withBranch ? $branch->id : null,
+                'total_cents' => $totalCents,
                 'deposit_paid_cents' => $depositPaidCents,
-                'status'             => $status,
+                'status' => $status,
             ])
             ->create();
 
@@ -135,8 +133,8 @@ final class ReservationConversionTest extends TestCase
 
         $this->assertDatabaseHas('reservation_status_history', [
             'reservation_id' => $reservation->id,
-            'from_status'    => 'ready',
-            'to_status'      => 'delivered',
+            'from_status' => 'ready',
+            'to_status' => 'delivered',
         ]);
     }
 
@@ -147,10 +145,10 @@ final class ReservationConversionTest extends TestCase
         $order = $this->service->convertToOrder($reservation, $user);
 
         $this->assertDatabaseHas('order_status_history', [
-            'order_id'    => $order->id,
+            'order_id' => $order->id,
             'from_status' => null,
-            'to_status'   => 'delivered',
-            'note'        => 'Created from reservation',
+            'to_status' => 'delivered',
+            'note' => 'Created from reservation',
         ]);
     }
 
@@ -282,9 +280,9 @@ final class ReservationConversionTest extends TestCase
         $reservation = Reservation::factory()
             ->forTenant($tenant)
             ->state([
-                'branch_id'   => null,    // no branch assigned
+                'branch_id' => null,    // no branch assigned
                 'total_cents' => 8000,
-                'status'      => 'ready',
+                'status' => 'ready',
             ])
             ->create();
 
@@ -306,7 +304,7 @@ final class ReservationConversionTest extends TestCase
             ->forTenant($tenant)
             ->state([
                 'branch_id' => null,
-                'status'    => 'ready',
+                'status' => 'ready',
             ])
             ->create();
 
@@ -346,7 +344,7 @@ final class ReservationConversionTest extends TestCase
         // This test verifies the combined flow: advance → ready, then convert.
         $tenant = Tenant::factory()->create(['reservation_deposit_pct' => 30]);
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -372,7 +370,7 @@ final class ReservationConversionTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['reservation_deposit_pct' => 30]);
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
         $customer = Customer::factory()->forTenant($tenant)->create();
 
         app()->instance('currentTenant', $tenant);
@@ -397,7 +395,7 @@ final class ReservationConversionTest extends TestCase
         // without trying an invalid transition from 'delivered'.
         $tenant = Tenant::factory()->create(['reservation_deposit_pct' => 30]);
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $user   = User::factory()->forTenant($tenant, role: 'staff')->create();
+        $user = User::factory()->forTenant($tenant, role: 'staff')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -414,8 +412,8 @@ final class ReservationConversionTest extends TestCase
         // Status was already delivered — no extra history row for the transition
         $this->assertDatabaseMissing('reservation_status_history', [
             'reservation_id' => $reservation->id,
-            'from_status'    => 'delivered',
-            'to_status'      => 'delivered',
+            'from_status' => 'delivered',
+            'to_status' => 'delivered',
         ]);
     }
 }

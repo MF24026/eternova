@@ -62,12 +62,12 @@ final class QuotationController extends Controller
         $this->authorize('viewAny', Quotation::class);
 
         $filters = [
-            'status'      => $request->query('status'),
+            'status' => $request->query('status'),
             'customer_id' => $request->query('customer_id'),
-            'date_from'   => $request->query('date_from'),
-            'date_to'     => $request->query('date_to'),
-            'search'      => $request->query('search'),
-            'per_page'    => $request->query('per_page', '20'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'search' => $request->query('search'),
+            'per_page' => $request->query('per_page', '20'),
         ];
 
         // Eager-load customer to avoid N+1 on the list page.
@@ -77,7 +77,7 @@ final class QuotationController extends Controller
         // Status counts honor all filters EXCEPT status + per_page, so tabs always show
         // correct totals regardless of which tab (status) is active.
         $countsFilters = array_diff_key($filters, ['status' => true, 'per_page' => true]);
-        $statusCounts  = $this->quotations->statusCounts($countsFilters);
+        $statusCounts = $this->quotations->statusCounts($countsFilters);
 
         return (new QuotationCollection($paginator))
             ->additional(['status_counts' => $statusCounts]);
@@ -146,14 +146,14 @@ final class QuotationController extends Controller
             );
         } catch (DomainException $e) {
             Log::warning('Quotation update rejected', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'current_status'   => $quotation->status,
-                'message'          => $e->getMessage(),
+                'current_status' => $quotation->status,
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'quotations.not_editable',
             ], 422);
         }
@@ -176,9 +176,9 @@ final class QuotationController extends Controller
         $this->quotations->delete($quotation);
 
         Log::info('Quotation deleted', [
-            'quotation_id'     => $quotation->id,
+            'quotation_id' => $quotation->id,
             'quotation_number' => $quotation->quotation_number,
-            'tenant_id'        => $quotation->tenant_id,
+            'tenant_id' => $quotation->tenant_id,
         ]);
 
         return response()->noContent();
@@ -200,13 +200,13 @@ final class QuotationController extends Controller
     {
         $this->authorize('view', $quotation);
 
-        $bytes    = $this->pdfRenderer->render($quotation);
-        $filename = 'cotizacion-' . str_replace('/', '-', $quotation->quotation_number) . '.pdf';
+        $bytes = $this->pdfRenderer->render($quotation);
+        $filename = 'cotizacion-'.str_replace('/', '-', $quotation->quotation_number).'.pdf';
 
         return response($bytes, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-            'Content-Length'      => strlen($bytes),
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+            'Content-Length' => strlen($bytes),
         ]);
     }
 
@@ -231,14 +231,14 @@ final class QuotationController extends Controller
             );
         } catch (DomainException $e) {
             Log::warning('Quotation send rejected', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'current_status'   => $quotation->status,
-                'message'          => $e->getMessage(),
+                'current_status' => $quotation->status,
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'quotations.invalid_transition',
             ], 422);
         }
@@ -260,8 +260,8 @@ final class QuotationController extends Controller
     {
         $this->authorize('update', $quotation);
 
-        $validated      = $request->validated();
-        $note           = $validated['note'] ?? null;
+        $validated = $request->validated();
+        $note = $validated['note'] ?? null;
         $convertToOrder = (bool) ($validated['convert_to_order'] ?? false);
 
         try {
@@ -273,15 +273,15 @@ final class QuotationController extends Controller
             );
         } catch (DomainException $e) {
             Log::warning('Quotation accept rejected', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'current_status'   => $quotation->status,
+                'current_status' => $quotation->status,
                 'convert_to_order' => $convertToOrder,
-                'message'          => $e->getMessage(),
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'quotations.invalid_transition',
             ], 422);
         }
@@ -310,14 +310,14 @@ final class QuotationController extends Controller
             );
         } catch (DomainException $e) {
             Log::warning('Quotation reject rejected', [
-                'quotation_id'     => $quotation->id,
+                'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->quotation_number,
-                'current_status'   => $quotation->status,
-                'message'          => $e->getMessage(),
+                'current_status' => $quotation->status,
+                'message' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message'    => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'error_code' => 'quotations.invalid_transition',
             ], 422);
         }

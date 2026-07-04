@@ -120,12 +120,12 @@ final class EloquentReservationRepository implements ReservationRepositoryInterf
     public function statusCounts(array $filters): array
     {
         $zero = [
-            'inquiry'     => 0,
-            'confirmed'   => 0,
+            'inquiry' => 0,
+            'confirmed' => 0,
             'in_progress' => 0,
-            'ready'       => 0,
-            'delivered'   => 0,
-            'cancelled'   => 0,
+            'ready' => 0,
+            'delivered' => 0,
+            'cancelled' => 0,
         ];
 
         $query = Reservation::query();

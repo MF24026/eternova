@@ -52,7 +52,7 @@ final class BillingPciSmokeTest extends TestCase
             apiSecret: 'api_secret_test',
             authBaseUrl: 'https://id.wompi.test',
             baseUrl: 'https://api.wompi.test',
-            errorTranslator: new WompiErrorTranslator(),
+            errorTranslator: new WompiErrorTranslator,
             apiBreaker: new CircuitBreaker('pci-test:'.uniqid(), threshold: 99, cooldownSeconds: 60),
             logger: $logger,
         );

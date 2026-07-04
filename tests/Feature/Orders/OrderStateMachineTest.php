@@ -90,10 +90,10 @@ final class OrderStateMachineTest extends TestCase
     {
         $path = [
             'preparing' => [],
-            'ready'      => ['ready'],
+            'ready' => ['ready'],
             'dispatched' => ['ready', 'dispatched'],
-            'delivered'  => ['ready', 'dispatched', 'delivered'],
-            'cancelled'  => ['cancelled'],
+            'delivered' => ['ready', 'dispatched', 'delivered'],
+            'cancelled' => ['cancelled'],
         ];
 
         foreach ($path[$targetStatus] ?? [] as $step) {
@@ -388,12 +388,12 @@ final class OrderStateMachineTest extends TestCase
         app()->instance('currentTenant', $tenant);
 
         $cases = [
-            'pending'    => ['preparing', 'cancelled'],
-            'preparing'  => ['ready', 'cancelled'],
-            'ready'      => ['dispatched', 'delivered', 'cancelled'],
+            'pending' => ['preparing', 'cancelled'],
+            'preparing' => ['ready', 'cancelled'],
+            'ready' => ['dispatched', 'delivered', 'cancelled'],
             'dispatched' => ['delivered', 'cancelled'],
-            'delivered'  => [],
-            'cancelled'  => [],
+            'delivered' => [],
+            'cancelled' => [],
         ];
 
         foreach ($cases as $status => $expected) {

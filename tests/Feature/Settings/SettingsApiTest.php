@@ -37,7 +37,7 @@ final class SettingsApiTest extends TestCase
     private function setupTenant(array $tenantOverrides = []): array
     {
         $tenant = Tenant::factory()->create($tenantOverrides);
-        $owner  = User::factory()->forTenant($tenant, role: 'owner')->create();
+        $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -48,7 +48,7 @@ final class SettingsApiTest extends TestCase
     {
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant([
             'business_name' => 'Rosa Eterna',
-            'currency'      => 'USD',
+            'currency' => 'USD',
         ]);
 
         $response = $this->tenantGetJson($tenant, $owner, '/api/v1/settings');
@@ -69,14 +69,14 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/brand', [
-            'business_name'   => 'Nueva Marca',
-            'primary_color'   => '#7c545d',
+            'business_name' => 'Nueva Marca',
+            'primary_color' => '#7c545d',
             'secondary_color' => '#5a4b71',
         ]);
 
         $response->assertOk()->assertJsonPath('data.brand.business_name', 'Nueva Marca');
         $this->assertDatabaseHas('tenants', [
-            'id'            => $tenant->id,
+            'id' => $tenant->id,
             'business_name' => 'Nueva Marca',
             'primary_color' => '#7c545d',
         ]);
@@ -87,10 +87,10 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/locale', [
-            'currency'     => 'XYZ',
+            'currency' => 'XYZ',
             'country_code' => 'SV',
-            'language'     => 'es',
-            'timezone'     => 'America/El_Salvador',
+            'language' => 'es',
+            'timezone' => 'America/El_Salvador',
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrorFor('currency');
@@ -101,8 +101,8 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/contact', [
-            'phone'   => '+503 7892-1234',
-            'email'   => 'hola@rosa.test',
+            'phone' => '+503 7892-1234',
+            'email' => 'hola@rosa.test',
             'website' => 'rosa.test',
             'address' => 'San Salvador',
         ]);
@@ -111,10 +111,10 @@ final class SettingsApiTest extends TestCase
 
         // Stored as a tenant default row (branch_id null).
         $this->assertDatabaseHas('branch_settings', [
-            'tenant_id'  => $tenant->id,
-            'branch_id'  => null,
-            'group'      => 'contact',
-            'key'        => 'phone',
+            'tenant_id' => $tenant->id,
+            'branch_id' => null,
+            'group' => 'contact',
+            'key' => 'phone',
         ]);
     }
 
@@ -123,8 +123,8 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
-            'enabled'            => true,
-            'rate_bps'           => 10000, // over the 9999 max
+            'enabled' => true,
+            'rate_bps' => 10000, // over the 9999 max
             'prices_include_tax' => false,
         ]);
 
@@ -136,10 +136,10 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant(['country_code' => 'SV']);
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
-            'enabled'            => true,
-            'rate_bps'           => 1300,
-            'id_label'           => 'DUI',
-            'id_number'          => '04210323-5', // wrong DUI check digit
+            'enabled' => true,
+            'rate_bps' => 1300,
+            'id_label' => 'DUI',
+            'id_number' => '04210323-5', // wrong DUI check digit
             'prices_include_tax' => false,
         ]);
 
@@ -151,10 +151,10 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant(['country_code' => 'SV']);
 
         $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
-            'enabled'            => true,
-            'rate_bps'           => 1300,
-            'id_label'           => 'DUI',
-            'id_number'          => '04210323-4',
+            'enabled' => true,
+            'rate_bps' => 1300,
+            'id_label' => 'DUI',
+            'id_number' => '04210323-4',
             'prices_include_tax' => false,
         ])->assertOk();
 
@@ -172,10 +172,10 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
-            'enabled'            => true,
-            'rate_bps'           => 1300,
-            'id_label'           => 'NIT',
-            'id_number'          => null,
+            'enabled' => true,
+            'rate_bps' => 1300,
+            'id_label' => 'NIT',
+            'id_number' => null,
             'prices_include_tax' => true,
         ])->assertOk();
 
@@ -187,12 +187,12 @@ final class SettingsApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/notifications', [
-            'new_order'             => false,
-            'order_pending'         => true,
-            'low_stock'             => true,
+            'new_order' => false,
+            'order_pending' => true,
+            'low_stock' => true,
             'reservation_confirmed' => true,
-            'quotation_accepted'    => false,
-            'payment_received'      => true,
+            'quotation_accepted' => false,
+            'payment_received' => true,
         ]);
 
         $response->assertOk()
@@ -222,7 +222,7 @@ final class SettingsApiTest extends TestCase
             $this->tenantUrl($tenant, '/api/v1/settings/brand'),
             [
                 'business_name' => 'Con Logo',
-                'logo'          => $file,
+                'logo' => $file,
             ],
             ['Accept' => 'application/json'],
         );
@@ -231,7 +231,7 @@ final class SettingsApiTest extends TestCase
 
         $tenant->refresh();
         $this->assertNotNull($tenant->logo_url);
-        $this->assertStringStartsWith('/storage/tenants/' . $tenant->id . '/brand', $tenant->logo_url);
+        $this->assertStringStartsWith('/storage/tenants/'.$tenant->id.'/brand', $tenant->logo_url);
         Storage::disk('public')->assertExists(substr($tenant->logo_url, strlen('/storage/')));
     }
 
@@ -246,7 +246,7 @@ final class SettingsApiTest extends TestCase
             $this->tenantUrl($tenant, '/api/v1/settings/brand'),
             [
                 'business_name' => 'Con Favicon',
-                'favicon'       => $file,
+                'favicon' => $file,
             ],
             ['Accept' => 'application/json'],
         );
@@ -255,7 +255,7 @@ final class SettingsApiTest extends TestCase
 
         $tenant->refresh();
         $this->assertNotNull($tenant->favicon_url);
-        $this->assertStringStartsWith('/storage/tenants/' . $tenant->id . '/brand', $tenant->favicon_url);
+        $this->assertStringStartsWith('/storage/tenants/'.$tenant->id.'/brand', $tenant->favicon_url);
         Storage::disk('public')->assertExists(substr($tenant->favicon_url, strlen('/storage/')));
     }
 
@@ -333,7 +333,7 @@ final class SettingsApiTest extends TestCase
 
         // Tenant B is a separate business with its own owner.
         $tenantB = Tenant::factory()->create(['business_name' => 'Negocio B']);
-        $ownerB  = User::factory()->forTenant($tenantB, role: 'owner')->create();
+        $ownerB = User::factory()->forTenant($tenantB, role: 'owner')->create();
         app()->instance('currentTenant', $tenantB);
 
         $response = $this->tenantGetJson($tenantB, $ownerB, '/api/v1/settings');

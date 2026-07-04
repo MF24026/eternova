@@ -63,12 +63,12 @@ final readonly class ReservationService
      * @var array<string, list<string>>
      */
     private const TRANSITIONS = [
-        'inquiry'     => ['confirmed', 'cancelled'],
-        'confirmed'   => ['in_progress', 'cancelled'],
+        'inquiry' => ['confirmed', 'cancelled'],
+        'confirmed' => ['in_progress', 'cancelled'],
         'in_progress' => ['ready', 'cancelled'],
-        'ready'       => ['delivered', 'cancelled'],
-        'delivered'   => [],
-        'cancelled'   => [],
+        'ready' => ['delivered', 'cancelled'],
+        'delivered' => [],
+        'cancelled' => [],
     ];
 
     /**
@@ -101,31 +101,31 @@ final readonly class ReservationService
                 : $this->computeDepositRequired((int) ($data['total_cents'] ?? 0), $tenant);
 
             $reservation = $this->reservations->create([
-                'tenant_id'              => $tenant->id,
-                'branch_id'              => $data['branch_id'] ?? null,
-                'customer_id'            => $data['customer_id'] ?? null,
-                'reservation_number'     => $number,
-                'description'            => $data['description'],
-                'occasion'               => $data['occasion'] ?? null,
-                'event_date'             => $data['event_date'] ?? null,
-                'total_cents'            => (int) ($data['total_cents'] ?? 0),
+                'tenant_id' => $tenant->id,
+                'branch_id' => $data['branch_id'] ?? null,
+                'customer_id' => $data['customer_id'] ?? null,
+                'reservation_number' => $number,
+                'description' => $data['description'],
+                'occasion' => $data['occasion'] ?? null,
+                'event_date' => $data['event_date'] ?? null,
+                'total_cents' => (int) ($data['total_cents'] ?? 0),
                 'deposit_required_cents' => $depositRequired,
-                'deposit_paid_cents'     => 0,
-                'status'                 => 'inquiry',
-                'special_instructions'   => $data['special_instructions'] ?? null,
-                'admin_notes'            => $data['admin_notes'] ?? null,
-                'created_by'             => $actor?->id,
+                'deposit_paid_cents' => 0,
+                'status' => 'inquiry',
+                'special_instructions' => $data['special_instructions'] ?? null,
+                'admin_notes' => $data['admin_notes'] ?? null,
+                'created_by' => $actor?->id,
             ]);
 
             $this->recordInitialHistory($reservation, $actor);
 
             Log::info('Reservation captured', [
-                'reservation_id'         => $reservation->id,
-                'reservation_number'     => $reservation->reservation_number,
-                'tenant_id'              => $reservation->tenant_id,
-                'total_cents'            => $reservation->total_cents,
+                'reservation_id' => $reservation->id,
+                'reservation_number' => $reservation->reservation_number,
+                'tenant_id' => $reservation->tenant_id,
+                'total_cents' => $reservation->total_cents,
                 'deposit_required_cents' => $reservation->deposit_required_cents,
-                'actor_id'               => $actor?->id,
+                'actor_id' => $actor?->id,
             ]);
 
             return $reservation;
@@ -354,7 +354,7 @@ final readonly class ReservationService
      *
      * @throws InvalidArgumentException When $amountCents is not positive
      * @throws InvalidArgumentException When $paymentMethod is not one of cash|card|transfer|other
-     * @throws DomainException          When the new total paid would exceed the reservation total
+     * @throws DomainException When the new total paid would exceed the reservation total
      */
     public function recordPayment(
         Reservation $reservation,
@@ -401,13 +401,13 @@ final readonly class ReservationService
             $reservation, $amountCents, $paymentMethod, $actor, $reference, $paidAt
         ): ReservationPayment {
             $payment = ReservationPayment::create([
-                'tenant_id'      => $reservation->tenant_id,
+                'tenant_id' => $reservation->tenant_id,
                 'reservation_id' => $reservation->id,
-                'amount_cents'   => $amountCents,
+                'amount_cents' => $amountCents,
                 'payment_method' => $paymentMethod,
-                'reference'      => $reference,
-                'recorded_by'    => $actor?->id,
-                'paid_at'        => $paidAt ?? now(),
+                'reference' => $reference,
+                'recorded_by' => $actor?->id,
+                'paid_at' => $paidAt ?? now(),
             ]);
 
             // Authoritative recompute — sum all payments rather than incrementing
@@ -417,15 +417,15 @@ final readonly class ReservationService
             $reservation->update(['deposit_paid_cents' => (int) $sumPaid]);
 
             Log::info('Reservation payment recorded', [
-                'reservation_id'       => $reservation->id,
-                'reservation_number'   => $reservation->reservation_number,
-                'tenant_id'            => $reservation->tenant_id,
-                'payment_id'           => $payment->id,
-                'amount_cents'         => $amountCents,
-                'payment_method'       => $paymentMethod,
-                'deposit_paid_cents'   => (int) $sumPaid,
-                'total_cents'          => $reservation->total_cents,
-                'actor_id'             => $actor?->id,
+                'reservation_id' => $reservation->id,
+                'reservation_number' => $reservation->reservation_number,
+                'tenant_id' => $reservation->tenant_id,
+                'payment_id' => $payment->id,
+                'amount_cents' => $amountCents,
+                'payment_method' => $paymentMethod,
+                'deposit_paid_cents' => (int) $sumPaid,
+                'total_cents' => $reservation->total_cents,
+                'actor_id' => $actor?->id,
             ]);
 
             return $payment;
@@ -441,7 +441,7 @@ final readonly class ReservationService
      * reservation total does not make business sense.
      *
      * @throws InvalidArgumentException When $depositRequiredCents is negative
-     * @throws DomainException          When $depositRequiredCents exceeds total_cents
+     * @throws DomainException When $depositRequiredCents exceeds total_cents
      */
     public function setDepositRequired(
         Reservation $reservation,
@@ -464,11 +464,11 @@ final readonly class ReservationService
         $reservation->update(['deposit_required_cents' => $depositRequiredCents]);
 
         Log::info('Reservation deposit requirement updated', [
-            'reservation_id'         => $reservation->id,
-            'reservation_number'     => $reservation->reservation_number,
-            'tenant_id'              => $reservation->tenant_id,
+            'reservation_id' => $reservation->id,
+            'reservation_number' => $reservation->reservation_number,
+            'tenant_id' => $reservation->tenant_id,
             'deposit_required_cents' => $depositRequiredCents,
-            'actor_id'               => $actor?->id,
+            'actor_id' => $actor?->id,
         ]);
 
         return $reservation->fresh();
@@ -508,7 +508,7 @@ final readonly class ReservationService
 
         if (! $force && $reservation->deposit_paid_cents < $reservation->deposit_required_cents) {
             $required = $reservation->deposit_required_cents;
-            $paid     = $reservation->deposit_paid_cents;
+            $paid = $reservation->deposit_paid_cents;
 
             throw new DomainException(
                 "Reservation #{$reservation->reservation_number} cannot be confirmed: "
@@ -589,23 +589,23 @@ final readonly class ReservationService
                 $reservation->update(['status' => 'delivered']);
 
                 ReservationStatusHistory::create([
-                    'tenant_id'      => $reservation->tenant_id,
+                    'tenant_id' => $reservation->tenant_id,
                     'reservation_id' => $reservation->id,
-                    'from_status'    => $fromStatus,
-                    'to_status'      => 'delivered',
-                    'user_id'        => $actor?->id,
-                    'note'           => 'Entregada y convertida a pedido',
+                    'from_status' => $fromStatus,
+                    'to_status' => 'delivered',
+                    'user_id' => $actor?->id,
+                    'note' => 'Entregada y convertida a pedido',
                 ]);
             }
 
             Log::info('Reservation converted to order', [
-                'reservation_id'     => $reservation->id,
+                'reservation_id' => $reservation->id,
                 'reservation_number' => $reservation->reservation_number,
-                'tenant_id'          => $reservation->tenant_id,
-                'order_id'           => $order->id,
-                'order_number'       => $order->order_number,
-                'payment_status'     => $paymentStatus,
-                'actor_id'           => $actor?->id,
+                'tenant_id' => $reservation->tenant_id,
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'payment_status' => $paymentStatus,
+                'actor_id' => $actor?->id,
             ]);
 
             return $order;

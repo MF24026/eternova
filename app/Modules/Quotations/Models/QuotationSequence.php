@@ -38,7 +38,7 @@ final class QuotationSequence extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'year'          => 'integer',
+        'year' => 'integer',
         'last_sequence' => 'integer',
     ];
 }

@@ -133,7 +133,7 @@ final class OrderApiTest extends TestCase
             ->assertJsonStructure([
                 'data',
                 'links' => ['first', 'last', 'prev', 'next'],
-                'meta'  => ['current_page', 'per_page', 'total', 'tenant_id'],
+                'meta' => ['current_page', 'per_page', 'total', 'tenant_id'],
                 'status_counts',
             ]);
 

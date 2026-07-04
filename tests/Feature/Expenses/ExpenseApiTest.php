@@ -104,7 +104,7 @@ final class ExpenseApiTest extends TestCase
             ->assertJsonStructure([
                 'data',
                 'links' => ['first', 'last', 'prev', 'next'],
-                'meta'  => ['current_page', 'per_page', 'total', 'tenant_id'],
+                'meta' => ['current_page', 'per_page', 'total', 'tenant_id'],
                 'period_total_cents',
             ]);
 
@@ -246,8 +246,8 @@ final class ExpenseApiTest extends TestCase
                     'payment_method', 'ocr_status', 'is_verified', 'ocr_data',
                     'receipt_url', 'notes', 'created_at', 'updated_at',
                     'category' => ['id', 'name', 'type'],
-                    'branch'   => ['id', 'name'],
-                    'creator'  => ['id', 'name'],
+                    'branch' => ['id', 'name'],
+                    'creator' => ['id', 'name'],
                 ],
             ]);
 
@@ -278,14 +278,14 @@ final class ExpenseApiTest extends TestCase
         $category = ExpenseCategory::factory()->forTenant($tenant)->create();
 
         $payload = [
-            'description'         => 'Compra de papel y lapices',
-            'amount_cents'        => 7500,
-            'expense_date'        => '2026-06-10',
+            'description' => 'Compra de papel y lapices',
+            'amount_cents' => 7500,
+            'expense_date' => '2026-06-10',
             'expense_category_id' => $category->id,
-            'branch_id'           => $branch->id,
-            'vendor'              => 'Papeleria Central',
-            'payment_method'      => 'cash',
-            'notes'               => 'Para el taller del martes',
+            'branch_id' => $branch->id,
+            'vendor' => 'Papeleria Central',
+            'payment_method' => 'cash',
+            'notes' => 'Para el taller del martes',
         ];
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/expenses', $payload)
@@ -296,11 +296,11 @@ final class ExpenseApiTest extends TestCase
             ->assertJsonPath('data.vendor', 'Papeleria Central');
 
         $this->assertDatabaseHas('expenses', [
-            'tenant_id'    => $tenant->id,
+            'tenant_id' => $tenant->id,
             'amount_cents' => 7500,
-            'is_verified'  => true,
-            'ocr_status'   => 'none',
-            'created_by'   => $owner->id,
+            'is_verified' => true,
+            'ocr_status' => 'none',
+            'created_by' => $owner->id,
         ]);
 
         // creator relation should be loaded in the response
@@ -322,11 +322,11 @@ final class ExpenseApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $this->tenantPostJson($tenant, $owner, '/api/v1/expenses', [
-            'description'  => 'Test',
+            'description' => 'Test',
             'amount_cents' => -500,
             'expense_date' => '2026-06-10',
         ])->assertStatus(422)
-          ->assertJsonValidationErrors(['amount_cents']);
+            ->assertJsonValidationErrors(['amount_cents']);
     }
 
     // ── update (edit + verify path) ───────────────────────────────────────────
@@ -338,15 +338,15 @@ final class ExpenseApiTest extends TestCase
 
         $this->tenantPatchJson($tenant, $owner, "/api/v1/expenses/{$expense->id}", [
             'amount_cents' => 8800,
-            'vendor'       => 'Nuevo Proveedor',
+            'vendor' => 'Nuevo Proveedor',
         ])->assertOk()
-          ->assertJsonPath('data.amount_cents', 8800)
-          ->assertJsonPath('data.vendor', 'Nuevo Proveedor');
+            ->assertJsonPath('data.amount_cents', 8800)
+            ->assertJsonPath('data.vendor', 'Nuevo Proveedor');
 
         $this->assertDatabaseHas('expenses', [
-            'id'           => $expense->id,
+            'id' => $expense->id,
             'amount_cents' => 8800,
-            'vendor'       => 'Nuevo Proveedor',
+            'vendor' => 'Nuevo Proveedor',
         ]);
     }
 
@@ -355,18 +355,18 @@ final class ExpenseApiTest extends TestCase
         ['tenant' => $tenant, 'branch' => $branch, 'owner' => $owner] = $this->setupTenant();
         $draft = Expense::factory()->forBranch($branch)->draft()->create([
             'amount_cents' => 0,
-            'vendor'       => null,
+            'vendor' => null,
         ]);
 
         $this->assertFalse($draft->fresh()->is_verified);
 
         $this->tenantPatchJson($tenant, $owner, "/api/v1/expenses/{$draft->id}", [
             'amount_cents' => 15000,
-            'vendor'       => 'Proveedor OCR Verificado',
-            'is_verified'  => true,
+            'vendor' => 'Proveedor OCR Verificado',
+            'is_verified' => true,
         ])->assertOk()
-          ->assertJsonPath('data.is_verified', true)
-          ->assertJsonPath('data.amount_cents', 15000);
+            ->assertJsonPath('data.is_verified', true)
+            ->assertJsonPath('data.amount_cents', 15000);
 
         $this->assertTrue($draft->fresh()->is_verified);
     }

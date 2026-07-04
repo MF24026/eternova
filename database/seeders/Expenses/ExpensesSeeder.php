@@ -113,7 +113,7 @@ final class ExpensesSeeder extends Seeder
      * @var array<int, string>
      */
     private const OCR_STATE_PLAN = [
-        5  => 'ocr_verified',
+        5 => 'ocr_verified',
         11 => 'ocr_verified',
         17 => 'ocr_verified',
         22 => 'ocr_draft',    // draft #1 — appears in E7 verification queue
@@ -129,36 +129,36 @@ final class ExpensesSeeder extends Seeder
      * @var array<int, int>
      */
     private const DAYS_BACK = [
-        1  => 148,   // month -5
-        2  => 143,   // month -5
-        3  => 138,   // month -5
-        4  => 132,   // month -5
-        5  => 127,   // month -5
-        6  => 120,   // month -4
-        7  => 115,   // month -4
-        8  => 112,   // month -4
-        9  => 108,   // month -4
+        1 => 148,   // month -5
+        2 => 143,   // month -5
+        3 => 138,   // month -5
+        4 => 132,   // month -5
+        5 => 127,   // month -5
+        6 => 120,   // month -4
+        7 => 115,   // month -4
+        8 => 112,   // month -4
+        9 => 108,   // month -4
         10 => 104,   // month -4
-        11 =>  95,   // month -3
-        12 =>  91,   // month -3
-        13 =>  87,   // month -3
-        14 =>  83,   // month -3
-        15 =>  78,   // month -3
-        16 =>  72,   // month -3
-        17 =>  65,   // month -2
-        18 =>  60,   // month -2
-        19 =>  56,   // month -2
-        20 =>  52,   // month -2
-        21 =>  47,   // month -2
-        22 =>  43,   // month -2
-        23 =>  35,   // month -1
-        24 =>  31,   // month -1
-        25 =>  27,   // month -1
-        26 =>  22,   // month -1
-        27 =>  17,   // month -1
-        28 =>  12,   // current month
-        29 =>   7,   // current month
-        30 =>   2,   // current month
+        11 => 95,   // month -3
+        12 => 91,   // month -3
+        13 => 87,   // month -3
+        14 => 83,   // month -3
+        15 => 78,   // month -3
+        16 => 72,   // month -3
+        17 => 65,   // month -2
+        18 => 60,   // month -2
+        19 => 56,   // month -2
+        20 => 52,   // month -2
+        21 => 47,   // month -2
+        22 => 43,   // month -2
+        23 => 35,   // month -1
+        24 => 31,   // month -1
+        25 => 27,   // month -1
+        26 => 22,   // month -1
+        27 => 17,   // month -1
+        28 => 12,   // current month
+        29 => 7,   // current month
+        30 => 2,   // current month
     ];
 
     /**
@@ -252,12 +252,12 @@ final class ExpensesSeeder extends Seeder
      * @var array<string, array{min: int, max: int}>
      */
     private const AMOUNT_RANGES = [
-        'payroll'   => ['min' =>  50_000, 'max' => 150_000],
-        'rent'      => ['min' =>  60_000, 'max' => 120_000],
-        'products'  => ['min' =>   2_000, 'max' =>  40_000],
-        'operating' => ['min' =>   1_500, 'max' =>  25_000],
-        'other'     => ['min' =>     500, 'max' =>   8_000],
-        'null'      => ['min' =>     800, 'max' =>  12_000],   // uncategorised
+        'payroll' => ['min' => 50_000, 'max' => 150_000],
+        'rent' => ['min' => 60_000, 'max' => 120_000],
+        'products' => ['min' => 2_000, 'max' => 40_000],
+        'operating' => ['min' => 1_500, 'max' => 25_000],
+        'other' => ['min' => 500, 'max' => 8_000],
+        'null' => ['min' => 800, 'max' => 12_000],   // uncategorised
     ];
 
     /**
@@ -269,9 +269,9 @@ final class ExpensesSeeder extends Seeder
     private const CATEGORY_TYPE_BY_NAME = [
         'Operación' => 'operating',
         'Productos' => 'products',
-        'Nómina'    => 'payroll',
-        'Renta'     => 'rent',
-        'Otros'     => 'other',
+        'Nómina' => 'payroll',
+        'Renta' => 'rent',
+        'Otros' => 'other',
     ];
 
     public function run(): void
@@ -321,14 +321,14 @@ final class ExpensesSeeder extends Seeder
         $rows = [];
 
         foreach (self::CATEGORY_PLAN as $seqIndex => $categoryName) {
-            $seq         = $seqIndex + 1;
-            $daysBack    = self::DAYS_BACK[$seq];
-            $hoursBack   = random_int(8, 20);  // within business hours
+            $seq = $seqIndex + 1;
+            $daysBack = self::DAYS_BACK[$seq];
+            $hoursBack = random_int(8, 20);  // within business hours
             $expenseDate = Carbon::now()->subDays($daysBack)->toDateString();
-            $createdAt   = Carbon::now()->subDays($daysBack)->subHours($hoursBack);
-            $updatedAt   = $createdAt->copy()->addMinutes(random_int(0, 30));
+            $createdAt = Carbon::now()->subDays($daysBack)->subHours($hoursBack);
+            $updatedAt = $createdAt->copy()->addMinutes(random_int(0, 30));
 
-            $categoryId   = ($categoryName !== null) ? ($categoryIdByName[$categoryName] ?? null) : null;
+            $categoryId = ($categoryName !== null) ? ($categoryIdByName[$categoryName] ?? null) : null;
             $categoryType = ($categoryName !== null) ? (self::CATEGORY_TYPE_BY_NAME[$categoryName] ?? 'other') : 'null';
 
             [$amountCents] = $this->resolveAmount($categoryType, $seq);
@@ -340,10 +340,10 @@ final class ExpensesSeeder extends Seeder
                 ? ($seq % 2 === 0 ? $staffUserIds->first() : $staffUserIds->last())
                 : null;
 
-            $ocrBucket   = self::OCR_STATE_PLAN[$seq] ?? 'manual';
+            $ocrBucket = self::OCR_STATE_PLAN[$seq] ?? 'manual';
             $description = $this->buildDescription($tenant, $categoryName, $seq);
-            $vendor      = $this->resolveVendor($tenant, $categoryName, $categoryType, $seq);
-            $notes       = $this->maybeNotes($seq, $categoryType);
+            $vendor = $this->resolveVendor($tenant, $categoryName, $categoryType, $seq);
+            $notes = $this->maybeNotes($seq, $categoryType);
 
             $rows[] = $this->buildRow(
                 tenantId: $tenant->id,
@@ -369,10 +369,10 @@ final class ExpensesSeeder extends Seeder
 
         $this->command->info(
             "ExpensesSeeder: {$tenant->slug} — "
-            . count($rows) . " expenses seeded "
-            . "across {$monthsWithData} months "
-            . "(OCR-done-verified=" . count(array_filter($rows, fn($r) => $r['ocr_status'] === 'done' && $r['is_verified'])) . ", "
-            . "OCR-drafts=" . count(array_filter($rows, fn($r) => $r['ocr_status'] === 'done' && ! $r['is_verified'])) . ").",
+            .count($rows).' expenses seeded '
+            ."across {$monthsWithData} months "
+            .'(OCR-done-verified='.count(array_filter($rows, fn ($r) => $r['ocr_status'] === 'done' && $r['is_verified'])).', '
+            .'OCR-drafts='.count(array_filter($rows, fn ($r) => $r['ocr_status'] === 'done' && ! $r['is_verified'])).').',
         );
     }
 
@@ -416,23 +416,23 @@ final class ExpensesSeeder extends Seeder
         );
 
         return [
-            'tenant_id'           => $tenantId,
-            'branch_id'           => $branchId,
+            'tenant_id' => $tenantId,
+            'branch_id' => $branchId,
             'expense_category_id' => $categoryId,
-            'description'         => $description,
-            'amount_cents'        => $amountCents,
-            'expense_date'        => $expenseDate,
-            'vendor'              => $vendor,
-            'payment_method'      => $paymentMethod,
-            'receipt_path'        => $receiptPath,
-            'ocr_status'          => $ocrStatus,
-            'ocr_data'            => $ocrData,
-            'is_verified'         => $isVerified,
-            'notes'               => $notes,
-            'created_by'          => $createdBy,
-            'created_at'          => $createdAt->toDateTimeString(),
-            'updated_at'          => $updatedAt->toDateTimeString(),
-            'deleted_at'          => null,
+            'description' => $description,
+            'amount_cents' => $amountCents,
+            'expense_date' => $expenseDate,
+            'vendor' => $vendor,
+            'payment_method' => $paymentMethod,
+            'receipt_path' => $receiptPath,
+            'ocr_status' => $ocrStatus,
+            'ocr_data' => $ocrData,
+            'is_verified' => $isVerified,
+            'notes' => $notes,
+            'created_by' => $createdBy,
+            'created_at' => $createdAt->toDateTimeString(),
+            'updated_at' => $updatedAt->toDateTimeString(),
+            'deleted_at' => null,
         ];
     }
 
@@ -464,7 +464,7 @@ final class ExpensesSeeder extends Seeder
             return ['none', true, null, null];
         }
 
-        $isVerified  = ($bucket === 'ocr_verified');
+        $isVerified = ($bucket === 'ocr_verified');
         $receiptPath = "tenants/{$tenantId}/receipts/demo-{$seq}.jpg";
 
         // Build realistic ocr_data as the job would produce.
@@ -474,11 +474,11 @@ final class ExpensesSeeder extends Seeder
             : round(random_int(55, 75) / 100, 2);
 
         $ocrData = json_encode([
-            'vendor'       => $vendor ?? 'Proveedor desconocido',
+            'vendor' => $vendor ?? 'Proveedor desconocido',
             'amount_cents' => $amountCents,
-            'date'         => $expenseDate,
-            'raw_text'     => $this->buildFakeRawText($vendor, $amountCents, $expenseDate),
-            'confidence'   => $confidence,
+            'date' => $expenseDate,
+            'raw_text' => $this->buildFakeRawText($vendor, $amountCents, $expenseDate),
+            'confidence' => $confidence,
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         return ['done', $isVerified, $receiptPath, $ocrData];
@@ -513,7 +513,7 @@ final class ExpensesSeeder extends Seeder
      */
     private function resolveAmount(string $categoryType, int $seq): array
     {
-        $range  = self::AMOUNT_RANGES[$categoryType] ?? self::AMOUNT_RANGES['other'];
+        $range = self::AMOUNT_RANGES[$categoryType] ?? self::AMOUNT_RANGES['other'];
         $amount = random_int($range['min'], $range['max']);
 
         return [$amount];
@@ -530,13 +530,13 @@ final class ExpensesSeeder extends Seeder
     private function buildDescription(Tenant $tenant, ?string $categoryName, int $seq): string
     {
         $templates = match ($categoryName) {
-            'Nómina'    => [
+            'Nómina' => [
                 'Pago de nomina quincenal',
                 'Salario mensual colaboradores',
                 'Pago semanal de personal',
                 'Remuneracion colaboradora',
             ],
-            'Renta'     => [
+            'Renta' => [
                 'Pago de renta mensual del local',
                 'Alquiler del local comercial',
                 'Renta de bodega',
@@ -550,7 +550,7 @@ final class ExpensesSeeder extends Seeder
                     'Insumos: cintas, lazos y papel',
                     'Flores de temporada — mayoreo',
                 ],
-                default       => [
+                default => [
                     'Compra de peluches y accesorios',
                     'Adquisicion de regalos variados',
                     'Insumos para canastas y arreglos',
@@ -566,12 +566,12 @@ final class ExpensesSeeder extends Seeder
                 'Transporte y envios',
                 'Publicidad en redes sociales',
             ],
-            'Otros'     => [
+            'Otros' => [
                 'Gasto varios de caja chica',
                 'Imprevistos del mes',
                 'Gastos menores sin categoria',
             ],
-            default     => [     // uncategorised
+            default => [     // uncategorised
                 'Gasto pendiente de clasificar',
                 'Compra sin categorizar',
             ],
@@ -612,11 +612,11 @@ final class ExpensesSeeder extends Seeder
         }
 
         $byType = match ($categoryType) {
-            'payroll'   => 'Incluye bonificacion por productividad',
-            'rent'      => 'Pago puntual — sin recargo por mora',
-            'products'  => 'Solicitar factura fiscal en proxima compra',
+            'payroll' => 'Incluye bonificacion por productividad',
+            'rent' => 'Pago puntual — sin recargo por mora',
+            'products' => 'Solicitar factura fiscal en proxima compra',
             'operating' => 'Revisar si aplica deduccion de impuestos',
-            default     => 'Verificar con contabilidad',
+            default => 'Verificar con contabilidad',
         };
 
         return $byType;
@@ -634,9 +634,9 @@ final class ExpensesSeeder extends Seeder
     {
         return match ($seq % 10) {
             0, 1, 2, 3 => 'cash',
-            4, 5, 6    => 'transfer',
-            7          => 'card',
-            default    => 'other',
+            4, 5, 6 => 'transfer',
+            7 => 'card',
+            default => 'other',
         };
     }
 
@@ -669,7 +669,7 @@ final class ExpensesSeeder extends Seeder
      * Resolve the tenant's expense_category rows and index them by name.
      * Relies on ExpenseCategoriesSeeder having run first (DatabaseSeeder order guarantees this).
      *
-     * @return array<string, int>  name → id
+     * @return array<string, int> name → id
      */
     private function resolveCategoryIds(Tenant $tenant): array
     {

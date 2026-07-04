@@ -68,12 +68,12 @@ final class ReservationStateMachineTest extends TestCase
     private function advanceToStatus(Reservation $reservation, string $targetStatus, User $user): void
     {
         $path = [
-            'inquiry'     => [],
-            'confirmed'   => ['confirmed'],
+            'inquiry' => [],
+            'confirmed' => ['confirmed'],
             'in_progress' => ['confirmed', 'in_progress'],
-            'ready'       => ['confirmed', 'in_progress', 'ready'],
-            'delivered'   => ['confirmed', 'in_progress', 'ready', 'delivered'],
-            'cancelled'   => ['cancelled'],
+            'ready' => ['confirmed', 'in_progress', 'ready'],
+            'delivered' => ['confirmed', 'in_progress', 'ready', 'delivered'],
+            'cancelled' => ['cancelled'],
         ];
 
         foreach ($path[$targetStatus] ?? [] as $step) {
@@ -330,12 +330,12 @@ final class ReservationStateMachineTest extends TestCase
         app()->instance('currentTenant', $tenant);
 
         $cases = [
-            'inquiry'     => ['confirmed', 'cancelled'],
-            'confirmed'   => ['in_progress', 'cancelled'],
+            'inquiry' => ['confirmed', 'cancelled'],
+            'confirmed' => ['in_progress', 'cancelled'],
             'in_progress' => ['ready', 'cancelled'],
-            'ready'       => ['delivered', 'cancelled'],
-            'delivered'   => [],
-            'cancelled'   => [],
+            'ready' => ['delivered', 'cancelled'],
+            'delivered' => [],
+            'cancelled' => [],
         ];
 
         foreach ($cases as $status => $expected) {

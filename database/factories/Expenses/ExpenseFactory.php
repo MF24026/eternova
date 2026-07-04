@@ -37,20 +37,20 @@ class ExpenseFactory extends Factory
     public function definition(): array
     {
         return [
-            'branch_id'           => null,
+            'branch_id' => null,
             'expense_category_id' => null,
-            'description'         => $this->faker->sentence(4),
-            'amount_cents'        => $this->faker->numberBetween(1000, 100000),
-            'expense_date'        => $this->faker->dateTimeBetween('-60 days', 'now')->format('Y-m-d'),
-            'vendor'              => $this->faker->optional(0.7)->company(),
-            'payment_method'      => $this->faker->randomElement(['cash', 'card', 'transfer', 'other']),
-            'receipt_path'        => null,
-            'ocr_status'          => 'none',
-            'ocr_data'            => null,
+            'description' => $this->faker->sentence(4),
+            'amount_cents' => $this->faker->numberBetween(1000, 100000),
+            'expense_date' => $this->faker->dateTimeBetween('-60 days', 'now')->format('Y-m-d'),
+            'vendor' => $this->faker->optional(0.7)->company(),
+            'payment_method' => $this->faker->randomElement(['cash', 'card', 'transfer', 'other']),
+            'receipt_path' => null,
+            'ocr_status' => 'none',
+            'ocr_data' => null,
             // Manual entry default: staff-confirmed at creation (no OCR involved).
-            'is_verified'         => true,
-            'notes'               => $this->faker->optional(0.3)->sentence(),
-            'created_by'          => null,
+            'is_verified' => true,
+            'notes' => $this->faker->optional(0.3)->sentence(),
+            'created_by' => null,
         ];
     }
 
@@ -90,7 +90,7 @@ class ExpenseFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_verified' => true,
-            'ocr_status'  => 'none',
+            'ocr_status' => 'none',
         ]);
     }
 
@@ -104,15 +104,15 @@ class ExpenseFactory extends Factory
     public function draft(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_verified'  => false,
-            'ocr_status'   => 'done',
+            'is_verified' => false,
+            'ocr_status' => 'done',
             'receipt_path' => 'expenses/receipts/'.fake()->uuid().'.jpg',
-            'ocr_data'     => [
-                'vendor'       => fake()->company(),
+            'ocr_data' => [
+                'vendor' => fake()->company(),
                 'amount_cents' => fake()->numberBetween(1000, 50000),
-                'date'         => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
-                'raw_text'     => 'FACTURA 001 TOTAL $'.number_format(fake()->numberBetween(10, 500), 2),
-                'confidence'   => fake()->randomFloat(2, 0.50, 0.99),
+                'date' => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
+                'raw_text' => 'FACTURA 001 TOTAL $'.number_format(fake()->numberBetween(10, 500), 2),
+                'confidence' => fake()->randomFloat(2, 0.50, 0.99),
             ],
         ]);
     }
@@ -126,10 +126,10 @@ class ExpenseFactory extends Factory
     public function ocrFailed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_verified'  => false,
-            'ocr_status'   => 'failed',
+            'is_verified' => false,
+            'ocr_status' => 'failed',
             'receipt_path' => 'expenses/receipts/'.fake()->uuid().'.jpg',
-            'ocr_data'     => null,
+            'ocr_data' => null,
         ]);
     }
 }

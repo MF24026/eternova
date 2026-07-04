@@ -29,7 +29,7 @@ final class ReceiptTextParserTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->parser = new ReceiptTextParser();
+        $this->parser = new ReceiptTextParser;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

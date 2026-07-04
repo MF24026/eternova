@@ -242,7 +242,7 @@ onMounted(() => window.addEventListener('beforeunload', onBeforeUnloadNative))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnloadNative))
 
 onBeforeRouteLeave(async () => {
-    if (!isDirty.value) return
+    if (!isDirty.value) return true
     const leave = await confirm({
         title: 'Cambios sin guardar',
         message: DISCARD_PROMPT,
@@ -250,7 +250,7 @@ onBeforeRouteLeave(async () => {
         cancelLabel: 'Seguir editando',
         variant: 'danger',
     })
-    if (!leave) return false
+    return leave
 })
 </script>
 
