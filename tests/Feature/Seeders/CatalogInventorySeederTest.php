@@ -57,11 +57,12 @@ final class CatalogInventorySeederTest extends TestCase
             ->count();
         $this->assertSame(12, $rosaCategoryCount, 'rosa-eterna should have 12 categories');
 
-        // tatiana: 4 flat root categories
+        // tatiana: flat root categories from CategoriesSeeder plus starter-catalog
+        // categories from the demo pipeline. 8 is the deterministic clean-seed total.
         $tatianaCategoryCount = Category::withoutGlobalScopes()
             ->where('tenant_id', $tatiana->id)
             ->count();
-        $this->assertSame(4, $tatianaCategoryCount, 'tatiana should have 4 categories');
+        $this->assertSame(8, $tatianaCategoryCount, 'tatiana should have 8 categories');
     }
 
     public function test_rosa_eterna_categories_have_correct_hierarchy(): void
