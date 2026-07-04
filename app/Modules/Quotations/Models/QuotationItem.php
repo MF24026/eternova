@@ -52,10 +52,10 @@ final class QuotationItem extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'quantity'         => 'integer',
+        'quantity' => 'integer',
         'unit_price_cents' => 'integer',
         'line_total_cents' => 'integer',
-        'sort_order'       => 'integer',
+        'sort_order' => 'integer',
     ];
 
     /**

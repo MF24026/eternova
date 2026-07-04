@@ -144,14 +144,14 @@ final class ExpenseCategoryApiTest extends TestCase
             'name' => 'Servicios de Mensajeria',
             'type' => 'operating',
         ])->assertStatus(201)
-          ->assertJsonPath('data.name', 'Servicios de Mensajeria')
-          ->assertJsonPath('data.type', 'operating')
-          ->assertJsonPath('data.is_active', true);
+            ->assertJsonPath('data.name', 'Servicios de Mensajeria')
+            ->assertJsonPath('data.type', 'operating')
+            ->assertJsonPath('data.is_active', true);
 
         $this->assertDatabaseHas('expense_categories', [
             'tenant_id' => $tenant->id,
-            'name'      => 'Servicios de Mensajeria',
-            'type'      => 'operating',
+            'name' => 'Servicios de Mensajeria',
+            'type' => 'operating',
         ]);
     }
 
@@ -165,7 +165,7 @@ final class ExpenseCategoryApiTest extends TestCase
             'name' => 'Operaciones',
             'type' => 'operating',
         ])->assertStatus(422)
-          ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['name']);
     }
 
     public function test_store_allows_same_name_across_different_tenants(): void
@@ -203,7 +203,7 @@ final class ExpenseCategoryApiTest extends TestCase
             'name' => 'Test',
             'type' => 'invalid_type',
         ])->assertStatus(422)
-          ->assertJsonValidationErrors(['type']);
+            ->assertJsonValidationErrors(['type']);
     }
 
     // ── update ────────────────────────────────────────────────────────────────
@@ -216,7 +216,7 @@ final class ExpenseCategoryApiTest extends TestCase
         $this->tenantPatchJson($tenant, $owner, "/api/v1/expenses/categories/{$category->id}", [
             'name' => 'Operacion Nueva',
         ])->assertOk()
-          ->assertJsonPath('data.name', 'Operacion Nueva');
+            ->assertJsonPath('data.name', 'Operacion Nueva');
     }
 
     public function test_update_no_op_rename_keeps_same_name_without_unique_violation(): void
@@ -238,10 +238,10 @@ final class ExpenseCategoryApiTest extends TestCase
         $this->tenantPatchJson($tenant, $owner, "/api/v1/expenses/categories/{$category->id}", [
             'is_active' => false,
         ])->assertOk()
-          ->assertJsonPath('data.is_active', false);
+            ->assertJsonPath('data.is_active', false);
 
         $this->assertDatabaseHas('expense_categories', [
-            'id'        => $category->id,
+            'id' => $category->id,
             'is_active' => false,
         ]);
     }

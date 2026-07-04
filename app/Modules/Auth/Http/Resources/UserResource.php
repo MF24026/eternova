@@ -37,10 +37,10 @@ final class UserResource extends BaseResource
             // Current tenant's plan entitlements — drives the frontend plan-gating UI.
             // null when there is no active/trialing subscription (treat as no entitlements).
             'plan' => $plan === null ? null : [
-                'slug'     => $plan->slug,
-                'name'     => $plan->name,
+                'slug' => $plan->slug,
+                'name' => $plan->name,
                 'features' => $plan->features ?? [],
-                'limits'   => $plan->limits ?? [],
+                'limits' => $plan->limits ?? [],
             ],
             'tenants' => $this->resource->tenants->map(static function ($tenant) use ($currentTenant) {
                 return [

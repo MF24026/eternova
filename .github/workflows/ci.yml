@@ -96,11 +96,19 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run PHPUnit test suite
-        run: php artisan test
-
+      # Build assets before the test suite: feature tests that render the Inertia
+      # root view need public/build/manifest.json, otherwise they fail with a
+      # ViteManifestNotFoundException (HTTP 500) instead of exercising the route.
       - name: Build production assets
         run: npm run build
+
+      - name: Run PHPUnit test suite
+        # The runner reaches the service containers via mapped ports on 127.0.0.1,
+        # not by service hostname. phpunit.xml sets DB_HOST=mysql for local Sail
+        # (Docker network); this non-forced OS env overrides it for CI only.
+        env:
+          DB_HOST: 127.0.0.1
+        run: php artisan test
 
       - name: Verify API docs generate cleanly
         run: php artisan scribe:generate --no-interaction

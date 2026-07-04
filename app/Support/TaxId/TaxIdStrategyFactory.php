@@ -14,7 +14,7 @@ final class TaxIdStrategyFactory
     public static function for(string $countryCode): TaxIdStrategy
     {
         return match (strtoupper($countryCode)) {
-            'SV' => new SalvadoranTaxIdStrategy(),
+            'SV' => new SalvadoranTaxIdStrategy,
             default => new GenericTaxIdStrategy(self::labelFor($countryCode)),
         };
     }

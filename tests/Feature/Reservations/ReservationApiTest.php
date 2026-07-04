@@ -77,7 +77,7 @@ final class ReservationApiTest extends TestCase
         return $this->reservationService->capture(
             data: array_merge([
                 'description' => 'Arreglo floral para boda',
-                'occasion'    => 'Boda',
+                'occasion' => 'Boda',
                 'total_cents' => 25000,
             ], $overrides),
             actor: $actor,
@@ -123,7 +123,7 @@ final class ReservationApiTest extends TestCase
             ->assertJsonStructure([
                 'data',
                 'links' => ['first', 'last', 'prev', 'next'],
-                'meta'  => ['current_page', 'per_page', 'total', 'tenant_id'],
+                'meta' => ['current_page', 'per_page', 'total', 'tenant_id'],
                 'status_counts',
             ]);
 
@@ -329,7 +329,7 @@ final class ReservationApiTest extends TestCase
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/reservations', [
             'description' => 'Arreglo floral para boda',
-            'occasion'    => 'Boda',
+            'occasion' => 'Boda',
             'total_cents' => 20000,
         ])->assertStatus(201)
             ->assertJsonStructure([
@@ -354,8 +354,8 @@ final class ReservationApiTest extends TestCase
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
 
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/reservations', [
-            'description'            => 'Arreglo especial',
-            'total_cents'            => 50000,
+            'description' => 'Arreglo especial',
+            'total_cents' => 50000,
             'deposit_required_cents' => 5000,  // explicit override: 10%
         ])->assertStatus(201);
 
@@ -451,8 +451,8 @@ final class ReservationApiTest extends TestCase
 
         $this->assertDatabaseHas('reservation_status_history', [
             'reservation_id' => $reservation->id,
-            'to_status'      => 'confirmed',
-            'note'           => 'adelanto recibido en efectivo',
+            'to_status' => 'confirmed',
+            'note' => 'adelanto recibido en efectivo',
         ]);
     }
 
@@ -475,7 +475,7 @@ final class ReservationApiTest extends TestCase
 
         $this->assertDatabaseHas('reservation_payments', [
             'reservation_id' => $reservation->id,
-            'amount_cents'   => 6000,
+            'amount_cents' => 6000,
             'payment_method' => 'cash',
         ]);
     }
@@ -517,7 +517,7 @@ final class ReservationApiTest extends TestCase
         $this->assertNotNull($orderId);
 
         $this->assertDatabaseHas('reservations', [
-            'id'                 => $reservation->id,
+            'id' => $reservation->id,
             'converted_order_id' => $orderId,
         ]);
     }
@@ -628,7 +628,7 @@ final class ReservationApiTest extends TestCase
 
         $response = $this->tenantPutJson($tenant, $owner, '/api/v1/reservations/settings', [
             'deposit_pct' => 40,
-            'occasions'   => ['Boda', 'Cumpleanos', 'Corporativo'],
+            'occasions' => ['Boda', 'Cumpleanos', 'Corporativo'],
         ])->assertOk();
 
         $this->assertSame(40, $response->json('data.deposit_pct'));

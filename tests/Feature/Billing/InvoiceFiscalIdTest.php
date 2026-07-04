@@ -47,7 +47,7 @@ final class InvoiceFiscalIdTest extends TestCase
         $tenant = Tenant::factory()->create(['country_code' => 'SV', 'business_name' => 'Rosa Eterna']);
         $this->writeTaxDefault($tenant, 'DUI', '04210323-4');
 
-        $html = (new InvoicePdfService())->renderHtml($this->invoiceFor($tenant));
+        $html = (new InvoicePdfService)->renderHtml($this->invoiceFor($tenant));
 
         $this->assertStringContainsString('DUI: 04210323-4', $html);
     }
@@ -56,7 +56,7 @@ final class InvoiceFiscalIdTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['country_code' => 'SV', 'business_name' => 'Sin Fiscal']);
 
-        $html = (new InvoicePdfService())->renderHtml($this->invoiceFor($tenant));
+        $html = (new InvoicePdfService)->renderHtml($this->invoiceFor($tenant));
 
         // No tax rows -> no fiscal line, and the document still renders the tenant.
         $this->assertStringContainsString('Sin Fiscal', $html);

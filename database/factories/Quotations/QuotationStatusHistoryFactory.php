@@ -28,17 +28,17 @@ class QuotationStatusHistoryFactory extends Factory
 
         return [
             'quotation_id' => null,
-            'from_status'  => $this->faker->randomElement($statuses),
-            'to_status'    => $this->faker->randomElement($statuses),
-            'user_id'      => null,
-            'note'         => $this->faker->optional(0.3)->sentence(),
+            'from_status' => $this->faker->randomElement($statuses),
+            'to_status' => $this->faker->randomElement($statuses),
+            'user_id' => null,
+            'note' => $this->faker->optional(0.3)->sentence(),
         ];
     }
 
     public function forQuotation(Quotation $quotation): static
     {
         return $this->state(fn (array $attributes) => [
-            'tenant_id'    => $quotation->tenant_id,
+            'tenant_id' => $quotation->tenant_id,
             'quotation_id' => $quotation->id,
         ]);
     }
@@ -50,7 +50,7 @@ class QuotationStatusHistoryFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'from_status' => null,
-            'to_status'   => 'draft',
+            'to_status' => 'draft',
         ]);
     }
 

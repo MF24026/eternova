@@ -43,12 +43,12 @@ final class FakeOcrDriver implements OcrDriverInterface
     public function extract(string $absolutePath): OcrResult
     {
         return new OcrResult(
-            rawText:     self::RAW_TEXT,
-            vendor:      self::VENDOR,
+            rawText: self::RAW_TEXT,
+            vendor: self::VENDOR,
             amountCents: self::AMOUNT_CENTS,
-            date:        self::DATE,
-            confidence:  null,
-            lineItems:   [],
+            date: self::DATE,
+            confidence: null,
+            lineItems: [],
         );
     }
 }

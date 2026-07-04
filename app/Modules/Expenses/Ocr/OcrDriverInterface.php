@@ -22,12 +22,12 @@ interface OcrDriverInterface
     /**
      * Extract text and structured fields from an image or PDF file.
      *
-     * @param  string $absolutePath  Absolute filesystem path to the receipt file.
-     *                               For PDFs the driver handles conversion to image
-     *                               internally before running OCR.
-     * @return OcrResult             Populated with best-effort suggestions.
+     * @param  string  $absolutePath  Absolute filesystem path to the receipt file.
+     *                                For PDFs the driver handles conversion to image
+     *                                internally before running OCR.
+     * @return OcrResult Populated with best-effort suggestions.
      *
-     * @throws OcrException          On any unrecoverable extraction failure.
+     * @throws OcrException On any unrecoverable extraction failure.
      */
     public function extract(string $absolutePath): OcrResult;
 }

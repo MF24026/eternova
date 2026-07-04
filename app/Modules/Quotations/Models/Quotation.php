@@ -37,6 +37,7 @@ final class Quotation extends Model
 
     /** @use HasFactory<QuotationFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     protected static function newFactory(): QuotationFactory
@@ -71,13 +72,13 @@ final class Quotation extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'issue_date'       => 'date',
-        'valid_until'      => 'date',
-        'subtotal_cents'   => 'integer',
-        'discount_cents'   => 'integer',
-        'tax_rate_bps'     => 'integer',
-        'tax_cents'        => 'integer',
-        'total_cents'      => 'integer',
+        'issue_date' => 'date',
+        'valid_until' => 'date',
+        'subtotal_cents' => 'integer',
+        'discount_cents' => 'integer',
+        'tax_rate_bps' => 'integer',
+        'tax_cents' => 'integer',
+        'total_cents' => 'integer',
     ];
 
     /**

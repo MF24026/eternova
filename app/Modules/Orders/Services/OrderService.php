@@ -57,12 +57,12 @@ final readonly class OrderService
      * @var array<string, list<string>>
      */
     private const TRANSITIONS = [
-        'pending'    => ['preparing', 'cancelled'],
-        'preparing'  => ['ready', 'cancelled'],
-        'ready'      => ['dispatched', 'delivered', 'cancelled'],
+        'pending' => ['preparing', 'cancelled'],
+        'preparing' => ['ready', 'cancelled'],
+        'ready' => ['dispatched', 'delivered', 'cancelled'],
         'dispatched' => ['delivered', 'cancelled'],
-        'delivered'  => [],
-        'cancelled'  => [],
+        'delivered' => [],
+        'cancelled' => [],
     ];
 
     public function __construct(
@@ -224,42 +224,42 @@ final readonly class OrderService
             // Tax v1: always zero for reservation-derived orders.
             // TODO(#80): derive from tenant Settings tax_rate when that module ships.
             $order = $this->orders->create([
-                'tenant_id'      => $tenant->id,
-                'branch_id'      => $branch->id,
-                'customer_id'    => $customer?->id,
-                'order_number'   => $orderNumber,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
+                'customer_id' => $customer?->id,
+                'order_number' => $orderNumber,
                 'tracking_token' => $this->generateTrackingToken(),
-                'status'         => 'delivered',
-                'source'         => 'reservation',
+                'status' => 'delivered',
+                'source' => 'reservation',
                 'subtotal_cents' => $totalCents,
-                'tax_cents'      => 0,
+                'tax_cents' => 0,
                 'discount_cents' => 0,
-                'total_cents'    => $totalCents,
+                'total_cents' => $totalCents,
                 'payment_method' => null,
                 'payment_status' => $paymentStatus,
-                'notes'          => $notes,
-                'user_id'        => $user?->id,
+                'notes' => $notes,
+                'user_id' => $user?->id,
             ]);
 
             // Write the initial history entry. from_status=null signals this is the
             // birth of the order into its initial status, not a transition from prior state.
             OrderStatusHistory::create([
-                'tenant_id'   => $tenant->id,
-                'order_id'    => $order->id,
+                'tenant_id' => $tenant->id,
+                'order_id' => $order->id,
                 'from_status' => null,
-                'to_status'   => 'delivered',
-                'user_id'     => $user?->id,
-                'note'        => 'Created from reservation',
+                'to_status' => 'delivered',
+                'user_id' => $user?->id,
+                'note' => 'Created from reservation',
             ]);
 
             Log::info('Reservation order created', [
-                'order_id'       => $order->id,
-                'order_number'   => $order->order_number,
-                'tenant_id'      => $tenant->id,
-                'branch_id'      => $branch->id,
-                'total_cents'    => $totalCents,
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
+                'total_cents' => $totalCents,
                 'payment_status' => $paymentStatus,
-                'user_id'        => $user?->id,
+                'user_id' => $user?->id,
             ]);
 
             return $order;
@@ -307,44 +307,44 @@ final readonly class OrderService
             $orderNumber = $this->orders->nextOrderNumber($tenant);
 
             $order = $this->orders->create([
-                'tenant_id'      => $tenant->id,
-                'branch_id'      => $branch->id,
-                'customer_id'    => $customer?->id,
-                'order_number'   => $orderNumber,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
+                'customer_id' => $customer?->id,
+                'order_number' => $orderNumber,
                 'tracking_token' => $this->generateTrackingToken(),
-                'status'         => 'pending',
-                'source'         => 'quotation',
+                'status' => 'pending',
+                'source' => 'quotation',
                 'subtotal_cents' => $subtotalCents,
-                'tax_cents'      => $taxCents,
+                'tax_cents' => $taxCents,
                 'discount_cents' => $discountCents,
-                'total_cents'    => $totalCents,
+                'total_cents' => $totalCents,
                 'payment_method' => null,
                 'payment_status' => 'pending',
-                'notes'          => $notes,
-                'user_id'        => $user?->id,
+                'notes' => $notes,
+                'user_id' => $user?->id,
             ]);
 
             // Write the initial history entry. from_status=null signals this is the
             // birth of the order into its initial status, not a transition from prior state.
             OrderStatusHistory::create([
-                'tenant_id'   => $tenant->id,
-                'order_id'    => $order->id,
+                'tenant_id' => $tenant->id,
+                'order_id' => $order->id,
                 'from_status' => null,
-                'to_status'   => 'pending',
-                'user_id'     => $user?->id,
-                'note'        => 'Created from quotation',
+                'to_status' => 'pending',
+                'user_id' => $user?->id,
+                'note' => 'Created from quotation',
             ]);
 
             Log::info('Quotation order created', [
-                'order_id'       => $order->id,
-                'order_number'   => $order->order_number,
-                'tenant_id'      => $tenant->id,
-                'branch_id'      => $branch->id,
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
                 'subtotal_cents' => $subtotalCents,
-                'tax_cents'      => $taxCents,
+                'tax_cents' => $taxCents,
                 'discount_cents' => $discountCents,
-                'total_cents'    => $totalCents,
-                'user_id'        => $user?->id,
+                'total_cents' => $totalCents,
+                'user_id' => $user?->id,
             ]);
 
             return $order;

@@ -29,7 +29,7 @@ final class ResetPasswordController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             static function (User $user, string $password): void {
                 $user->forceFill([
-                    'password'       => Hash::make($password),
+                    'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
 

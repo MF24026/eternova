@@ -37,8 +37,8 @@ final class StarterCatalogService
 
     private const GALLERY = [[
         'thumbnail' => 'https://placehold.co/200',
-        'medium'    => 'https://placehold.co/600',
-        'full'      => 'https://placehold.co/1200',
+        'medium' => 'https://placehold.co/600',
+        'full' => 'https://placehold.co/1200',
     ]];
 
     public static function isValidTemplate(?string $template): bool
@@ -62,7 +62,7 @@ final class StarterCatalogService
         app()->instance('currentTenant', $tenant);
 
         try {
-            $definition  = $this->definition($template);
+            $definition = $this->definition($template);
             $categoryIds = $this->createCategories($definition['categories']);
             $this->createProducts($definition['products'], $categoryIds, $branch);
         } finally {
@@ -72,7 +72,7 @@ final class StarterCatalogService
 
     /**
      * @param  list<array{name: string, slug: string}>  $categories
-     * @return array<string, int|string>  slug => id
+     * @return array<string, int|string> slug => id
      */
     private function createCategories(array $categories): array
     {
@@ -80,8 +80,8 @@ final class StarterCatalogService
 
         foreach ($categories as $position => $category) {
             $row = Category::create([
-                'name'       => $category['name'],
-                'slug'       => $category['slug'],
+                'name' => $category['name'],
+                'slug' => $category['slug'],
                 'sort_order' => $position,
             ]);
             $ids[$category['slug']] = $row->id;
@@ -98,14 +98,14 @@ final class StarterCatalogService
     {
         foreach ($products as $definition) {
             $product = Product::create([
-                'name'             => $definition['name'],
-                'slug'             => Str::slug($definition['name']),
-                'sku_root'         => $definition['sku'],
-                'description'      => null,
+                'name' => $definition['name'],
+                'slug' => Str::slug($definition['name']),
+                'sku_root' => $definition['sku'],
+                'description' => null,
                 'base_price_cents' => $definition['price'],
-                'gallery'          => self::GALLERY,
-                'is_active'        => true,
-                'is_featured'      => $definition['featured'] ?? false,
+                'gallery' => self::GALLERY,
+                'is_active' => true,
+                'is_featured' => $definition['featured'] ?? false,
             ]);
 
             $linkIds = collect($definition['categories'])
@@ -120,19 +120,19 @@ final class StarterCatalogService
 
             foreach ($definition['variants'] as $position => $variant) {
                 $row = ProductVariant::create([
-                    'product_id'      => $product->id,
-                    'sku'             => $definition['sku'].'-'.strtoupper(Str::slug($variant['label'])),
-                    'price_cents'     => $variant['price'],
+                    'product_id' => $product->id,
+                    'sku' => $definition['sku'].'-'.strtoupper(Str::slug($variant['label'])),
+                    'price_cents' => $variant['price'],
                     'min_stock_alert' => self::LOW_STOCK_ALERT,
-                    'options'         => ['Presentacion' => $variant['label']],
-                    'position'        => $position,
+                    'options' => ['Presentacion' => $variant['label']],
+                    'position' => $position,
                 ]);
 
                 if ($branch !== null) {
                     BranchInventory::create([
-                        'branch_id'          => $branch->id,
+                        'branch_id' => $branch->id,
                         'product_variant_id' => $row->id,
-                        'quantity'           => self::STARTING_QUANTITY,
+                        'quantity' => self::STARTING_QUANTITY,
                     ]);
                 }
             }
@@ -146,9 +146,9 @@ final class StarterCatalogService
     {
         return match ($template) {
             'accesorios' => $this->accesorios(),
-            'peluches'   => $this->peluches(),
+            'peluches' => $this->peluches(),
             'reposteria' => $this->reposteria(),
-            default      => $this->floreria(),
+            default => $this->floreria(),
         };
     }
 

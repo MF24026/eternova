@@ -28,15 +28,15 @@ namespace App\Modules\Expenses\Ocr;
 final readonly class OcrResult
 {
     /**
-     * @param list<array<string, mixed>> $lineItems
+     * @param  list<array<string, mixed>>  $lineItems
      */
     public function __construct(
-        public readonly string  $rawText,
+        public readonly string $rawText,
         public readonly ?string $vendor,
-        public readonly ?int    $amountCents,
+        public readonly ?int $amountCents,
         public readonly ?string $date,
-        public readonly ?float  $confidence,
-        public readonly array   $lineItems = [],
+        public readonly ?float $confidence,
+        public readonly array $lineItems = [],
     ) {}
 
     /**
@@ -57,12 +57,12 @@ final readonly class OcrResult
     public function toArray(): array
     {
         return [
-            'vendor'       => $this->vendor,
+            'vendor' => $this->vendor,
             'amount_cents' => $this->amountCents,
-            'date'         => $this->date,
-            'raw_text'     => $this->rawText,
-            'confidence'   => $this->confidence,
-            'line_items'   => $this->lineItems,
+            'date' => $this->date,
+            'raw_text' => $this->rawText,
+            'confidence' => $this->confidence,
+            'line_items' => $this->lineItems,
         ];
     }
 }

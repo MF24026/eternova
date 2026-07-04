@@ -38,7 +38,7 @@ final class BillingSubscribeTest extends TestCase
 
     public function test_changing_plan_cancels_the_previous_recurring_link(): void
     {
-        $fake = new FakeGateway();
+        $fake = new FakeGateway;
         $this->app->instance(PaymentGatewayInterface::class, $fake);
 
         $tenant = Tenant::factory()->create();

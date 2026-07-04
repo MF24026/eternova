@@ -28,14 +28,14 @@ final class QuotationStatusHistoryResource extends BaseResource
         $entry = $this->resource;
 
         return [
-            'id'          => $entry->id,
+            'id' => $entry->id,
             'from_status' => $entry->from_status,
-            'to_status'   => $entry->to_status,
-            'note'        => $entry->note,
-            'user'        => $this->when(
+            'to_status' => $entry->to_status,
+            'note' => $entry->note,
+            'user' => $this->when(
                 $entry->relationLoaded('user') && $entry->user !== null,
                 static fn () => [
-                    'id'   => $entry->user?->id,
+                    'id' => $entry->user?->id,
                     'name' => $entry->user?->name,
                 ],
             ),
