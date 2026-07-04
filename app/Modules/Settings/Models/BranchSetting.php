@@ -68,14 +68,14 @@ final class BranchSetting extends Model
      */
     public static function resolvedGroup(string $group, ?string $branchId = null): array
     {
-        $resolved = static::codedDefaults($group);
+        $resolved = self::codedDefaults($group);
 
         if (! app()->bound('currentTenant')) {
             return $resolved;
         }
 
         // Tenant default rows (branch_id = null). TenantScope filters by tenant.
-        $defaults = static::query()
+        $defaults = self::query()
             ->where('group', $group)
             ->whereNull('branch_id')
             ->pluck('value', 'key')
@@ -85,7 +85,7 @@ final class BranchSetting extends Model
 
         // Per-branch overrides win when a branch is given (future; null today).
         if ($branchId !== null) {
-            $overrides = static::query()
+            $overrides = self::query()
                 ->where('group', $group)
                 ->where('branch_id', $branchId)
                 ->pluck('value', 'key')
@@ -109,14 +109,14 @@ final class BranchSetting extends Model
      */
     public static function writeDefault(string $group, array $values): void
     {
-        $allowed = array_keys(static::codedDefaults($group));
+        $allowed = array_keys(self::codedDefaults($group));
 
         foreach ($values as $key => $value) {
             if (! in_array($key, $allowed, true)) {
                 continue;
             }
 
-            static::updateOrCreate(
+            self::updateOrCreate(
                 ['group' => $group, 'key' => $key, 'branch_id' => null],
                 ['value' => $value],
             );

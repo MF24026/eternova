@@ -28,15 +28,15 @@ final class ReservationPaymentResource extends BaseResource
         $payment = $this->resource;
 
         return [
-            'id'             => $payment->id,
-            'amount_cents'   => $payment->amount_cents,
+            'id' => $payment->id,
+            'amount_cents' => $payment->amount_cents,
             'payment_method' => $payment->payment_method,
-            'reference'      => $payment->reference,
-            'paid_at'        => $payment->paid_at?->toIso8601String(),
-            'recorder'       => $this->when(
+            'reference' => $payment->reference,
+            'paid_at' => $payment->paid_at?->toIso8601String(),
+            'recorder' => $this->when(
                 $payment->relationLoaded('recorder') && $payment->recorder !== null,
                 static fn () => [
-                    'id'   => $payment->recorder?->id,
+                    'id' => $payment->recorder?->id,
                     'name' => $payment->recorder?->name,
                 ],
             ),

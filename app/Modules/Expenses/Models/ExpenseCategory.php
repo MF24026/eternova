@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Expenses\Models;
 
-use App\Modules\Tenancy\Models\Tenant;
 use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
+use App\Modules\Tenancy\Models\Tenant;
 use Database\Factories\Expenses\ExpenseCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

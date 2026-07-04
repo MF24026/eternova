@@ -66,7 +66,7 @@ final class SecurityHeaders
     private function contentSecurityPolicy(): string
     {
         $scriptSrc = app()->isProduction()
-            ? "'self' 'nonce-" . Vite::cspNonce() . "'"
+            ? "'self' 'nonce-".Vite::cspNonce()."'"
             : "'self' 'unsafe-inline' 'unsafe-eval'";
 
         return implode('; ', [

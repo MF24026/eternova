@@ -43,9 +43,9 @@ final class ReceiptTextParser
         $lines = $this->splitLines($text);
 
         return [
-            'vendor'       => $this->extractVendor($lines),
+            'vendor' => $this->extractVendor($lines),
             'amount_cents' => $this->extractAmountCents($lines),
-            'date'         => $this->extractDate($lines),
+            'date' => $this->extractDate($lines),
         ];
     }
 
@@ -68,8 +68,7 @@ final class ReceiptTextParser
         // Step 1: search TOTAL lines (case-insensitive, exclude SUBTOTAL).
         $totalLines = array_filter(
             $lines,
-            static fn (string $line): bool =>
-                stripos($line, 'TOTAL') !== false &&
+            static fn (string $line): bool => stripos($line, 'TOTAL') !== false &&
                 stripos($line, 'SUBTOTAL') === false,
         );
 
@@ -114,7 +113,7 @@ final class ReceiptTextParser
      *   - Thousands separators: 1.234,56  |  1,234.56  |  1234.56  |  1234,56
      *   - Decimal-less amounts: $500 → 50000 centavos (only when prefixed)
      *
-     * @return list<int>  Values in centavos (integer).
+     * @return list<int> Values in centavos (integer).
      */
     private function extractMonetaryValues(string $line): array
     {
@@ -130,7 +129,7 @@ final class ReceiptTextParser
         $results = [];
 
         // Pattern A: currency symbol present — capture the full number.
-        $patternA = '/(?:' . $currencyPattern . ')(' . $numberPattern . ')\b/u';
+        $patternA = '/(?:'.$currencyPattern.')('.$numberPattern.')\b/u';
         if (preg_match_all($patternA, $line, $matches)) {
             foreach ($matches[1] as $raw) {
                 $value = $this->parseCurrencyString($raw);
@@ -191,7 +190,7 @@ final class ReceiptTextParser
             // Decimal part: right-pad to 2 digits so "5" → "50" centavos.
             $decimalPart = str_pad($m[2], 2, '0', STR_PAD_RIGHT);
 
-            if (!ctype_digit($integerPart) || !ctype_digit($decimalPart)) {
+            if (! ctype_digit($integerPart) || ! ctype_digit($decimalPart)) {
                 return null;
             }
 
@@ -202,7 +201,7 @@ final class ReceiptTextParser
         // Strip all separators.
         $digits = preg_replace('/[.,]/', '', $raw) ?? '';
 
-        if ($digits === '' || !ctype_digit($digits)) {
+        if ($digits === '' || ! ctype_digit($digits)) {
             return null;
         }
 
@@ -318,13 +317,13 @@ final class ReceiptTextParser
         $taxIdPattern = '/\b(?:RUC|NIT|RFC|NRC|CUIT|RIF)\b/i';
 
         foreach ($lines as $index => $line) {
-            if (!preg_match($taxIdPattern, $line)) {
+            if (! preg_match($taxIdPattern, $line)) {
                 continue;
             }
 
             // Check the line above and below the tax-id line.
             foreach ([$index - 1, $index + 1] as $adjacent) {
-                if (!isset($lines[$adjacent])) {
+                if (! isset($lines[$adjacent])) {
                     continue;
                 }
                 $candidate = trim($lines[$adjacent]);
@@ -368,7 +367,7 @@ final class ReceiptTextParser
         }
 
         // Must contain at least one letter.
-        if (!preg_match('/[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]/u', $line)) {
+        if (! preg_match('/[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]/u', $line)) {
             return false;
         }
 
@@ -387,7 +386,7 @@ final class ReceiptTextParser
     private function splitLines(string $text): array
     {
         $normalised = str_replace(["\r\n", "\r"], "\n", $text);
-        $lines      = explode("\n", $normalised);
+        $lines = explode("\n", $normalised);
 
         return array_values(array_filter($lines, static fn (string $l): bool => trim($l) !== ''));
     }

@@ -6,8 +6,8 @@ namespace App\Modules\Expenses\Models;
 
 use App\Models\User;
 use App\Modules\Tenancy\Models\Branch;
-use App\Modules\Tenancy\Models\Tenant;
 use App\Modules\Tenancy\Models\Concerns\BelongsToTenant;
+use App\Modules\Tenancy\Models\Tenant;
 use Database\Factories\Expenses\ExpenseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,6 +38,7 @@ final class Expense extends Model
 
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     protected static function newFactory(): ExpenseFactory
@@ -69,10 +70,10 @@ final class Expense extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'amount_cents'  => 'integer',
-        'expense_date'  => 'date',
-        'ocr_data'      => 'array',
-        'is_verified'   => 'boolean',
+        'amount_cents' => 'integer',
+        'expense_date' => 'date',
+        'ocr_data' => 'array',
+        'is_verified' => 'boolean',
     ];
 
     /**

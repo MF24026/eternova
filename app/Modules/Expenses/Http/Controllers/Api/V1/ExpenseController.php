@@ -59,14 +59,14 @@ final class ExpenseController extends Controller
 
         $filters = [
             'expense_category_id' => $request->query('expense_category_id'),
-            'branch_id'           => $request->query('branch_id'),
-            'date_from'           => $request->query('date_from'),
-            'date_to'             => $request->query('date_to'),
-            'month'               => $request->query('month'),
-            'ocr_status'          => $request->query('ocr_status'),
-            'is_verified'         => $request->query('is_verified'),
-            'search'              => $request->query('search'),
-            'per_page'            => $request->query('per_page', '20'),
+            'branch_id' => $request->query('branch_id'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'month' => $request->query('month'),
+            'ocr_status' => $request->query('ocr_status'),
+            'is_verified' => $request->query('is_verified'),
+            'search' => $request->query('search'),
+            'per_page' => $request->query('per_page', '20'),
         ];
 
         $paginator = $this->expenses->paginate($filters);
@@ -99,9 +99,9 @@ final class ExpenseController extends Controller
         $month = (string) ($request->query('month') ?? now()->format('Y-m'));
 
         $filters = [
-            'month'         => $request->query('month') ? $month : null,
-            'date_from'     => $request->query('date_from'),
-            'date_to'       => $request->query('date_to'),
+            'month' => $request->query('month') ? $month : null,
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
             'verified_only' => filter_var($request->query('verified_only', false), FILTER_VALIDATE_BOOL),
         ];
 
@@ -115,9 +115,9 @@ final class ExpenseController extends Controller
         return response()->json([
             'data' => [
                 'period' => [
-                    'month'     => $filters['month'],
+                    'month' => $filters['month'],
                     'date_from' => $filters['date_from'],
-                    'date_to'   => $filters['date_to'],
+                    'date_to' => $filters['date_to'],
                 ],
                 'total_cents' => $report['total_cents'],
                 'by_category' => $report['by_category'],
@@ -188,7 +188,7 @@ final class ExpenseController extends Controller
 
         Log::info('Expense deletion requested', [
             'expense_id' => $expense->id,
-            'tenant_id'  => $expense->tenant_id,
+            'tenant_id' => $expense->tenant_id,
         ]);
 
         $this->expenseService->delete($expense);
@@ -222,7 +222,7 @@ final class ExpenseController extends Controller
         if (isset($filters['month']) && $filters['month'] !== '') {
             $month = (string) $filters['month'];
             $query->whereYear('expense_date', (int) substr($month, 0, 4))
-                  ->whereMonth('expense_date', (int) substr($month, 5, 2));
+                ->whereMonth('expense_date', (int) substr($month, 5, 2));
         } else {
             if (isset($filters['date_from']) && $filters['date_from'] !== '') {
                 $query->whereDate('expense_date', '>=', (string) $filters['date_from']);
@@ -245,7 +245,7 @@ final class ExpenseController extends Controller
             $term = (string) $filters['search'];
             $query->where(static function ($q) use ($term): void {
                 $q->where('vendor', 'like', "%{$term}%")
-                  ->orWhere('description', 'like', "%{$term}%");
+                    ->orWhere('description', 'like', "%{$term}%");
             });
         }
 

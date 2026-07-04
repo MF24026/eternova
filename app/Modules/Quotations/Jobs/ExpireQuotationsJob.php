@@ -93,13 +93,13 @@ final class ExpireQuotationsJob implements ShouldQueue
                 // Write the history row directly, mirroring what transitionTo() does.
                 // user_id = null signals this is a system (automated) transition.
                 QuotationStatusHistory::insert([
-                    'tenant_id'    => $quotation->tenant_id,
+                    'tenant_id' => $quotation->tenant_id,
                     'quotation_id' => $quotation->id,
-                    'from_status'  => $quotation->status,
-                    'to_status'    => 'expired',
-                    'user_id'      => null,
-                    'note'         => 'Vencida automaticamente',
-                    'created_at'   => now(),
+                    'from_status' => $quotation->status,
+                    'to_status' => 'expired',
+                    'user_id' => null,
+                    'note' => 'Vencida automaticamente',
+                    'created_at' => now(),
                 ]);
             });
 
@@ -108,7 +108,7 @@ final class ExpireQuotationsJob implements ShouldQueue
 
         Log::info('ExpireQuotationsJob: expired quotations processed', [
             'expired_count' => $expiredCount,
-            'today'         => $today->toDateString(),
+            'today' => $today->toDateString(),
         ]);
     }
 }

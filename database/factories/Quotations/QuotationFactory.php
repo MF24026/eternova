@@ -39,22 +39,22 @@ class QuotationFactory extends Factory
         $issueDate = $this->faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d');
 
         return [
-            'branch_id'         => null,
-            'customer_id'       => null,
-            'quotation_number'  => 'COT-'.date('Y').'-'.str_pad((string) $this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
-            'issue_date'        => $issueDate,
-            'valid_until'       => $this->faker->optional(0.7)->dateTimeBetween($issueDate, '+30 days')?->format('Y-m-d'),
-            'subtotal_cents'    => $subtotal,
-            'discount_cents'    => 0,
-            'tax_rate_bps'      => 0,
-            'tax_cents'         => 0,
-            'total_cents'       => $subtotal,
-            'status'            => 'draft',
-            'notes'             => $this->faker->optional(0.4)->sentence(),
-            'terms'             => $this->faker->optional(0.3)->sentence(),
+            'branch_id' => null,
+            'customer_id' => null,
+            'quotation_number' => 'COT-'.date('Y').'-'.str_pad((string) $this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
+            'issue_date' => $issueDate,
+            'valid_until' => $this->faker->optional(0.7)->dateTimeBetween($issueDate, '+30 days')?->format('Y-m-d'),
+            'subtotal_cents' => $subtotal,
+            'discount_cents' => 0,
+            'tax_rate_bps' => 0,
+            'tax_cents' => 0,
+            'total_cents' => $subtotal,
+            'status' => 'draft',
+            'notes' => $this->faker->optional(0.4)->sentence(),
+            'terms' => $this->faker->optional(0.3)->sentence(),
             'converted_order_id' => null,
-            'assigned_to'       => null,
-            'created_by'        => null,
+            'assigned_to' => null,
+            'created_by' => null,
         ];
     }
 
@@ -130,7 +130,7 @@ class QuotationFactory extends Factory
     public function expired(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status'      => 'expired',
+            'status' => 'expired',
             'valid_until' => $this->faker->dateTimeBetween('-2 months', '-1 day')->format('Y-m-d'),
         ]);
     }

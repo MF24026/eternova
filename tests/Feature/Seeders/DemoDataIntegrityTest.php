@@ -14,11 +14,11 @@ use Database\Seeders\Catalog\ProductsSeeder;
 use Database\Seeders\Catalog\TagsSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoTenantsSeeder;
+use Database\Seeders\Expenses\ExpenseCategoriesSeeder;
+use Database\Seeders\Expenses\ExpensesSeeder;
 use Database\Seeders\Inventory\BranchInventorySeeder;
 use Database\Seeders\Orders\OrdersSeeder;
 use Database\Seeders\PlansSeeder;
-use Database\Seeders\Expenses\ExpenseCategoriesSeeder;
-use Database\Seeders\Expenses\ExpensesSeeder;
 use Database\Seeders\Reservations\ReservationsSeeder;
 use Database\Seeders\ReservedSubdomainsSeeder;
 use Database\Seeders\SuperAdminUserSeeder;
@@ -207,7 +207,7 @@ final class DemoDataIntegrityTest extends TestCase
         $this->seed(OrdersSeeder::class);
 
         $rosaEterna = Tenant::findBySlug('rosa-eterna');
-        $tatiana    = Tenant::findBySlug('tatiana');
+        $tatiana = Tenant::findBySlug('tatiana');
 
         $this->assertNotNull($rosaEterna);
         $this->assertNotNull($tatiana);
@@ -342,7 +342,7 @@ final class DemoDataIntegrityTest extends TestCase
         $this->seed(BranchInventorySeeder::class);
         $this->seed(OrdersSeeder::class);
 
-        $year    = now()->year;
+        $year = now()->year;
         $tenants = Tenant::all();
 
         foreach ($tenants as $tenant) {
@@ -462,12 +462,12 @@ final class DemoDataIntegrityTest extends TestCase
         $this->seedReservationPrerequisites();
 
         $rosaEterna = Tenant::findBySlug('rosa-eterna');
-        $tatiana    = Tenant::findBySlug('tatiana');
+        $tatiana = Tenant::findBySlug('tatiana');
 
         $this->assertNotNull($rosaEterna);
         $this->assertNotNull($tatiana);
 
-        $rosaCount    = DB::table('reservations')->where('tenant_id', $rosaEterna->id)->count();
+        $rosaCount = DB::table('reservations')->where('tenant_id', $rosaEterna->id)->count();
         $tatianaCount = DB::table('reservations')->where('tenant_id', $tatiana->id)->count();
 
         $this->assertGreaterThanOrEqual(10, $rosaCount, 'rosa-eterna should have at least 10 reservations');
@@ -545,7 +545,7 @@ final class DemoDataIntegrityTest extends TestCase
                 $paymentSum,
                 (int) $reservation->deposit_paid_cents,
                 "deposit_paid_cents ({$reservation->deposit_paid_cents}) must equal sum of payments "
-                . "({$paymentSum}) for reservation {$reservation->reservation_number}",
+                ."({$paymentSum}) for reservation {$reservation->reservation_number}",
             );
         }
     }
@@ -584,7 +584,7 @@ final class DemoDataIntegrityTest extends TestCase
         $this->seedReservationPrerequisites();
 
         $rosaEterna = Tenant::findBySlug('rosa-eterna');
-        $tatiana    = Tenant::findBySlug('tatiana');
+        $tatiana = Tenant::findBySlug('tatiana');
 
         $this->assertNotNull($rosaEterna);
         $this->assertNotNull($tatiana);
@@ -612,7 +612,7 @@ final class DemoDataIntegrityTest extends TestCase
     {
         $this->seedReservationPrerequisites();
 
-        $year    = now()->year;
+        $year = now()->year;
         $tenants = Tenant::all();
 
         foreach ($tenants as $tenant) {
@@ -639,7 +639,7 @@ final class DemoDataIntegrityTest extends TestCase
                 (int) $maxSeededSeq,
                 (int) $lastSequence,
                 "reservation_sequences.last_sequence ({$lastSequence}) must be >= highest seeded seq "
-                . "({$maxSeededSeq}) for {$tenant->slug}",
+                ."({$maxSeededSeq}) for {$tenant->slug}",
             );
         }
     }
@@ -722,12 +722,12 @@ final class DemoDataIntegrityTest extends TestCase
         $this->seedExpensePrerequisites();
 
         $rosaEterna = Tenant::findBySlug('rosa-eterna');
-        $tatiana    = Tenant::findBySlug('tatiana');
+        $tatiana = Tenant::findBySlug('tatiana');
 
         $this->assertNotNull($rosaEterna);
         $this->assertNotNull($tatiana);
 
-        $rosaCount    = DB::table('expenses')->where('tenant_id', $rosaEterna->id)->count();
+        $rosaCount = DB::table('expenses')->where('tenant_id', $rosaEterna->id)->count();
         $tatianaCount = DB::table('expenses')->where('tenant_id', $tatiana->id)->count();
 
         $this->assertGreaterThanOrEqual(25, $rosaCount, 'rosa-eterna should have at least 25 expenses');
@@ -749,7 +749,7 @@ final class DemoDataIntegrityTest extends TestCase
                 3,
                 $distinctMonths->count(),
                 "Tenant {$tenant->slug} must have expenses spanning at least 3 distinct months "
-                . "(got {$distinctMonths->count()}: {$distinctMonths->implode(', ')})",
+                ."(got {$distinctMonths->count()}: {$distinctMonths->implode(', ')})",
             );
         }
     }
@@ -775,7 +775,7 @@ final class DemoDataIntegrityTest extends TestCase
             $this->assertSame(
                 $expectedTypes,
                 $usedTypes,
-                "Tenant {$tenant->slug} must use all 5 category types (got: " . implode(', ', $usedTypes) . ")",
+                "Tenant {$tenant->slug} must use all 5 category types (got: ".implode(', ', $usedTypes).')',
             );
 
             // At least one uncategorised expense must exist per tenant.
@@ -821,7 +821,7 @@ final class DemoDataIntegrityTest extends TestCase
                 1,
                 $ocrDraftCount,
                 "Tenant {$tenant->slug} must have at least 1 OCR-done draft (is_verified=false) "
-                . "for the E7 verification queue",
+                .'for the E7 verification queue',
             );
         }
     }
@@ -856,8 +856,8 @@ final class DemoDataIntegrityTest extends TestCase
             $this->assertArrayHasKey('raw_text', $decoded, "ocr_data must contain 'raw_text'");
             $this->assertArrayHasKey('confidence', $decoded, "ocr_data must contain 'confidence'");
 
-            $this->assertIsInt($decoded['amount_cents'], "ocr_data.amount_cents must be an integer");
-            $this->assertGreaterThan(0, $decoded['amount_cents'], "ocr_data.amount_cents must be positive");
+            $this->assertIsInt($decoded['amount_cents'], 'ocr_data.amount_cents must be an integer');
+            $this->assertGreaterThan(0, $decoded['amount_cents'], 'ocr_data.amount_cents must be positive');
         }
     }
 
@@ -894,7 +894,7 @@ final class DemoDataIntegrityTest extends TestCase
                 0,
                 $crossLeakCount,
                 "Cross-tenant category leak detected for tenant {$tenant->slug}: "
-                . "an expense references a category from another tenant",
+                .'an expense references a category from another tenant',
             );
         }
     }

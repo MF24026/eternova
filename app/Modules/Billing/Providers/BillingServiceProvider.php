@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Billing\Providers;
 
+use App\Models\User;
 use App\Modules\Billing\Console\Commands\BillingMaintenanceCommand;
 use App\Modules\Billing\Console\Commands\HardDeleteOldCommand;
 use App\Modules\Billing\Console\Commands\ReconcileSubscriptionsCommand;
@@ -25,7 +26,6 @@ use App\Modules\Billing\Listeners\SendChargeFailedNotification;
 use App\Modules\Billing\Listeners\SendSuspendedNotification;
 use App\Modules\Billing\Listeners\SendTrialEndingNotification;
 use App\Modules\Billing\Support\CircuitBreaker;
-use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -51,7 +51,7 @@ final class BillingServiceProvider extends ServiceProvider
                     apiSecret: (string) config('billing.wompi.api_secret'),
                     authBaseUrl: (string) config('billing.wompi.auth_url'),
                     baseUrl: (string) config('billing.wompi.base_url'),
-                    errorTranslator: new WompiErrorTranslator(),
+                    errorTranslator: new WompiErrorTranslator,
                     apiBreaker: new CircuitBreaker(
                         'gateway:wompi:api',
                         (int) config('billing.circuit.threshold', 5),
@@ -61,7 +61,7 @@ final class BillingServiceProvider extends ServiceProvider
                 );
             }
 
-            return new FakeGateway();
+            return new FakeGateway;
         });
     }
 

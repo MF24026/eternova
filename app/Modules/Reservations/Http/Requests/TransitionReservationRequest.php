@@ -37,7 +37,7 @@ final class TransitionReservationRequest extends FormRequest
                 'string',
                 'in:inquiry,confirmed,in_progress,ready,delivered,cancelled',
             ],
-            'note'  => ['nullable', 'string', 'max:500'],
+            'note' => ['nullable', 'string', 'max:500'],
             'force' => ['nullable', 'boolean'],
         ];
     }

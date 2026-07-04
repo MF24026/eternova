@@ -27,10 +27,10 @@ final class RecordPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount_cents'   => ['required', 'integer', 'min:1'],
+            'amount_cents' => ['required', 'integer', 'min:1'],
             'payment_method' => ['required', 'string', 'in:cash,card,transfer,other'],
-            'reference'      => ['nullable', 'string', 'max:255'],
-            'paid_at'        => ['nullable', 'date'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'paid_at' => ['nullable', 'date'],
         ];
     }
 }

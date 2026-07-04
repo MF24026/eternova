@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Settings\Http\Requests;
 
-use App\Modules\Settings\Services\SettingsService;
 use App\Support\TaxId\Rules\ValidTaxId;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -33,63 +32,63 @@ final class UpdateSettingsRequest extends FormRequest
         /** @var string $group */
         $group = (string) $this->route('group');
 
-        $catalog    = (array) config('tenant-settings.catalog', []);
-        $countries  = array_keys((array) ($catalog['countries'] ?? []));
+        $catalog = (array) config('tenant-settings.catalog', []);
+        $countries = array_keys((array) ($catalog['countries'] ?? []));
         $currencies = (array) ($catalog['currencies'] ?? []);
-        $languages  = array_keys((array) ($catalog['languages'] ?? []));
+        $languages = array_keys((array) ($catalog['languages'] ?? []));
 
         return match ($group) {
             'brand' => [
-                'business_name'   => ['required', 'string', 'max:120'],
-                'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+                'business_name' => ['required', 'string', 'max:120'],
+                'primary_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
                 'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
                 // SVG is intentionally NOT accepted: an SVG can carry a <script>
                 // that executes when the asset is opened directly (logos are served
                 // from the public disk, often by nginx/CDN that bypass our CSP), so
                 // a tenant-uploaded SVG is a stored-XSS vector. Raster only.
-                'logo'            => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
-                'favicon'         => ['nullable', 'image', 'mimes:png,ico', 'max:512'],
+                'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+                'favicon' => ['nullable', 'image', 'mimes:png,ico', 'max:512'],
             ],
             'locale' => [
-                'currency'     => ['required', 'string', Rule::in($currencies)],
+                'currency' => ['required', 'string', Rule::in($currencies)],
                 'country_code' => ['required', 'string', Rule::in($countries)],
-                'language'     => ['required', 'string', Rule::in($languages)],
-                'timezone'     => ['required', 'timezone'],
+                'language' => ['required', 'string', Rule::in($languages)],
+                'timezone' => ['required', 'timezone'],
             ],
             'contact' => [
-                'phone'   => ['nullable', 'string', 'max:30'],
-                'email'   => ['nullable', 'email', 'max:150'],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'email' => ['nullable', 'email', 'max:150'],
                 'website' => ['nullable', 'string', 'max:150'],
                 'address' => ['nullable', 'string', 'max:300'],
             ],
             'tax' => [
-                'enabled'   => ['required', 'boolean'],
-                'rate_bps'  => ['required', 'integer', 'min:0', 'max:9999'],
-                'id_label'  => ['nullable', 'string', 'max:20'],
+                'enabled' => ['required', 'boolean'],
+                'rate_bps' => ['required', 'integer', 'min:0', 'max:9999'],
+                'id_label' => ['nullable', 'string', 'max:20'],
                 'id_number' => ['nullable', 'string', 'max:40', new ValidTaxId($this->tenantCountryCode())],
             ],
             'orders' => [
-                'auto_confirm'         => ['required', 'boolean'],
+                'auto_confirm' => ['required', 'boolean'],
                 'default_prep_minutes' => ['required', 'integer', 'min:0', 'max:1440'],
-                'pending_alert_hours'  => ['required', 'integer', 'min:1', 'max:72'],
+                'pending_alert_hours' => ['required', 'integer', 'min:1', 'max:72'],
             ],
             'quotations' => [
                 'quotation_tax_rate_bps' => ['required', 'integer', 'min:0', 'max:9999'],
-                'quotation_valid_days'   => ['required', 'integer', 'min:1', 'max:365'],
-                'quotation_terms'        => ['nullable', 'string', 'max:10000'],
+                'quotation_valid_days' => ['required', 'integer', 'min:1', 'max:365'],
+                'quotation_terms' => ['nullable', 'string', 'max:10000'],
             ],
             'reservations' => [
-                'reservation_deposit_pct'   => ['required', 'integer', 'min:0', 'max:100'],
-                'reservation_occasions'     => ['nullable', 'array', 'max:50'],
-                'reservation_occasions.*'   => ['string', 'max:60'],
+                'reservation_deposit_pct' => ['required', 'integer', 'min:0', 'max:100'],
+                'reservation_occasions' => ['nullable', 'array', 'max:50'],
+                'reservation_occasions.*' => ['string', 'max:60'],
             ],
             'notifications' => [
-                'new_order'             => ['required', 'boolean'],
-                'order_pending'         => ['required', 'boolean'],
-                'low_stock'             => ['required', 'boolean'],
+                'new_order' => ['required', 'boolean'],
+                'order_pending' => ['required', 'boolean'],
+                'low_stock' => ['required', 'boolean'],
                 'reservation_confirmed' => ['required', 'boolean'],
-                'quotation_accepted'    => ['required', 'boolean'],
-                'payment_received'      => ['required', 'boolean'],
+                'quotation_accepted' => ['required', 'boolean'],
+                'payment_received' => ['required', 'boolean'],
             ],
             default => [],
         };
@@ -105,10 +104,10 @@ final class UpdateSettingsRequest extends FormRequest
         $group = (string) $this->route('group');
 
         $booleanKeys = match ($group) {
-            'tax'           => ['enabled'],
-            'orders'        => ['auto_confirm'],
+            'tax' => ['enabled'],
+            'orders' => ['auto_confirm'],
             'notifications' => array_keys((array) config('tenant-settings.defaults.notifications', [])),
-            default         => [],
+            default => [],
         };
 
         $casts = [];
@@ -129,13 +128,13 @@ final class UpdateSettingsRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'primary_color.regex'   => 'El color debe ser un valor hexadecimal como #7c545d.',
+            'primary_color.regex' => 'El color debe ser un valor hexadecimal como #7c545d.',
             'secondary_color.regex' => 'El color debe ser un valor hexadecimal como #5a4b71.',
-            'currency.in'           => 'La moneda seleccionada no está soportada.',
-            'country_code.in'       => 'El país seleccionado no está soportado.',
-            'timezone.timezone'     => 'La zona horaria no es válida.',
-            'logo.max'              => 'El logo no puede superar los 2MB.',
-            'favicon.max'           => 'El favicon no puede superar los 512KB.',
+            'currency.in' => 'La moneda seleccionada no está soportada.',
+            'country_code.in' => 'El país seleccionado no está soportado.',
+            'timezone.timezone' => 'La zona horaria no es válida.',
+            'logo.max' => 'El logo no puede superar los 2MB.',
+            'favicon.max' => 'El favicon no puede superar los 512KB.',
         ];
     }
 

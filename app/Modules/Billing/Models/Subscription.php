@@ -19,6 +19,7 @@ final class Subscription extends Model
 {
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     /** @var list<string> */

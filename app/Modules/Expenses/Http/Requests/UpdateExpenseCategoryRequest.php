@@ -28,7 +28,7 @@ final class UpdateExpenseCategoryRequest extends FormRequest
     {
         $tenantId = current_tenant()?->id;
 
-        /** @var ExpenseCategory $category */
+        /** @var ExpenseCategory|null $category */
         $category = $this->route('category');
 
         return [
@@ -40,9 +40,9 @@ final class UpdateExpenseCategoryRequest extends FormRequest
                 // Ignore the current row so a no-op rename does not fail.
                 Rule::unique('expense_categories')
                     ->where('tenant_id', $tenantId)
-                    ->ignore($category->id),
+                    ->ignore($category?->id),
             ],
-            'type'      => ['sometimes', 'required', 'string', 'in:operating,products,payroll,rent,other'],
+            'type' => ['sometimes', 'required', 'string', 'in:operating,products,payroll,rent,other'],
             'is_active' => ['sometimes', 'nullable', 'boolean'],
         ];
     }

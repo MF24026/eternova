@@ -17,6 +17,7 @@ use App\Modules\Billing\Gateways\Data\TokenResult;
 use App\Modules\Billing\Gateways\Data\TransactionResult;
 use App\Modules\Billing\Gateways\Support\WompiErrorTranslator;
 use App\Modules\Billing\Support\CircuitBreaker;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -112,7 +113,7 @@ final class WompiGateway implements PaymentGatewayInterface
     {
         try {
             return $this->authorized()->post("{$this->baseUrl}/EnlacePagoRecurrente/{$linkId}")->successful();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logException('recurring_cancel_exception', $e, Str::uuid()->toString());
 
             return false;
@@ -125,7 +126,7 @@ final class WompiGateway implements PaymentGatewayInterface
             $response = $this->authorized()->get("{$this->baseUrl}/EnlacePagoRecurrente/{$linkId}");
 
             return $response->successful() ? (array) $response->json() : null;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logException('recurring_get_exception', $e, Str::uuid()->toString());
 
             return null;
@@ -297,7 +298,7 @@ final class WompiGateway implements PaymentGatewayInterface
     /**
      * A pending HTTP request pre-authorized with a fresh Bearer token (15s timeout).
      */
-    private function authorized(): \Illuminate\Http\Client\PendingRequest
+    private function authorized(): PendingRequest
     {
         return Http::withToken($this->accessToken())->timeout(15);
     }
