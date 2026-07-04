@@ -67,20 +67,27 @@ final class BranchInventorySeeder extends Seeder
         $lowStockCount = 0;
 
         foreach ($variants as $index => $variant) {
-            $alreadyExists = BranchInventory::withoutGlobalScopes()
-                ->where('branch_id', $branch->id)
-                ->where('product_variant_id', $variant->id)
-                ->exists();
-
-            if ($alreadyExists) {
-                continue;
-            }
-
             [$quantity, $minStockAlert] = $this->resolveStockLevels(
                 $index,
                 $outOfStockCount,
                 $lowStockCount,
             );
+
+            $isEdgeCase = $quantity === self::OUT_OF_STOCK_QUANTITY
+                || $quantity === self::LOW_STOCK_QUANTITY;
+
+            $existing = BranchInventory::withoutGlobalScopes()
+                ->where('branch_id', $branch->id)
+                ->where('product_variant_id', $variant->id)
+                ->first();
+
+            // Healthy variants keep whatever inventory was already seeded (e.g. by
+            // the starter catalog on tenant provisioning). Edge-case slots are forced
+            // even when a row exists, so the demo always has out-of-stock and
+            // low-stock variants for alert testing.
+            if ($existing !== null && ! $isEdgeCase) {
+                continue;
+            }
 
             if ($quantity === self::OUT_OF_STOCK_QUANTITY) {
                 $outOfStockCount++;
@@ -91,13 +98,17 @@ final class BranchInventorySeeder extends Seeder
                 $variant->saveQuietly();
             }
 
-            BranchInventory::create([
-                'tenant_id' => $tenant->id,
-                'branch_id' => $branch->id,
-                'product_variant_id' => $variant->id,
-                'quantity' => $quantity,
-                'reserved' => 0,
-            ]);
+            BranchInventory::updateOrCreate(
+                [
+                    'branch_id' => $branch->id,
+                    'product_variant_id' => $variant->id,
+                ],
+                [
+                    'tenant_id' => $tenant->id,
+                    'quantity' => $quantity,
+                    'reserved' => 0,
+                ],
+            );
         }
     }
 
