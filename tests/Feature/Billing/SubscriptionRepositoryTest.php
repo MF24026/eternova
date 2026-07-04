@@ -27,7 +27,7 @@ final class SubscriptionRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new SubscriptionRepository();
+        $this->repository = new SubscriptionRepository;
         // One shared plan: its slug is UNIQUE, and plan identity is irrelevant to the
         // cross-tenant queries under test. Each subscription still gets its own tenant.
         $this->plan = Plan::factory()->basico()->create();

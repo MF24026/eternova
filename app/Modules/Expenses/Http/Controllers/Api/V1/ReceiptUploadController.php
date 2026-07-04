@@ -48,9 +48,9 @@ final class ReceiptUploadController extends Controller
             : null;
 
         $expense = $this->expenseService->createFromReceiptUpload(
-            file:   $request->file('receipt'),
+            file: $request->file('receipt'),
             branch: $branch,
-            actor:  $request->user(),
+            actor: $request->user(),
         );
 
         return (new ExpenseResource($expense))
@@ -75,7 +75,7 @@ final class ReceiptUploadController extends Controller
         return response()->json([
             'data' => [
                 'ocr_status' => $expense->ocr_status,
-                'ocr_data'   => $expense->ocr_data,
+                'ocr_data' => $expense->ocr_data,
             ],
         ]);
     }

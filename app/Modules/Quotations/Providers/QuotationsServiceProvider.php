@@ -39,8 +39,8 @@ final class QuotationsServiceProvider extends ServiceProvider
             if (! isset($drivers[$driverName])) {
                 throw new PdfException(
                     "Unknown PDF renderer driver '{$driverName}'. "
-                    . 'Available drivers: ' . implode(', ', array_keys($drivers)) . '. '
-                    . "Check the 'renderer' key in config/pdf.php or the PDF_RENDERER env variable.",
+                    .'Available drivers: '.implode(', ', array_keys($drivers)).'. '
+                    ."Check the 'renderer' key in config/pdf.php or the PDF_RENDERER env variable.",
                 );
             }
 

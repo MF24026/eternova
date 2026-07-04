@@ -24,27 +24,41 @@ final readonly class QuotationPdfViewModel
     // ── Document metadata ─────────────────────────────────────────────────────
 
     public string $quotationNumber;
+
     public string $status;
+
     public string $statusLabel;
+
     public string $issueDate;
+
     public ?string $validUntil;
 
     // ── Tenant branding ───────────────────────────────────────────────────────
 
     public string $tenantName;
+
     public ?string $tenantLogoBase64;   // data:image/...;base64,... or null
+
     public ?string $tenantLogoMime;
+
     public string $primaryColor;
+
     public string $secondaryColor;
+
     public ?string $tenantAddress;
+
     public ?string $tenantPhone;
+
     public ?string $tenantTagline;
+
     public string $currency;
 
     // ── Customer ──────────────────────────────────────────────────────────────
 
     public ?string $customerName;
+
     public ?string $customerEmail;
+
     public ?string $customerPhone;
 
     // ── Line items ────────────────────────────────────────────────────────────
@@ -55,51 +69,56 @@ final readonly class QuotationPdfViewModel
     // ── Totals (pre-formatted) ────────────────────────────────────────────────
 
     public string $subtotal;
+
     public ?string $discount;       // null when discount_cents === 0
+
     public ?string $taxLabel;       // e.g. "IVA (13%)" — null when no tax
+
     public ?string $tax;            // formatted tax amount — null when no tax
+
     public string $total;
 
     // ── Notes & terms ─────────────────────────────────────────────────────────
 
     public ?string $notes;
+
     public ?string $terms;
 
     public function __construct(Quotation $quotation, Tenant $tenant)
     {
         // ── Document metadata ─────────────────────────────────────────────
         $this->quotationNumber = $quotation->quotation_number;
-        $this->status          = $quotation->status;
-        $this->statusLabel     = $this->resolveStatusLabel($quotation->status);
-        $this->issueDate       = $quotation->issue_date->format('d/m/Y');
-        $this->validUntil      = $quotation->valid_until?->format('d/m/Y');
+        $this->status = $quotation->status;
+        $this->statusLabel = $this->resolveStatusLabel($quotation->status);
+        $this->issueDate = $quotation->issue_date->format('d/m/Y');
+        $this->validUntil = $quotation->valid_until?->format('d/m/Y');
 
         // ── Tenant branding ───────────────────────────────────────────────
-        $this->tenantName      = $tenant->business_name ?? $tenant->name;
-        $this->primaryColor    = $tenant->primary_color ?? '#7c545d';
-        $this->secondaryColor  = $tenant->secondary_color ?? '#5a4b71';
-        $this->currency        = $tenant->currency ?? 'USD';
-        $this->tenantTagline   = $tenant->brand_extra['tagline'] ?? null;
-        $this->tenantAddress   = $tenant->brand_extra['address'] ?? null;
-        $this->tenantPhone     = $tenant->brand_extra['phone'] ?? $tenant->brand_extra['phones'][0] ?? null;
+        $this->tenantName = $tenant->business_name ?? $tenant->name;
+        $this->primaryColor = $tenant->primary_color ?? '#7c545d';
+        $this->secondaryColor = $tenant->secondary_color ?? '#5a4b71';
+        $this->currency = $tenant->currency ?? 'USD';
+        $this->tenantTagline = $tenant->brand_extra['tagline'] ?? null;
+        $this->tenantAddress = $tenant->brand_extra['address'] ?? null;
+        $this->tenantPhone = $tenant->brand_extra['phone'] ?? $tenant->brand_extra['phones'][0] ?? null;
 
         [$this->tenantLogoBase64, $this->tenantLogoMime] = $this->resolveLogoBase64($tenant);
 
         // ── Customer ──────────────────────────────────────────────────────
-        $customer                = $quotation->customer;
-        $this->customerName      = $customer?->name;
-        $this->customerEmail     = $customer?->email;
-        $this->customerPhone     = $customer?->phone;
+        $customer = $quotation->customer;
+        $this->customerName = $customer?->name;
+        $this->customerEmail = $customer?->email;
+        $this->customerPhone = $customer?->phone;
 
         // ── Line items ────────────────────────────────────────────────────
-        $currency    = $this->currency;
-        $locale      = Format::localeForTenant($tenant);
+        $currency = $this->currency;
+        $locale = Format::localeForTenant($tenant);
         $this->items = $quotation->items->map(
             fn ($item) => [
                 'description' => $item->description,
-                'quantity'    => $item->quantity,
-                'unit_price'  => self::formatCents($item->unit_price_cents, $currency, $locale),
-                'line_total'  => self::formatCents($item->line_total_cents, $currency, $locale),
+                'quantity' => $item->quantity,
+                'unit_price' => self::formatCents($item->unit_price_cents, $currency, $locale),
+                'line_total' => self::formatCents($item->line_total_cents, $currency, $locale),
             ]
         );
 
@@ -111,12 +130,12 @@ final readonly class QuotationPdfViewModel
             : null;
 
         if ($quotation->tax_rate_bps > 0) {
-            $ratePct        = $quotation->tax_rate_bps / 100;
+            $ratePct = $quotation->tax_rate_bps / 100;
             $this->taxLabel = sprintf('IVA (%.0f%%)', $ratePct);
-            $this->tax      = self::formatCents($quotation->tax_cents, $currency, $locale);
+            $this->tax = self::formatCents($quotation->tax_cents, $currency, $locale);
         } else {
             $this->taxLabel = null;
-            $this->tax      = null;
+            $this->tax = null;
         }
 
         $this->total = self::formatCents($quotation->total_cents, $currency, $locale);
@@ -147,12 +166,12 @@ final readonly class QuotationPdfViewModel
     private function resolveStatusLabel(string $status): string
     {
         return match ($status) {
-            'draft'    => 'Borrador',
-            'sent'     => 'Enviada',
+            'draft' => 'Borrador',
+            'sent' => 'Enviada',
             'accepted' => 'Aceptada',
             'rejected' => 'Rechazada',
-            'expired'  => 'Vencida',
-            default    => ucfirst($status),
+            'expired' => 'Vencida',
+            default => ucfirst($status),
         };
     }
 
@@ -185,15 +204,15 @@ final readonly class QuotationPdfViewModel
 
         // Handle URLs like /storage/tenants/.../logo.jpg
         if (str_starts_with($relativePath, 'storage/')) {
-            $relativePath = 'public/' . substr($relativePath, strlen('storage/'));
+            $relativePath = 'public/'.substr($relativePath, strlen('storage/'));
         }
 
-        $absolutePath = storage_path('app/' . $relativePath);
+        $absolutePath = storage_path('app/'.$relativePath);
 
         if (file_exists($absolutePath)) {
-            $bytes    = file_get_contents($absolutePath);
-            $mime     = mime_content_type($absolutePath) ?: 'image/jpeg';
-            $encoded  = base64_encode($bytes !== false ? $bytes : '');
+            $bytes = file_get_contents($absolutePath);
+            $mime = mime_content_type($absolutePath) ?: 'image/jpeg';
+            $encoded = base64_encode($bytes !== false ? $bytes : '');
 
             return ["data:{$mime};base64,{$encoded}", $mime];
         }

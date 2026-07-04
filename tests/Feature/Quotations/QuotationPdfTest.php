@@ -57,21 +57,21 @@ final class QuotationPdfTest extends TestCase
     private function setupTenant(string $businessName = 'Rosas Eternas SV'): array
     {
         $tenant = Tenant::factory()->create([
-            'business_name'          => $businessName,
-            'primary_color'          => '#7c545d',
-            'secondary_color'        => '#5a4b71',
+            'business_name' => $businessName,
+            'primary_color' => '#7c545d',
+            'secondary_color' => '#5a4b71',
             // Pin country + currency together: the factory otherwise randomizes the
             // country (SV/CO), and the locale drives the number's decimal glyph
             // (es-SV "185.00" vs es-CO "185,00"). USD billing implies SV here.
-            'country_code'           => 'SV',
-            'currency'               => 'USD',
-            'language'               => 'es',
+            'country_code' => 'SV',
+            'currency' => 'USD',
+            'language' => 'es',
             'quotation_tax_rate_bps' => 1300,
-            'quotation_valid_days'   => 15,
+            'quotation_valid_days' => 15,
         ]);
 
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $owner  = User::factory()->forTenant($tenant, role: 'owner')->create();
+        $owner = User::factory()->forTenant($tenant, role: 'owner')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -87,11 +87,11 @@ final class QuotationPdfTest extends TestCase
 
         return $this->quotationService->create(
             data: array_merge([
-                'issue_date'     => '2026-06-12',
-                'valid_until'    => '2026-06-27',
+                'issue_date' => '2026-06-12',
+                'valid_until' => '2026-06-27',
                 'discount_cents' => 0,
-                'tax_rate_bps'   => 0,
-                'items'          => [
+                'tax_rate_bps' => 0,
+                'items' => [
                     ['description' => 'Arreglo floral especial', 'quantity' => 2, 'unit_price_cents' => 7500],
                     ['description' => 'Caja de chocolates', 'quantity' => 1, 'unit_price_cents' => 3500],
                 ],
@@ -108,7 +108,7 @@ final class QuotationPdfTest extends TestCase
         $quotation = $this->createQuotation($tenant, $owner);
 
         $renderer = app(QuotationPdfRenderer::class);
-        $bytes    = $renderer->render($quotation);
+        $bytes = $renderer->render($quotation);
 
         $this->assertNotEmpty($bytes, 'DomPDF output must not be empty.');
         $this->assertStringStartsWith('%PDF', $bytes, 'PDF binary must start with the %PDF magic header.');
@@ -144,8 +144,8 @@ final class QuotationPdfTest extends TestCase
         // total    = 18000 + 2340 = 20340
         $quotation = $this->createQuotation($tenant, $owner, [
             'discount_cents' => 500,
-            'tax_rate_bps'   => 1300,
-            'items'          => [
+            'tax_rate_bps' => 1300,
+            'items' => [
                 ['description' => 'Item A', 'quantity' => 2, 'unit_price_cents' => 7500],
                 ['description' => 'Item B', 'quantity' => 1, 'unit_price_cents' => 3500],
             ],
@@ -167,8 +167,8 @@ final class QuotationPdfTest extends TestCase
 
         $quotation = $this->createQuotation($tenant, $owner, [
             'discount_cents' => 0,
-            'tax_rate_bps'   => 0,
-            'items'          => [
+            'tax_rate_bps' => 0,
+            'items' => [
                 ['description' => 'Rosa única', 'quantity' => 1, 'unit_price_cents' => 5000],
             ],
         ]);
@@ -222,7 +222,7 @@ final class QuotationPdfTest extends TestCase
             'Eternova',
             $html,
             'The PDF template must not hardcode the SaaS brand name "Eternova". '
-            . 'All branding must come from the Tenant model.',
+            .'All branding must come from the Tenant model.',
         );
     }
 
@@ -230,7 +230,7 @@ final class QuotationPdfTest extends TestCase
     {
         ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
         $customer = Customer::factory()->forTenant($tenant)->create([
-            'name'  => 'Maria Gonzalez',
+            'name' => 'Maria Gonzalez',
             'email' => 'maria@example.com',
         ]);
 
@@ -267,8 +267,8 @@ final class QuotationPdfTest extends TestCase
         // total = 1 * 10000 = 10000 cents = USD 100.00
         $quotation = $this->createQuotation($tenant, $owner, [
             'discount_cents' => 0,
-            'tax_rate_bps'   => 0,
-            'items'          => [
+            'tax_rate_bps' => 0,
+            'items' => [
                 ['description' => 'Servicio único', 'quantity' => 1, 'unit_price_cents' => 10000],
             ],
         ]);
@@ -285,7 +285,7 @@ final class QuotationPdfTest extends TestCase
 
         $quotation = $this->createQuotation($tenant, $owner, [
             'tax_rate_bps' => 1300,
-            'items'        => [
+            'items' => [
                 ['description' => 'Producto', 'quantity' => 1, 'unit_price_cents' => 10000],
             ],
         ]);

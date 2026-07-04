@@ -27,7 +27,7 @@ final class TransitionQuotationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'note'            => ['nullable', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:1000'],
             // Only meaningful for the accept endpoint — ignored by send/reject.
             // When true, the acceptance also creates a linked Order in one transaction.
             'convert_to_order' => ['nullable', 'boolean'],

@@ -75,14 +75,15 @@ final class ExpenseCategoriesSeeder extends Seeder
 
             if ($exists) {
                 $skipped++;
+
                 continue;
             }
 
             DB::table('expense_categories')->insert([
-                'tenant_id'  => $tenant->id,
-                'name'       => $category['name'],
-                'type'       => $category['type'],
-                'is_active'  => true,
+                'tenant_id' => $tenant->id,
+                'name' => $category['name'],
+                'type' => $category['type'],
+                'is_active' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);

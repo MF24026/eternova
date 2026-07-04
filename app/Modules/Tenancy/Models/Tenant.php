@@ -81,10 +81,10 @@ class Tenant extends Model
         'brand_extra' => 'array',
         'locale_extra' => 'array',
         'reservation_deposit_pct' => 'integer',
-        'reservation_occasions'   => 'array',
-        'quotation_tax_rate_bps'  => 'integer',
-        'quotation_valid_days'    => 'integer',
-        'trial_ends_at'           => 'datetime',
+        'reservation_occasions' => 'array',
+        'quotation_tax_rate_bps' => 'integer',
+        'quotation_valid_days' => 'integer',
+        'trial_ends_at' => 'datetime',
         'status' => 'string',
     ];
 

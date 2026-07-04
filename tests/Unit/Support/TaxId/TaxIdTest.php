@@ -17,7 +17,7 @@ final class TaxIdTest extends TestCase
 
     public function test_salvadoran_accepts_a_valid_dui_with_check_digit(): void
     {
-        $sv = new SalvadoranTaxIdStrategy();
+        $sv = new SalvadoranTaxIdStrategy;
 
         $this->assertTrue($sv->isValid(self::VALID_DUI));
         $this->assertTrue($sv->isValid('042103234')); // dashes are optional
@@ -25,14 +25,14 @@ final class TaxIdTest extends TestCase
 
     public function test_salvadoran_rejects_a_dui_with_wrong_check_digit(): void
     {
-        $sv = new SalvadoranTaxIdStrategy();
+        $sv = new SalvadoranTaxIdStrategy;
 
         $this->assertFalse($sv->isValid('04210323-5'));
     }
 
     public function test_salvadoran_accepts_a_14_digit_nit_by_structure(): void
     {
-        $sv = new SalvadoranTaxIdStrategy();
+        $sv = new SalvadoranTaxIdStrategy;
 
         $this->assertTrue($sv->isValid('0614-280128-102-3'));
     }
@@ -40,7 +40,7 @@ final class TaxIdTest extends TestCase
     #[DataProvider('malformedSalvadoranIds')]
     public function test_salvadoran_rejects_malformed_ids(string $value): void
     {
-        $this->assertFalse((new SalvadoranTaxIdStrategy())->isValid($value));
+        $this->assertFalse((new SalvadoranTaxIdStrategy)->isValid($value));
     }
 
     /**

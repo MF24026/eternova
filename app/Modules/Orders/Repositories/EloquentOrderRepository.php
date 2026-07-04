@@ -120,12 +120,12 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
     public function statusCounts(array $filters): array
     {
         $zero = [
-            'pending'    => 0,
-            'preparing'  => 0,
-            'ready'      => 0,
+            'pending' => 0,
+            'preparing' => 0,
+            'ready' => 0,
             'dispatched' => 0,
-            'delivered'  => 0,
-            'cancelled'  => 0,
+            'delivered' => 0,
+            'cancelled' => 0,
         ];
 
         $query = Order::query();

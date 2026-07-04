@@ -13,6 +13,7 @@ use App\Modules\Quotations\Services\QuotationService;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use App\Modules\Tenancy\Scopes\TenantScope;
+use Carbon\Carbon;
 use DomainException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -46,7 +47,7 @@ final class QuotationServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $branch = Branch::factory()->forTenant($tenant)->create(['is_main' => true]);
-        $user   = User::factory()->forTenant($tenant, role: 'owner')->create();
+        $user = User::factory()->forTenant($tenant, role: 'owner')->create();
 
         app()->instance('currentTenant', $tenant);
 
@@ -74,7 +75,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $year = (int) date('Y');
@@ -87,12 +88,12 @@ final class QuotationServiceTest extends TestCase
 
         $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $q2 = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $year = (int) date('Y');
@@ -105,7 +106,7 @@ final class QuotationServiceTest extends TestCase
 
         $qA = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $tenantB = Tenant::factory()->create();
@@ -114,7 +115,7 @@ final class QuotationServiceTest extends TestCase
 
         $qB = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $year = (int) date('Y');
@@ -129,9 +130,9 @@ final class QuotationServiceTest extends TestCase
         $numbers = [];
 
         for ($i = 0; $i < 5; $i++) {
-            $q         = $this->service->create([
+            $q = $this->service->create([
                 'issue_date' => now()->toDateString(),
-                'items'      => $this->twoLines(),
+                'items' => $this->twoLines(),
             ]);
             $numbers[] = $q->quotation_number;
         }
@@ -153,15 +154,15 @@ final class QuotationServiceTest extends TestCase
 
         // Manually plant a sequence row for 2025 to simulate last-year state.
         QuotationSequence::withoutGlobalScope(TenantScope::class)->create([
-            'tenant_id'     => $tenant->id,
-            'year'          => 2025,
+            'tenant_id' => $tenant->id,
+            'year' => 2025,
             'last_sequence' => 42,
         ]);
 
         // Creating in the current year should start a fresh sequence.
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $year = (int) date('Y');
@@ -267,7 +268,7 @@ final class QuotationServiceTest extends TestCase
 
         // A case that would round differently: taxable=1 cent, rate=9999 bps
         // intdiv(1 * 9999, 10000) = intdiv(9999, 10000) = 0  (truncated, not rounded to 1)
-        $lines2  = [['quantity' => 1, 'unit_price_cents' => 1]];
+        $lines2 = [['quantity' => 1, 'unit_price_cents' => 1]];
         $totals2 = $this->service->calculateTotals(lines: $lines2, discountCents: 0, taxRateBps: 9999);
 
         $this->assertSame(0, $totals2['tax_cents'], 'sub-centavo tax must truncate to 0, not round to 1');
@@ -291,7 +292,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $this->assertSame($tenant->id, $q->tenant_id);
@@ -307,7 +308,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => [['description' => 'A', 'quantity' => 1, 'unit_price_cents' => 10000]],
+            'items' => [['description' => 'A', 'quantity' => 1, 'unit_price_cents' => 10000]],
         ]);
 
         $fresh = $q->fresh();
@@ -326,10 +327,10 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => $issueDate,
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
-        $expectedValidUntil = \Carbon\Carbon::parse($issueDate)->addDays(30)->toDateString();
+        $expectedValidUntil = Carbon::parse($issueDate)->addDays(30)->toDateString();
 
         $this->assertSame($expectedValidUntil, $q->fresh()->valid_until->toDateString());
     }
@@ -344,7 +345,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $this->assertSame('Payment due in 15 days.', $q->fresh()->terms);
@@ -358,16 +359,16 @@ final class QuotationServiceTest extends TestCase
         $tenant = app('currentTenant');
         $tenant->update([
             'quotation_tax_rate_bps' => 1300,
-            'quotation_valid_days'   => 30,
-            'quotation_terms'        => 'Default terms',
+            'quotation_valid_days' => 30,
+            'quotation_terms' => 'Default terms',
         ]);
 
         $q = $this->service->create([
-            'issue_date'   => now()->toDateString(),
+            'issue_date' => now()->toDateString(),
             'tax_rate_bps' => 1900, // caller override
-            'valid_until'  => now()->addDays(10)->toDateString(),
-            'terms'        => 'Custom terms for this quotation',
-            'items'        => [['description' => 'A', 'quantity' => 1, 'unit_price_cents' => 10000]],
+            'valid_until' => now()->addDays(10)->toDateString(),
+            'terms' => 'Custom terms for this quotation',
+            'items' => [['description' => 'A', 'quantity' => 1, 'unit_price_cents' => 10000]],
         ]);
 
         $fresh = $q->fresh();
@@ -381,7 +382,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $history = QuotationStatusHistory::withoutGlobalScope(TenantScope::class)
@@ -402,7 +403,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ], actor: $user);
 
         $this->assertSame($user->id, $q->fresh()->created_by);
@@ -414,7 +415,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => [
+            'items' => [
                 ['description' => 'Flower', 'quantity' => 3, 'unit_price_cents' => 2500, 'sort_order' => 0],
             ],
         ]);
@@ -430,7 +431,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => [
+            'items' => [
                 ['description' => 'B', 'quantity' => 1, 'unit_price_cents' => 100, 'sort_order' => 1],
                 ['description' => 'A', 'quantity' => 1, 'unit_price_cents' => 200, 'sort_order' => 0],
             ],
@@ -452,7 +453,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => [['description' => 'Old item', 'quantity' => 1, 'unit_price_cents' => 1000]],
+            'items' => [['description' => 'Old item', 'quantity' => 1, 'unit_price_cents' => 1000]],
         ]);
 
         $updated = $this->service->update($q, [
@@ -479,7 +480,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         // Advance to sent — no longer a draft
@@ -499,7 +500,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $this->service->accept($q);
@@ -518,7 +519,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $result = $this->service->markSent($q);
@@ -533,7 +534,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $result = $this->service->accept($q);
@@ -547,7 +548,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $result = $this->service->reject($q);
@@ -561,7 +562,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $q = $this->service->markSent($q);
@@ -576,7 +577,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $q = $this->service->markSent($q);
@@ -593,7 +594,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $q = $this->service->accept($q);
@@ -617,7 +618,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $q = $this->service->reject($q);
@@ -641,7 +642,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         // draft → accepted is valid; accepted → sent is not
@@ -659,7 +660,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $this->expectException(DomainException::class);
@@ -674,7 +675,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $q = $this->service->accept($q);
@@ -694,7 +695,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $q = $this->service->accept($q);
@@ -724,7 +725,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         // At creation: 1 row (initial history from create())
@@ -757,18 +758,18 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $this->service->transitionTo($q, 'sent', $user, 'Customer called, sending now');
 
         $this->assertDatabaseHas('quotation_status_history', [
             'quotation_id' => $q->id,
-            'tenant_id'    => $tenant->id,
-            'from_status'  => 'draft',
-            'to_status'    => 'sent',
-            'user_id'      => $user->id,
-            'note'         => 'Customer called, sending now',
+            'tenant_id' => $tenant->id,
+            'from_status' => 'draft',
+            'to_status' => 'sent',
+            'user_id' => $user->id,
+            'note' => 'Customer called, sending now',
         ]);
     }
 
@@ -778,7 +779,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $this->service->transitionTo($q, 'sent', actor: null);
@@ -797,7 +798,7 @@ final class QuotationServiceTest extends TestCase
 
         $q = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $result = $this->service->markSent($q);
@@ -819,10 +820,10 @@ final class QuotationServiceTest extends TestCase
 
         $this->assertDatabaseHas('quotation_status_history', [
             'quotation_id' => $q->id,
-            'tenant_id'    => $tenant->id,
-            'from_status'  => null,
-            'to_status'    => 'draft',
-            'user_id'      => $user->id,
+            'tenant_id' => $tenant->id,
+            'from_status' => null,
+            'to_status' => 'draft',
+            'user_id' => $user->id,
         ]);
     }
 
@@ -849,11 +850,11 @@ final class QuotationServiceTest extends TestCase
         ['tenant' => $tenant] = $this->setupTenant();
 
         $cases = [
-            'draft'    => ['sent', 'accepted', 'rejected', 'expired'],
-            'sent'     => ['accepted', 'rejected', 'expired'],
+            'draft' => ['sent', 'accepted', 'rejected', 'expired'],
+            'sent' => ['accepted', 'rejected', 'expired'],
             'accepted' => [],
             'rejected' => [],
-            'expired'  => [],
+            'expired' => [],
         ];
 
         foreach ($cases as $status => $expected) {
@@ -877,7 +878,7 @@ final class QuotationServiceTest extends TestCase
 
         $qA = $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
 
         $this->service->markSent($qA, $userA);
@@ -927,7 +928,7 @@ final class QuotationServiceTest extends TestCase
 
         $this->service->create([
             'issue_date' => now()->toDateString(),
-            'items'      => $this->twoLines(),
+            'items' => $this->twoLines(),
         ]);
     }
 }
