@@ -37,9 +37,9 @@ return new class extends Migration
         $quotationRowCount = DB::table('orders')->where('source', 'quotation')->count();
 
         if ($quotationRowCount > 0) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "Cannot roll back add_quotation_to_orders_source_enum: {$quotationRowCount} order(s) "
-                . "have source='quotation'. Delete or migrate those rows first, then re-run the rollback."
+                ."have source='quotation'. Delete or migrate those rows first, then re-run the rollback."
             );
         }
 

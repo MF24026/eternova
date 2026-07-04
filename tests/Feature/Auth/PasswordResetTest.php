@@ -69,9 +69,9 @@ final class PasswordResetTest extends TestCase
         $token = Password::createToken($user);
 
         $this->postJson('/api/v1/auth/reset-password', [
-            'token'                 => $token,
-            'email'                 => 'owner@shop.sv',
-            'password'              => 'NewPassw0rd!',
+            'token' => $token,
+            'email' => 'owner@shop.sv',
+            'password' => 'NewPassw0rd!',
             'password_confirmation' => 'NewPassw0rd!',
         ])->assertOk();
 
@@ -80,7 +80,7 @@ final class PasswordResetTest extends TestCase
 
         // The new password works on login.
         $this->postJson('/api/v1/auth/login', [
-            'email'    => 'owner@shop.sv',
+            'email' => 'owner@shop.sv',
             'password' => 'NewPassw0rd!',
         ])->assertStatus(200);
     }
@@ -90,9 +90,9 @@ final class PasswordResetTest extends TestCase
         User::factory()->create(['email' => 'owner@shop.sv']);
 
         $this->postJson('/api/v1/auth/reset-password', [
-            'token'                 => 'totally-invalid-token',
-            'email'                 => 'owner@shop.sv',
-            'password'              => 'NewPassw0rd!',
+            'token' => 'totally-invalid-token',
+            'email' => 'owner@shop.sv',
+            'password' => 'NewPassw0rd!',
             'password_confirmation' => 'NewPassw0rd!',
         ])->assertStatus(422)
             ->assertJsonValidationErrorFor('email');
@@ -104,9 +104,9 @@ final class PasswordResetTest extends TestCase
         $token = Password::createToken($user);
 
         $this->postJson('/api/v1/auth/reset-password', [
-            'token'                 => $token,
-            'email'                 => 'owner@shop.sv',
-            'password'              => 'short',
+            'token' => $token,
+            'email' => 'owner@shop.sv',
+            'password' => 'short',
             'password_confirmation' => 'mismatch',
         ])->assertStatus(422)
             ->assertJsonValidationErrorFor('password');

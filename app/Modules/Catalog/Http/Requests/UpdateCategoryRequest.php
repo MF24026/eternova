@@ -25,7 +25,7 @@ final class UpdateCategoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var Category $category */
+        /** @var Category|null $category */
         $category = $this->route('category');
 
         $tenantId = current_tenant()?->id;
@@ -45,7 +45,7 @@ final class UpdateCategoryRequest extends FormRequest
                 Rule::unique('categories', 'slug')
                     ->where('tenant_id', $tenantId)
                     ->whereNull('deleted_at')
-                    ->ignore($category->id),
+                    ->ignore($category?->id),
             ],
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'image_url' => ['sometimes', 'nullable', 'url', 'max:500'],

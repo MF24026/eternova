@@ -42,8 +42,8 @@ final class ExpensesServiceProvider extends ServiceProvider
             if (! isset($drivers[$driverName])) {
                 throw new OcrException(
                     "Unknown OCR driver '{$driverName}'. "
-                    . 'Available drivers: ' . implode(', ', array_keys($drivers)) . '. '
-                    . "Check the 'driver' key in config/ocr.php or the OCR_DRIVER env variable.",
+                    .'Available drivers: '.implode(', ', array_keys($drivers)).'. '
+                    ."Check the 'driver' key in config/ocr.php or the OCR_DRIVER env variable.",
                 );
             }
 

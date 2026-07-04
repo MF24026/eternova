@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, type RouteLocationRaw } from 'vue-router'
 import AppSpinner from './AppSpinner.vue'
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
     icon?: Component
     iconPosition?: 'left' | 'right'
     /** When set, renders as <router-link> instead of <button> */
-    to?: string
+    to?: RouteLocationRaw
     /** External href — renders as <a> */
     href?: string
 }

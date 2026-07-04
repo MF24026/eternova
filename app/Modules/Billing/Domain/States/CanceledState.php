@@ -14,21 +14,45 @@ use App\Modules\Billing\Enums\SubscriptionStatus;
  */
 final class CanceledState extends SubscriptionState
 {
-    public function name(): SubscriptionStatus { return SubscriptionStatus::Canceled; }
+    public function name(): SubscriptionStatus
+    {
+        return SubscriptionStatus::Canceled;
+    }
 
-    public function canCharge(): bool { return false; }
+    public function canCharge(): bool
+    {
+        return false;
+    }
 
-    public function canCancel(): bool { return false; }
+    public function canCancel(): bool
+    {
+        return false;
+    }
 
-    public function canPause(): bool { return false; }
+    public function canPause(): bool
+    {
+        return false;
+    }
 
-    public function canResume(): bool { return false; }
+    public function canResume(): bool
+    {
+        return false;
+    }
 
-    public function canRefund(): bool { return true; }
+    public function canRefund(): bool
+    {
+        return true;
+    }
 
-    public function isAccessible(): bool { return true; }   // until grace ends
+    public function isAccessible(): bool
+    {
+        return true;
+    }   // until grace ends
 
-    public function isReadOnly(): bool { return false; }
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
 
     public function allowedTransitions(): array
     {

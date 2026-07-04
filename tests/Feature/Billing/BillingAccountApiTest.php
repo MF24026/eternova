@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Billing;
 
 use App\Models\User;
+use App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface;
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\Subscription;
 use App\Modules\Plans\Models\Plan;
@@ -169,7 +170,7 @@ final class BillingAccountApiTest extends TestCase
         $tenant = $this->tenantWithSubscription();
         $sub = Subscription::query()->where('tenant_id', $tenant->id)->firstOrFail();
         $sub->forceFill(['gateway_subscription_id' => 'enlace-x'])->save();
-        $fake = app(\App\Modules\Billing\Gateways\Contracts\PaymentGatewayInterface::class);
+        $fake = app(PaymentGatewayInterface::class);
 
         $this->actingAs($this->owner($tenant))
             ->postJson($this->tenantUrl($tenant, 'api/v1/account/billing/cancel'))->assertOk();

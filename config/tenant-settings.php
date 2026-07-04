@@ -29,35 +29,35 @@ return [
 
         // Contact — phone/email/address. Per-branch in spirit (each location has its own).
         'contact' => [
-            'phone'   => null,
-            'email'   => null,
+            'phone' => null,
+            'email' => null,
             'website' => null,
             'address' => null,
         ],
 
         // Tax — IVA toggle + rate (basis points) + local tax-id label/number.
         'tax' => [
-            'enabled'   => true,
-            'rate_bps'  => 1300,   // 13% IVA (El Salvador default)
-            'id_label'  => null,   // e.g. 'NIT' (SV), 'RFC' (MX), 'NIT' (CO)
+            'enabled' => true,
+            'rate_bps' => 1300,   // 13% IVA (El Salvador default)
+            'id_label' => null,   // e.g. 'NIT' (SV), 'RFC' (MX), 'NIT' (CO)
             'id_number' => null,
         ],
 
         // Orders — operational defaults for the order workflow.
         'orders' => [
-            'auto_confirm'         => false,
+            'auto_confirm' => false,
             'default_prep_minutes' => 60,
-            'pending_alert_hours'  => 4,
+            'pending_alert_hours' => 4,
         ],
 
         // Notifications — per-event alert toggles.
         'notifications' => [
-            'new_order'              => true,
-            'order_pending'          => true,
-            'low_stock'              => true,
-            'reservation_confirmed'  => false,
-            'quotation_accepted'     => true,
-            'payment_received'       => true,
+            'new_order' => true,
+            'order_pending' => true,
+            'low_stock' => true,
+            'reservation_confirmed' => false,
+            'quotation_accepted' => true,
+            'payment_received' => true,
         ],
     ],
 

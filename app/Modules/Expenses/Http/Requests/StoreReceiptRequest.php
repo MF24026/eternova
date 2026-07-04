@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Expenses\Http\Requests;
 
+use App\Modules\Expenses\Models\Expense;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -21,7 +22,7 @@ final class StoreReceiptRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', \App\Modules\Expenses\Models\Expense::class) ?? false;
+        return $this->user()?->can('create', Expense::class) ?? false;
     }
 
     /**
@@ -55,9 +56,9 @@ final class StoreReceiptRequest extends FormRequest
 
         return [
             'receipt.required' => 'A receipt file is required.',
-            'receipt.file'     => 'The upload must be a file.',
-            'receipt.max'      => "The receipt may not be larger than {$maxMb} MB.",
-            'receipt.mimes'    => 'The receipt must be a JPEG, PNG, or PDF file.',
+            'receipt.file' => 'The upload must be a file.',
+            'receipt.max' => "The receipt may not be larger than {$maxMb} MB.",
+            'receipt.mimes' => 'The receipt must be a JPEG, PNG, or PDF file.',
             'branch_id.exists' => 'The selected branch does not exist.',
         ];
     }

@@ -37,13 +37,13 @@ final class BillingAuditLog extends Model
 
     protected static function booted(): void
     {
-        static::updating(function (): never {
+        self::updating(function (): never {
             throw new RuntimeException(
                 'billing_audit_log is append-only; append a compensating entry instead of updating.'
             );
         });
 
-        static::deleting(function (): never {
+        self::deleting(function (): never {
             throw new RuntimeException('billing_audit_log is append-only; entries cannot be deleted.');
         });
     }

@@ -24,11 +24,10 @@ interface QuotationPdfRenderer
     /**
      * Render the quotation as a PDF document.
      *
-     * @param  Quotation $quotation  The quotation to render. The renderer is
-     *                               responsible for loading any missing relations;
-     *                               do not assume they are already loaded.
-     *
-     * @return string  Raw PDF bytes (starts with the %PDF magic header).
+     * @param  Quotation  $quotation  The quotation to render. The renderer is
+     *                                responsible for loading any missing relations;
+     *                                do not assume they are already loaded.
+     * @return string Raw PDF bytes (starts with the %PDF magic header).
      */
     public function render(Quotation $quotation): string;
 }

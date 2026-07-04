@@ -31,29 +31,29 @@ final class BranchSettingsSeeder extends Seeder
     private const TENANT_SETTINGS = [
         'rosa-eterna' => [
             'contact' => [
-                'phone'   => '+503 7892-1234',
-                'email'   => 'hola@rosaeterna.sv',
+                'phone' => '+503 7892-1234',
+                'email' => 'hola@rosaeterna.sv',
                 'website' => 'rosaeterna.sv',
                 'address' => 'Col. Escalón, Calle La Mascota #25, San Salvador',
             ],
             'tax' => [
-                'enabled'   => true,
-                'rate_bps'  => 1300,
-                'id_label'  => 'NIT',
+                'enabled' => true,
+                'rate_bps' => 1300,
+                'id_label' => 'NIT',
                 'id_number' => '0614-120385-101-2',
             ],
         ],
         'tatiana' => [
             'contact' => [
-                'phone'   => '+503 7456-9871',
-                'email'   => 'contacto@detallestatiana.sv',
+                'phone' => '+503 7456-9871',
+                'email' => 'contacto@detallestatiana.sv',
                 'website' => 'detallestatiana.sv',
                 'address' => 'Av. Las Magnolias #14, Santa Tecla',
             ],
             'tax' => [
-                'enabled'   => true,
-                'rate_bps'  => 1300,
-                'id_label'  => 'NIT',
+                'enabled' => true,
+                'rate_bps' => 1300,
+                'id_label' => 'NIT',
                 'id_number' => '0511-250790-102-3',
             ],
         ],
@@ -86,17 +86,17 @@ final class BranchSettingsSeeder extends Seeder
             return;
         }
 
-        $now  = now()->toDateTimeString();
+        $now = now()->toDateTimeString();
         $rows = [];
 
         foreach ($groups as $group => $values) {
             foreach ($values as $key => $value) {
                 $rows[] = [
-                    'tenant_id'  => $tenant->id,
-                    'branch_id'  => null,   // tenant default
-                    'group'      => $group,
-                    'key'        => $key,
-                    'value'      => json_encode($value),
+                    'tenant_id' => $tenant->id,
+                    'branch_id' => null,   // tenant default
+                    'group' => $group,
+                    'key' => $key,
+                    'value' => json_encode($value),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -106,7 +106,7 @@ final class BranchSettingsSeeder extends Seeder
         DB::table('branch_settings')->insert($rows);
 
         $this->command->info(
-            "BranchSettingsSeeder: {$tenant->slug} — " . count($rows) . ' default settings seeded (contact + tax).',
+            "BranchSettingsSeeder: {$tenant->slug} — ".count($rows).' default settings seeded (contact + tax).',
         );
     }
 }

@@ -60,13 +60,13 @@ final class OrderController extends Controller
         $this->authorize('viewAny', Order::class);
 
         $filters = [
-            'branch_id'   => $request->query('branch_id'),
-            'status'      => $request->query('status'),
+            'branch_id' => $request->query('branch_id'),
+            'status' => $request->query('status'),
             'customer_id' => $request->query('customer_id'),
-            'date_from'   => $request->query('date_from'),
-            'date_to'     => $request->query('date_to'),
-            'search'      => $request->query('search'),
-            'per_page'    => $request->query('per_page', '20'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'search' => $request->query('search'),
+            'per_page' => $request->query('per_page', '20'),
         ];
 
         // Eager-load to avoid N+1 on the list page.

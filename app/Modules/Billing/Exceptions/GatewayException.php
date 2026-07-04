@@ -12,6 +12,4 @@ use RuntimeException;
  * and only a safe message — the original throwable may reference a card token in its trace,
  * so we never chain it.
  */
-final class GatewayException extends RuntimeException
-{
-}
+final class GatewayException extends RuntimeException {}

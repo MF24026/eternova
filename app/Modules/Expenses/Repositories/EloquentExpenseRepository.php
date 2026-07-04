@@ -46,7 +46,7 @@ final class EloquentExpenseRepository implements ExpenseRepositoryInterface
         if (isset($filters['month']) && $filters['month'] !== '') {
             $month = (string) $filters['month'];
             $query->whereYear('expense_date', (int) substr($month, 0, 4))
-                  ->whereMonth('expense_date', (int) substr($month, 5, 2));
+                ->whereMonth('expense_date', (int) substr($month, 5, 2));
         } else {
             if (isset($filters['date_from']) && $filters['date_from'] !== '') {
                 $query->whereDate('expense_date', '>=', (string) $filters['date_from']);
@@ -69,7 +69,7 @@ final class EloquentExpenseRepository implements ExpenseRepositoryInterface
             $term = (string) $filters['search'];
             $query->where(static function ($q) use ($term): void {
                 $q->where('vendor', 'like', "%{$term}%")
-                  ->orWhere('description', 'like', "%{$term}%");
+                    ->orWhere('description', 'like', "%{$term}%");
             });
         }
 
@@ -88,7 +88,7 @@ final class EloquentExpenseRepository implements ExpenseRepositoryInterface
         if (isset($filters['month']) && $filters['month'] !== '') {
             $month = (string) $filters['month'];
             $query->whereYear('expense_date', (int) substr($month, 0, 4))
-                  ->whereMonth('expense_date', (int) substr($month, 5, 2));
+                ->whereMonth('expense_date', (int) substr($month, 5, 2));
         } else {
             if (isset($filters['date_from']) && $filters['date_from'] !== '') {
                 $query->whereDate('expense_date', '>=', (string) $filters['date_from']);

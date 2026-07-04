@@ -11,6 +11,4 @@ use RuntimeException;
  * cooldown. Callers (dunning, recurring charges) treat this as "skip and retry later",
  * not as a hard payment failure.
  */
-final class CircuitOpenException extends RuntimeException
-{
-}
+final class CircuitOpenException extends RuntimeException {}

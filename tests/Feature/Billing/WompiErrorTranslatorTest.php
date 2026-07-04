@@ -16,7 +16,7 @@ final class WompiErrorTranslatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->translator = new WompiErrorTranslator();
+        $this->translator = new WompiErrorTranslator;
     }
 
     /**

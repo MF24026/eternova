@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Expenses\Ocr;
 
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\ImageManager;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 
@@ -37,7 +37,7 @@ final class TesseractOcrDriver implements OcrDriverInterface
 
     public function extract(string $absolutePath): OcrResult
     {
-        if (!file_exists($absolutePath)) {
+        if (! file_exists($absolutePath)) {
             throw new OcrException("OCR input file not found: {$absolutePath}");
         }
 
@@ -45,17 +45,17 @@ final class TesseractOcrDriver implements OcrDriverInterface
 
         try {
             $preprocessed = $this->preprocessImage($imagePath);
-            $rawText      = $this->runTesseract($preprocessed);
+            $rawText = $this->runTesseract($preprocessed);
 
             $parsed = $this->parser->parse($rawText);
 
             return new OcrResult(
-                rawText:     $rawText,
-                vendor:      $parsed['vendor'],
+                rawText: $rawText,
+                vendor: $parsed['vendor'],
                 amountCents: $parsed['amount_cents'],
-                date:        $parsed['date'],
-                confidence:  null, // Tesseract CLI does not expose per-document confidence easily
-                lineItems:   [],
+                date: $parsed['date'],
+                confidence: null, // Tesseract CLI does not expose per-document confidence easily
+                lineItems: [],
             );
         } finally {
             // Clean up any temporary files we created during this extraction.
@@ -101,7 +101,7 @@ final class TesseractOcrDriver implements OcrDriverInterface
      */
     private function convertPdfToImage(string $pdfPath): string
     {
-        $outputPrefix = sys_get_temp_dir() . '/ocr_' . uniqid('', true);
+        $outputPrefix = sys_get_temp_dir().'/ocr_'.uniqid('', true);
 
         $process = new Process([
             'pdftoppm',
@@ -124,16 +124,16 @@ final class TesseractOcrDriver implements OcrDriverInterface
             );
         }
 
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             throw new OcrException(
-                "pdftoppm failed (exit {$process->getExitCode()}) for: {$pdfPath}. " .
-                "Stderr: " . $process->getErrorOutput(),
+                "pdftoppm failed (exit {$process->getExitCode()}) for: {$pdfPath}. ".
+                'Stderr: '.$process->getErrorOutput(),
             );
         }
 
         // pdftoppm pads page numbers based on total pages: -1.png or -01.png.
         foreach (['-1.png', '-01.png', '-001.png'] as $suffix) {
-            $candidate = $outputPrefix . $suffix;
+            $candidate = $outputPrefix.$suffix;
             if (file_exists($candidate)) {
                 return $candidate;
             }
@@ -162,11 +162,11 @@ final class TesseractOcrDriver implements OcrDriverInterface
      */
     private function preprocessImage(string $imagePath): string
     {
-        $outputPath = sys_get_temp_dir() . '/ocr_pre_' . uniqid('', true) . '.png';
+        $outputPath = sys_get_temp_dir().'/ocr_pre_'.uniqid('', true).'.png';
 
         try {
-            $manager = new ImageManager(new GdDriver());
-            $image   = $manager->read($imagePath);
+            $manager = new ImageManager(new GdDriver);
+            $image = $manager->read($imagePath);
 
             $image->greyscale();
 
@@ -195,13 +195,13 @@ final class TesseractOcrDriver implements OcrDriverInterface
      *   - "stdout" as output basename tells Tesseract to write to stdout
      *     rather than a file (no .txt file created on disk).
      *
-     * @throws OcrException  On timeout or non-zero exit code.
+     * @throws OcrException On timeout or non-zero exit code.
      */
     private function runTesseract(string $imagePath): string
     {
-        $binary    = config('ocr.tesseract.binary', 'tesseract');
+        $binary = config('ocr.tesseract.binary', 'tesseract');
         $languages = config('ocr.tesseract.languages', 'spa+eng');
-        $timeout   = (int) config('ocr.tesseract.timeout', 60);
+        $timeout = (int) config('ocr.tesseract.timeout', 60);
 
         $process = new Process([$binary, $imagePath, 'stdout', '-l', $languages]);
         $process->setTimeout($timeout);
@@ -215,10 +215,10 @@ final class TesseractOcrDriver implements OcrDriverInterface
             );
         }
 
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             throw new OcrException(
-                "Tesseract failed (exit {$process->getExitCode()}) for: {$imagePath}. " .
-                "Stderr: " . $process->getErrorOutput(),
+                "Tesseract failed (exit {$process->getExitCode()}) for: {$imagePath}. ".
+                'Stderr: '.$process->getErrorOutput(),
             );
         }
 
