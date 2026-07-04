@@ -29,6 +29,8 @@ import AppSpinner from '@/components/base/AppSpinner.vue'
 import OnboardingTour from '@/components/composite/OnboardingTour.vue'
 import ConfirmDialog from '@/components/composite/ConfirmDialog.vue'
 import { useRouter } from 'vue-router'
+import { useNotificationsStore } from '@/stores/notifications'
+import NotificationsDropdown from '@/components/layout/NotificationsDropdown.vue'
 
 interface NavItem {
     id: string
@@ -42,6 +44,7 @@ const route = useRoute()
 const router = useRouter()
 const { currentUser, logout } = useAuth()
 const { isDark, toggle: toggleDark } = useTheme()
+const notifications = useNotificationsStore()
 
 const sidebarOpen = ref(false)
 const sidebarCollapsed = ref(false)
@@ -111,8 +114,14 @@ function handleClickOutsideUserMenu(e: MouseEvent) {
     }
 }
 
-onMounted(() => document.addEventListener('click', handleClickOutsideUserMenu))
-onUnmounted(() => document.removeEventListener('click', handleClickOutsideUserMenu))
+onMounted(() => {
+    document.addEventListener('click', handleClickOutsideUserMenu)
+    notifications.startPolling()
+})
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutsideUserMenu)
+    notifications.stopPolling()
+})
 
 // ── Onboarding tour: shown once per tenant on the owner's first visit ───────────
 const showTour = ref(false)
@@ -292,14 +301,26 @@ watch(() => route.name, () => maybeStartTour())
                 </button>
 
                 <!-- Notifications -->
-                <button
-                    type="button"
-                    class="btn-icon relative"
-                    aria-label="Notificaciones"
-                >
-                    <Bell :size="20" />
-                    <span class="admin-topbar-dot" aria-hidden="true" />
-                </button>
+                <div class="relative">
+                    <button
+                        type="button"
+                        class="btn-icon relative"
+                        aria-label="Notificaciones"
+                        data-notif-bell
+                        data-testid="notif-bell"
+                        :aria-expanded="notifications.open"
+                        aria-haspopup="true"
+                        @click="notifications.toggle()"
+                    >
+                        <Bell :size="20" />
+                        <span
+                            v-if="notifications.unreadCount > 0"
+                            class="notif-badge"
+                            data-testid="notif-badge"
+                        >{{ notifications.unreadCount > 9 ? '9+' : notifications.unreadCount }}</span>
+                    </button>
+                    <NotificationsDropdown />
+                </div>
 
                 <!-- User menu -->
                 <div class="relative" data-user-menu>
@@ -427,14 +448,22 @@ watch(() => route.name, () => maybeStartTour())
     display: none;
 }
 
-.admin-topbar-dot {
+.notif-badge {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 99px;
+    top: -0.15rem;
+    right: -0.15rem;
+    min-width: 1.05rem;
+    height: 1.05rem;
+    padding: 0 0.28rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
     background: var(--primary);
+    border-radius: var(--r-full);
 }
 
 .admin-topbar-user {
