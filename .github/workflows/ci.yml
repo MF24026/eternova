@@ -97,6 +97,11 @@ jobs:
         run: npm run lint
 
       - name: Run PHPUnit test suite
+        # The runner reaches the service containers via mapped ports on 127.0.0.1,
+        # not by service hostname. phpunit.xml sets DB_HOST=mysql for local Sail
+        # (Docker network); this non-forced OS env overrides it for CI only.
+        env:
+          DB_HOST: 127.0.0.1
         run: php artisan test
 
       - name: Build production assets
