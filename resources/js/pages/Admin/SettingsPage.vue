@@ -418,6 +418,20 @@ onBeforeRouteLeave(async () => {
                             </button>
                         </div>
                         <AppInput v-model="taxRatePercent" label="Tasa de IVA (%)" type="number" help-text="Porcentaje sobre el subtotal" :error="errors.tax?.rate_bps" data-testid="input-tax-rate" />
+                        <div class="flex items-center justify-between p-4 rounded-xl" style="background: var(--surface-low)">
+                            <div>
+                                <p class="text-sm font-semibold text-on-surface">Los precios incluyen IVA</p>
+                                <p class="text-xs text-on-surface-variant">El impuesto ya está incorporado en los precios del catálogo</p>
+                            </div>
+                            <button
+                                type="button" role="switch" :aria-checked="settings.tax.prices_include_tax" data-testid="tax-prices-include"
+                                class="w-12 h-6 rounded-full transition-colors duration-200 relative shrink-0"
+                                :style="{ background: settings.tax.prices_include_tax ? 'var(--primary)' : 'var(--surface-high)' }"
+                                @click="settings.tax.prices_include_tax = !settings.tax.prices_include_tax"
+                            >
+                                <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.tax.prices_include_tax ? 'translate-x-7' : 'translate-x-1'" />
+                            </button>
+                        </div>
                         <AppInput v-model="settings.tax.id_label" label="Etiqueta de identificación fiscal" help-text="Ej. NIT, RFC, RUC" :error="errors.tax?.id_label" />
                         <AppInput v-model="settings.tax.id_number" label="Número de identificación fiscal" :error="errors.tax?.id_number" data-testid="input-tax-id" />
                     </div>

@@ -1,8 +1,7 @@
 import api from './api'
-import type { Paginated } from '@/types/api'
 import type {
     PosBranch,
-    PosProduct,
+    PosProductsResponse,
     PosCheckoutPayload,
     PosCheckoutResponse,
     PosReceiptResponse,
@@ -11,6 +10,7 @@ import type {
 interface BranchesApiResponse {
     data: PosBranch[]
 }
+
 
 export interface PosProductFilters {
     branch_id: string
@@ -38,8 +38,8 @@ const PosService = {
         return response.data.data
     },
 
-    async products(filters: PosProductFilters): Promise<Paginated<PosProduct>> {
-        const response = await api.get<Paginated<PosProduct>>('/pos/products', {
+    async products(filters: PosProductFilters): Promise<PosProductsResponse> {
+        const response = await api.get<PosProductsResponse>('/pos/products', {
             params: buildParams(
                 filters as unknown as Record<string, string | number | undefined>,
             ),

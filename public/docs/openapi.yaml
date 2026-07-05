@@ -29,7 +29,7 @@ paths:
                     status: ok
                     version: v1
                   meta:
-                    request_id: 20c1b63f-cf86-42c5-b00c-9d7905017e26
+                    request_id: b2d60fca-3a1a-458c-baa5-e2bae4868e48
                 properties:
                   data:
                     type: object
@@ -45,7 +45,4577 @@ paths:
                     properties:
                       request_id:
                         type: string
-                        example: 20c1b63f-cf86-42c5-b00c-9d7905017e26
+                        example: b2d60fca-3a1a-458c-baa5-e2bae4868e48
       tags:
         - Endpoints
+      security: []
+  /api/v1/auth/register:
+    post:
+      summary: 'Register a new global user account.'
+      operationId: registerANewGlobalUserAccount
+      description: "Creates the user, fires the Registered event (triggers email verification),\nand immediately issues a Bearer token so the SPA can proceed to onboarding\nwithout a second auth round-trip.\n\nNote: this endpoint does NOT create a tenant. Tenant creation happens via\nPOST /api/v1/tenants (issue #13 wizard flow). A fresh user has zero tenants."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                email:
+                  type: string
+                  description: 'validation.email validation.max.'
+                  example: zbailey@example.net
+                password:
+                  type: string
+                  description: ''
+                  example: '|]|{+-'
+              required:
+                - name
+                - email
+                - password
+      security: []
+  /api/v1/auth/login:
+    post:
+      summary: 'Login via session cookie (SPA mode).'
+      operationId: loginViaSessionCookieSPAMode
+      description: "After a successful login the SPA's Axios with withCredentials: true\nautomatically sends the session cookie on subsequent requests. The\nresponse body contains the user resource so the SPA can hydrate its store."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: validation.email.
+                  example: gbailey@example.net
+                password:
+                  type: string
+                  description: ''
+                  example: '|]|{+-'
+                device_name:
+                  type: string
+                  description: validation.max.
+                  example: v
+              required:
+                - email
+                - password
+      security: []
+  /api/v1/auth/token:
+    post:
+      summary: 'Issue a Bearer token (mobile / external client mode).'
+      operationId: issueABearerTokenmobileExternalClientMode
+      description: "The plaintext token is returned once and only once in `plain_text_token`.\nThe token model itself (without the plaintext) is also returned in `data`\nso the client can store the token ID for later revocation."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: validation.email.
+                  example: gbailey@example.net
+                password:
+                  type: string
+                  description: ''
+                  example: '|]|{+-'
+                name:
+                  type: string
+                  description: validation.max.
+                  example: v
+                abilities:
+                  type: array
+                  description: ''
+                  example:
+                    - architecto
+                  items:
+                    type: string
+              required:
+                - email
+                - password
+                - name
+      security: []
+  /api/v1/auth/forgot-password:
+    post:
+      summary: 'Send a password reset link to the given email.'
+      operationId: sendAPasswordResetLinkToTheGivenEmail
+      description: "The response is intentionally identical whether or not the email exists,\nto avoid leaking which addresses have accounts (user enumeration). The one\nexception is throttling, which returns 429 so the user knows to wait."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'validation.email validation.max.'
+                  example: gbailey@example.net
+              required:
+                - email
+      security: []
+  /api/v1/auth/reset-password:
+    post:
+      summary: 'Consume a reset token and set the new password.'
+      operationId: consumeAResetTokenAndSetTheNewPassword
+      description: "On success the remember token is rotated (invalidating other sessions) and\na PasswordReset event fires. An invalid/expired token yields a 422 keyed on\nthe email field so the SPA can surface it inline."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: ''
+                  example: architecto
+                email:
+                  type: string
+                  description: 'validation.email validation.max.'
+                  example: zbailey@example.net
+                password:
+                  type: string
+                  description: ''
+                  example: '|]|{+-'
+              required:
+                - token
+                - email
+                - password
+      security: []
+  /api/v1/auth/logout:
+    post:
+      summary: 'Log out the current user.'
+      operationId: logOutTheCurrentUser
+      description: "Handles both SPA (session) and Bearer token authentication:\n  - Revokes the current access token if the user authenticated via token.\n  - Invalidates the session and regenerates the CSRF token for SPA mode.\n\nReturns 204 No Content — the client should clear its local auth state."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/me:
+    get:
+      summary: 'Return the currently authenticated user with their tenant memberships.'
+      operationId: returnTheCurrentlyAuthenticatedUserWithTheirTenantMemberships
+      description: "The /me route is intentionally NOT behind the 'tenant' middleware: it is\nalso called from non-tenant origins (super-admin panel, public storefront\nboot), where EnsureTenant would abort(404). So we resolve the \"current\"\ntenant SOFTLY here — from the request subdomain, only when it matches one\nof the user's memberships — and bind it so UserResource can flag\nis_current and expose the plan. On non-tenant hosts this resolves to null\nand the response simply has no current tenant / plan."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/auth/tokens:
+    get:
+      summary: 'List all personal access tokens for the authenticated user.'
+      operationId: listAllPersonalAccessTokensForTheAuthenticatedUser
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  '/api/v1/auth/tokens/{tokenId}':
+    delete:
+      summary: 'Revoke a specific personal access token.'
+      operationId: revokeASpecificPersonalAccessToken
+      description: "Returns 404 (not 403) when the token does not belong to this user\nto avoid revealing which token IDs exist globally."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: tokenId
+        description: ''
+        example: '564'
+        required: true
+        schema:
+          type: string
+  /api/v1/billing/webhooks/wompi:
+    post:
+      summary: ''
+      operationId: postApiV1BillingWebhooksWompi
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    get:
+      summary: ''
+      operationId: getApiV1BillingWebhooksWompi
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: ok
+                properties:
+                  status:
+                    type: string
+                    example: ok
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/account/billing:
+    get:
+      summary: ''
+      operationId: getApiV1AccountBilling
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/account/billing/invoices:
+    get:
+      summary: ''
+      operationId: getApiV1AccountBillingInvoices
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  '/api/v1/account/billing/invoices/{invoice}/download':
+    get:
+      summary: ''
+      operationId: getApiV1AccountBillingInvoicesInvoiceDownload
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: invoice
+        description: 'The invoice.'
+        example: '564'
+        required: true
+        schema:
+          type: string
+  /api/v1/account/billing/cancel:
+    post:
+      summary: ''
+      operationId: postApiV1AccountBillingCancel
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/account/billing/plan:
+    post:
+      summary: ''
+      operationId: postApiV1AccountBillingPlan
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the plans table.'
+                  example: 16
+              required:
+                - plan_id
+      security: []
+  /api/v1/account/billing/subscribe:
+    post:
+      summary: ''
+      operationId: postApiV1AccountBillingSubscribe
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the plans table.'
+                  example: 16
+              required:
+                - plan_id
+      security: []
+  /api/v1/branches:
+    get:
+      summary: ''
+      operationId: getApiV1Branches
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/categories/reorder:
+    patch:
+      summary: 'Bulk reorder categories by updating sort_order and parent_id.'
+      operationId: bulkReorderCategoriesByUpdatingSortOrderAndParentId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  description: validation.min.
+                  example:
+                    - []
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: 'The <code>id</code> of an existing record in the categories table.'
+                        example: 16
+                      sort_order:
+                        type: integer
+                        description: validation.min.
+                        example: 39
+                      parent_id:
+                        type: integer
+                        description: 'The <code>id</code> of an existing record in the categories table.'
+                        example: 16
+                        nullable: true
+                    required:
+                      - id
+                      - sort_order
+              required:
+                - items
+      security: []
+  /api/v1/categories:
+    get:
+      summary: 'Paginated list of categories.'
+      operationId: paginatedListOfCategories
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Create a new category.'
+      operationId: createANewCategory
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                slug:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                description:
+                  type: string
+                  description: validation.max.
+                  example: 'Animi quos velit et fugiat.'
+                  nullable: true
+                image_url:
+                  type: string
+                  description: 'Must be a valid URL. validation.max.'
+                  example: 'http://www.dach.com/mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo.html'
+                  nullable: true
+                parent_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the categories table.'
+                  example: 16
+                  nullable: true
+                sort_order:
+                  type: integer
+                  description: validation.min.
+                  example: 39
+                  nullable: true
+                is_active:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: true
+              required:
+                - name
+      security: []
+  '/api/v1/categories/{id}':
+    get:
+      summary: 'Single category with children and product count.'
+      operationId: singleCategoryWithChildrenAndProductCount
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    patch:
+      summary: 'Update an existing category.'
+      operationId: updateAnExistingCategory
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                slug:
+                  type: string
+                  description: '@var Category|null $category validation.max.'
+                  example: 'n'
+                  nullable: true
+                description:
+                  type: string
+                  description: validation.max.
+                  example: 'Animi quos velit et fugiat.'
+                  nullable: true
+                image_url:
+                  type: string
+                  description: 'Must be a valid URL. validation.max.'
+                  example: 'http://www.dach.com/mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo.html'
+                  nullable: true
+                parent_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the categories table.'
+                  example: 16
+                  nullable: true
+                sort_order:
+                  type: integer
+                  description: validation.min.
+                  example: 39
+                  nullable: true
+                is_active:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: true
+      security: []
+    delete:
+      summary: 'Soft-delete a category. Children are orphaned (parent_id → null).'
+      operationId: softDeleteACategoryChildrenAreOrphanedparentIdNull
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the category.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/categories/{category_id}/restore':
+    post:
+      summary: 'Restore a soft-deleted category.'
+      operationId: restoreASoftDeletedCategory
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: category_id
+        description: 'The ID of the category.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/products/{product_id}/restore':
+    post:
+      summary: 'Restore a soft-deleted product and its variants.'
+      operationId: restoreASoftDeletedProductAndItsVariants
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: product_id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/products/{product_id}/variants/reorder':
+    patch:
+      summary: 'Reorder variants by position.'
+      operationId: reorderVariantsByPosition
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  description: validation.min.
+                  example:
+                    - []
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: 'The <code>id</code> of an existing record in the product_variants table.'
+                        example: 16
+                      position:
+                        type: integer
+                        description: validation.min.
+                        example: 39
+                    required:
+                      - id
+                      - position
+              required:
+                - items
+      security: []
+    parameters:
+      -
+        in: path
+        name: product_id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/products:
+    get:
+      summary: 'Paginated list of products with optional filters.'
+      operationId: paginatedListOfProductsWithOptionalFilters
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Create a product atomically (product + options + variants + categories + tags).'
+      operationId: createAProductAtomicallyproduct+Options+Variants+Categories+Tags
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                slug:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                description:
+                  type: string
+                  description: validation.max.
+                  example: 'Animi quos velit et fugiat.'
+                  nullable: true
+                sku_root:
+                  type: string
+                  description: validation.max.
+                  example: d
+                  nullable: true
+                base_price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 37
+                cost_price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 9
+                  nullable: true
+                default_image_url:
+                  type: string
+                  description: 'Must be a valid URL. validation.max.'
+                  example: 'http://tillman.com/'
+                  nullable: true
+                gallery:
+                  type: array
+                  description: 'Must be a valid URL. validation.max.'
+                  example:
+                    - h
+                  items:
+                    type: string
+                is_active:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: true
+                is_featured:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: true
+                tax_rate:
+                  type: number
+                  description: 'validation.min validation.max.'
+                  example: 1
+                  nullable: true
+                options:
+                  type: array
+                  description: ''
+                  example: null
+                  items:
+                    type: object
+                    nullable: true
+                    properties:
+                      name:
+                        type: string
+                        description: 'This field is required when <code>options</code> is present. validation.max.'
+                        example: 'n'
+                      values:
+                        type: array
+                        description: validation.max.
+                        example:
+                          - g
+                        items:
+                          type: string
+                variants:
+                  type: array
+                  description: ''
+                  example: null
+                  items:
+                    type: object
+                    nullable: true
+                    properties:
+                      sku:
+                        type: string
+                        description: validation.max.
+                        example: z
+                        nullable: true
+                      price_cents:
+                        type: integer
+                        description: validation.min.
+                        example: 77
+                        nullable: true
+                      options:
+                        type: object
+                        description: ''
+                        example: null
+                        properties: {  }
+                        nullable: true
+                      barcode:
+                        type: string
+                        description: validation.max.
+                        example: i
+                        nullable: true
+                      image_url:
+                        type: string
+                        description: 'Must be a valid URL. validation.max.'
+                        example: 'http://www.okon.com/accusantium-harum-mollitia-modi-deserunt-aut-ab'
+                        nullable: true
+                      position:
+                        type: integer
+                        description: validation.min.
+                        example: 50
+                        nullable: true
+                categories:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the categories table.'
+                  example:
+                    - 16
+                  items:
+                    type: integer
+                tags:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the tags table.'
+                  example:
+                    - 16
+                  items:
+                    type: integer
+              required:
+                - name
+                - base_price_cents
+      security: []
+  '/api/v1/products/{id}':
+    get:
+      summary: 'Single product with all relations.'
+      operationId: singleProductWithAllRelations
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    patch:
+      summary: 'Update an existing product.'
+      operationId: updateAnExistingProduct
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                slug:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                description:
+                  type: string
+                  description: validation.max.
+                  example: 'Animi quos velit et fugiat.'
+                  nullable: true
+                sku_root:
+                  type: string
+                  description: validation.max.
+                  example: d
+                  nullable: true
+                base_price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 37
+                cost_price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 9
+                  nullable: true
+                default_image_url:
+                  type: string
+                  description: 'Must be a valid URL. validation.max.'
+                  example: 'http://tillman.com/'
+                  nullable: true
+                gallery:
+                  type: array
+                  description: 'Must be a valid URL. validation.max.'
+                  example:
+                    - h
+                  items:
+                    type: string
+                is_active:
+                  type: boolean
+                  description: ''
+                  example: false
+                is_featured:
+                  type: boolean
+                  description: ''
+                  example: false
+                tax_rate:
+                  type: number
+                  description: 'validation.min validation.max.'
+                  example: 1
+                  nullable: true
+                categories:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the categories table.'
+                  example:
+                    - 16
+                  items:
+                    type: integer
+                tags:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the tags table.'
+                  example:
+                    - 16
+                  items:
+                    type: integer
+      security: []
+    delete:
+      summary: 'Soft-delete a product (cascades to its variants).'
+      operationId: softDeleteAProductcascadesToItsVariants
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/products/{product_id}/images/reorder':
+    patch:
+      summary: 'Reorder the gallery.'
+      operationId: reorderTheGallery
+      description: 'Expects JSON body: { "urls": ["<full-url-1>", "<full-url-2>", ...] }'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                urls:
+                  type: array
+                  description: ''
+                  example:
+                    - architecto
+                  items:
+                    type: string
+      security: []
+    parameters:
+      -
+        in: path
+        name: product_id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/products/{product_id}/images/set-default':
+    patch:
+      summary: 'Set the default image for a product.'
+      operationId: setTheDefaultImageForAProduct
+      description: 'Expects JSON body: { "url": "<full-size URL>" }'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: ''
+                  example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+              required:
+                - url
+      security: []
+    parameters:
+      -
+        in: path
+        name: product_id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/products/{product_id}/images':
+    post:
+      summary: 'Upload an image for a product.'
+      operationId: uploadAnImageForAProduct
+      description: 'Multipart POST with field "image". Returns the created image object.'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: 'Must be a file. validation.max.'
+              required:
+                - image
+      security: []
+    delete:
+      summary: 'Delete an image from the product gallery and storage.'
+      operationId: deleteAnImageFromTheProductGalleryAndStorage
+      description: 'Expects JSON body: { "url": "<full-size URL>" }'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: ''
+                  example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+              required:
+                - url
+      security: []
+    parameters:
+      -
+        in: path
+        name: product_id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/products/{product_id}/variants':
+    post:
+      summary: 'Add a new variant to an existing product.'
+      operationId: addANewVariantToAnExistingProduct
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku:
+                  type: string
+                  description: validation.max.
+                  example: b
+                  nullable: true
+                barcode:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 84
+                  nullable: true
+                cost_price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 12
+                  nullable: true
+                weight_grams:
+                  type: integer
+                  description: validation.min.
+                  example: 77
+                  nullable: true
+                options:
+                  type: object
+                  description: ''
+                  example: null
+                  properties: {  }
+                  nullable: true
+                image_url:
+                  type: string
+                  description: 'Must be a valid URL. validation.max.'
+                  example: 'https://www.gulgowski.com/nihil-accusantium-harum-mollitia-modi-deserunt'
+                  nullable: true
+                position:
+                  type: integer
+                  description: validation.min.
+                  example: 87
+                  nullable: true
+      security: []
+    parameters:
+      -
+        in: path
+        name: product_id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/products/{product_id}/variants/{id}':
+    patch:
+      summary: 'Update a single variant.'
+      operationId: updateASingleVariant
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku:
+                  type: string
+                  description: validation.max.
+                  example: b
+                barcode:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 84
+                  nullable: true
+                cost_price_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 12
+                  nullable: true
+                weight_grams:
+                  type: integer
+                  description: validation.min.
+                  example: 77
+                  nullable: true
+                options:
+                  type: object
+                  description: ''
+                  example: null
+                  properties: {  }
+                image_url:
+                  type: string
+                  description: 'Must be a valid URL. validation.max.'
+                  example: 'https://www.gulgowski.com/nihil-accusantium-harum-mollitia-modi-deserunt'
+                  nullable: true
+                position:
+                  type: integer
+                  description: validation.min.
+                  example: 87
+      security: []
+    delete:
+      summary: 'Soft-delete a variant.'
+      operationId: softDeleteAVariant
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: product_id
+        description: 'The ID of the product.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+      -
+        in: path
+        name: id
+        description: 'The ID of the variant.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/tags:
+    get:
+      summary: 'Paginated list of tags for the current tenant.'
+      operationId: paginatedListOfTagsForTheCurrentTenant
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Create a new tag.'
+      operationId: createANewTag
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                slug:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+              required:
+                - name
+      security: []
+  '/api/v1/tags/{id}':
+    patch:
+      summary: 'Update an existing tag.'
+      operationId: updateAnExistingTag
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                slug:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+      security: []
+    delete:
+      summary: 'Hard-delete a tag. Tags have no soft-delete per ERD §2.6.'
+      operationId: hardDeleteATagTagsHaveNoSoftDeletePerERD26
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the tag.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/customers/{customer_id}/restore':
+    post:
+      summary: 'Restore a soft-deleted customer.'
+      operationId: restoreASoftDeletedCustomer
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: customer_id
+        description: 'The ID of the customer.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/customers:
+    get:
+      summary: 'Paginated customer list with optional search — powers the POS customer selector.'
+      operationId: paginatedCustomerListWithOptionalSearchPowersThePOSCustomerSelector
+      description: "Query params:\n  ?search=   — matches name, phone, whatsapp, or email\n  ?per_page= — results per page (1–100, default 20)"
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Create a new customer.'
+      operationId: createANewCustomer
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                email:
+                  type: string
+                  description: 'validation.email validation.max.'
+                  example: zbailey@example.net
+                  nullable: true
+                phone:
+                  type: string
+                  description: validation.max.
+                  example: i
+                  nullable: true
+                whatsapp:
+                  type: string
+                  description: validation.max.
+                  example: 'y'
+                  nullable: true
+                address:
+                  type: string
+                  description: validation.max.
+                  example: v
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: d
+                  nullable: true
+              required:
+                - name
+      security: []
+  '/api/v1/customers/{id}':
+    get:
+      summary: 'Show a single customer.'
+      operationId: showASingleCustomer
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    patch:
+      summary: 'Update an existing customer.'
+      operationId: updateAnExistingCustomer
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                email:
+                  type: string
+                  description: 'validation.email validation.max.'
+                  example: zbailey@example.net
+                  nullable: true
+                phone:
+                  type: string
+                  description: validation.max.
+                  example: i
+                  nullable: true
+                whatsapp:
+                  type: string
+                  description: validation.max.
+                  example: 'y'
+                  nullable: true
+                address:
+                  type: string
+                  description: validation.max.
+                  example: v
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: d
+                  nullable: true
+      security: []
+    delete:
+      summary: 'Soft-delete a customer.'
+      operationId: softDeleteACustomer
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the customer.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/dashboard:
+    get:
+      summary: ''
+      operationId: getApiV1Dashboard
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/expenses/receipt:
+    post:
+      summary: 'Upload a receipt, create a DRAFT expense, and dispatch the OCR job.'
+      operationId: uploadAReceiptCreateADRAFTExpenseAndDispatchTheOCRJob
+      description: "Returns 201 immediately. OCR processing is async — the caller should\npoll GET /{expense}/ocr-status until ocr_status is 'done' or 'failed'."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                receipt:
+                  type: string
+                  format: binary
+                  description: 'Must be a file. validation.max.'
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                  nullable: true
+              required:
+                - receipt
+      security: []
+  /api/v1/expenses/categories:
+    get:
+      summary: 'List all expense categories for the current tenant, ordered by name.'
+      operationId: listAllExpenseCategoriesForTheCurrentTenantOrderedByName
+      description: "Returns active AND inactive categories so the frontend can show the full\nlist in the settings view. The expense form should filter to is_active=true\non the client side."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Create a new expense category for the current tenant.'
+      operationId: createANewExpenseCategoryForTheCurrentTenant
+      description: "tenant_id is injected from the active tenant context so the caller\ncannot supply it in the request body (they could try, but validated()\nonly returns declared fields)."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                type:
+                  type: string
+                  description: ''
+                  example: operating
+                  enum:
+                    - operating
+                    - products
+                    - payroll
+                    - rent
+                    - other
+                is_active:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: true
+              required:
+                - name
+                - type
+      security: []
+  '/api/v1/expenses/categories/{id}':
+    patch:
+      summary: "Update an expense category's name, type, or active status."
+      operationId: updateAnExpenseCategorysNameTypeOrActiveStatus
+      description: "Renaming uses the UpdateExpenseCategoryRequest unique rule which ignores\nthe current row, so a no-op rename does not trigger a uniqueness violation."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: validation.max.
+                  example: b
+                type:
+                  type: string
+                  description: ''
+                  example: products
+                  enum:
+                    - operating
+                    - products
+                    - payroll
+                    - rent
+                    - other
+                is_active:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: true
+      security: []
+    delete:
+      summary: 'Delete an expense category.'
+      operationId: deleteAnExpenseCategory
+      description: "Blocked with 422 when the category has any associated expenses (including\nsoft-deleted ones). Use PATCH to set is_active=false to retire a category\nwithout breaking expense history.\n\nWe count withTrashed() because soft-deleted expenses still reference the\ncategory for reporting; nulling the FK there would silently break E5 reports."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the category.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/expenses/report:
+    get:
+      summary: 'Monthly expense report: totals grouped by category for a period.'
+      operationId: monthlyExpenseReportTotalsGroupedByCategoryForAPeriod
+      description: "Query params:\n  ?month=YYYY-MM        — the period (defaults to the current month if omitted)\n  ?date_from= &date_to= — explicit range (used when month is absent)\n  ?verified_only=       — true to count only confirmed expenses (default: all)\n\nReturns { period, total_cents, by_category[] }. Every active category is\nzero-filled so the chart in S6-E8 has a stable set of slices."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/expenses:
+    get:
+      summary: 'Paginated list of expenses with period total for the filtered set.'
+      operationId: paginatedListOfExpensesWithPeriodTotalForTheFilteredSet
+      description: "Query params:\n  ?expense_category_id= — filter to a specific category\n  ?branch_id=           — filter to a specific branch\n  ?date_from=           — ISO date lower bound on expense_date\n  ?date_to=             — ISO date upper bound on expense_date\n  ?month=               — YYYY-MM shorthand (expands to date_from/to for that month)\n  ?ocr_status=          — one of: none, pending, processing, done, failed\n  ?is_verified=         — true/false (0/1 accepted)\n  ?search=              — LIKE match on vendor or description\n  ?per_page=            — page size (1–100, default 20)"
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Create a manually entered expense for the current tenant.'
+      operationId: createAManuallyEnteredExpenseForTheCurrentTenant
+      description: "Returns 201 with the full expense shape. The expense is immediately\nverified (is_verified=true) and has no receipt or OCR pipeline attached."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: validation.max.
+                  example: 'Eius et animi quos velit et.'
+                amount_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 60
+                expense_date:
+                  type: string
+                  description: validation.date.
+                  example: '2026-07-04T03:07:07'
+                expense_category_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the expense_categories table.'
+                  example: 16
+                  nullable: true
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                  nullable: true
+                vendor:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                payment_method:
+                  type: string
+                  description: ''
+                  example: transfer
+                  enum:
+                    - cash
+                    - card
+                    - transfer
+                    - other
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: g
+                  nullable: true
+              required:
+                - description
+                - amount_cents
+                - expense_date
+      security: []
+  '/api/v1/expenses/{expense_id}/ocr-status':
+    get:
+      summary: 'Return the current OCR status and extracted data for a single expense.'
+      operationId: returnTheCurrentOCRStatusAndExtractedDataForASingleExpense
+      description: "The E7 verification UI polls this endpoint after uploading a receipt to\nknow when OCR suggestions are ready to display. Clients should stop\npolling when ocr_status is 'done' or 'failed'.\n\nRoute-model binding resolves {expense} through the BelongsToTenant global\nscope, so a cross-tenant expense ID returns 404 before reaching this method."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: expense_id
+        description: 'The ID of the expense.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/expenses/{id}':
+    get:
+      summary: 'Full expense detail including category, branch, and creator.'
+      operationId: fullExpenseDetailIncludingCategoryBranchAndCreator
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    patch:
+      summary: "Update an expense's fields."
+      operationId: updateAnExpensesFields
+      description: "Also serves as the verification endpoint: sending { is_verified: true }\nalongside corrected fields confirms a draft in one atomic write. This\navoids a separate /verify action — the intent is clear from the payload."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: validation.max.
+                  example: 'Eius et animi quos velit et.'
+                amount_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 60
+                expense_date:
+                  type: string
+                  description: validation.date.
+                  example: '2026-07-04T03:07:07'
+                expense_category_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the expense_categories table.'
+                  example: 16
+                  nullable: true
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                  nullable: true
+                vendor:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                payment_method:
+                  type: string
+                  description: ''
+                  example: other
+                  enum:
+                    - cash
+                    - card
+                    - transfer
+                    - other
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: g
+                  nullable: true
+                is_verified:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: true
+      security: []
+    delete:
+      summary: 'Soft-delete an expense and remove its receipt file (best-effort).'
+      operationId: softDeleteAnExpenseAndRemoveItsReceiptFilebestEffort
+      description: 'Returns 204 No Content on success.'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the expense.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/inventory:
+    get:
+      summary: "GET /api/v1/inventory\nPaginated stock listing per branch."
+      operationId: gETapiv1inventoryPaginatedStockListingPerBranch
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/inventory/movements:
+    get:
+      summary: "GET /api/v1/inventory/movements\nPaginated movement history with optional filters."
+      operationId: gETapiv1inventorymovementsPaginatedMovementHistoryWithOptionalFilters
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: "POST /api/v1/inventory/movements\nRecord an entry, exit, or adjustment movement."
+      operationId: pOSTapiv1inventorymovementsRecordAnEntryExitOrAdjustmentMovement
+      description: 'Routes to the appropriate InventoryService method based on `type`.'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branch_id:
+                  type: string
+                  description: ''
+                  example: architecto
+                product_variant_id:
+                  type: integer
+                  description: ''
+                  example: 16
+                type:
+                  type: string
+                  description: ''
+                  example: entry
+                  enum:
+                    - entry
+                    - exit
+                    - adjustment
+                quantity:
+                  type: integer
+                  description: 'Must not be one of <code>0</code>.'
+                  example: 16
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+              required:
+                - branch_id
+                - product_variant_id
+                - type
+                - quantity
+      security: []
+  /api/v1/inventory/transfers:
+    post:
+      summary: "POST /api/v1/inventory/transfers\nTransfer stock between two branches of the same tenant."
+      operationId: pOSTapiv1inventorytransfersTransferStockBetweenTwoBranchesOfTheSameTenant
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                from_branch_id:
+                  type: string
+                  description: 'The value and <code>to_branch_id</code> must be different.'
+                  example: architecto
+                to_branch_id:
+                  type: string
+                  description: 'The value and <code>from_branch_id</code> must be different.'
+                  example: architecto
+                product_variant_id:
+                  type: integer
+                  description: ''
+                  example: 16
+                quantity:
+                  type: integer
+                  description: validation.min.
+                  example: 22
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: g
+                  nullable: true
+              required:
+                - from_branch_id
+                - to_branch_id
+                - product_variant_id
+                - quantity
+      security: []
+  '/api/v1/inventory/{id}':
+    get:
+      summary: "GET /api/v1/inventory/{inventory}\nSingle BranchInventory row with branch + variant + product."
+      operationId: gETapiv1inventoryinventorySingleBranchInventoryRowWithBranch+Variant+Product
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the inventory.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/notifications/unread-count:
+    get:
+      summary: 'GET /api/v1/notifications/unread-count'
+      operationId: gETapiv1notificationsunreadCount
+      description: "Returns the count of unread notifications for the current user in the\ncurrent tenant context."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/notifications:
+    get:
+      summary: 'GET /api/v1/notifications'
+      operationId: gETapiv1notifications
+      description: "Paginated list of notifications for the current user + tenant.\nSupports ?unread_only=true to filter to unread notifications only."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/notifications/read-all:
+    patch:
+      summary: 'PATCH /api/v1/notifications/read-all'
+      operationId: pATCHapiv1notificationsreadAll
+      description: 'Mark all unread notifications as read for the current user + tenant.'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  '/api/v1/notifications/{id}/read':
+    patch:
+      summary: 'PATCH /api/v1/notifications/{id}/read'
+      operationId: pATCHapiv1notificationsidread
+      description: "Mark a single notification as read. Returns 404 if the notification\ndoes not belong to the current user + tenant."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the notification.'
+        example: architecto
+        required: true
+        schema:
+          type: string
+  '/api/v1/track/{token}':
+    get:
+      summary: ''
+      operationId: getApiV1TrackToken
+      description: ''
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Route not found.'
+                  error_code: route.not_found
+                  meta:
+                    request_id: 1d860b80-0a25-4c6a-8626-e8622b054e8d
+                properties:
+                  message:
+                    type: string
+                    example: 'Route not found.'
+                  error_code:
+                    type: string
+                    example: route.not_found
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: 1d860b80-0a25-4c6a-8626-e8622b054e8d
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: token
+        description: ''
+        example: LG4
+        required: true
+        schema:
+          type: string
+  /api/v1/orders:
+    get:
+      summary: 'Paginated list of orders with per-status counts for tab rendering.'
+      operationId: paginatedListOfOrdersWithPerStatusCountsForTabRendering
+      description: "Query params:\n  ?branch_id=    — filter to a specific branch\n  ?status=       — filter to one status (counts always span all statuses)\n  ?customer_id=  — filter to a specific customer\n  ?date_from=    — ISO date lower bound on created_at\n  ?date_to=      — ISO date upper bound on created_at\n  ?search=       — LIKE match on order_number\n  ?per_page=     — page size (1–100, default 20)"
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  '/api/v1/orders/{order_id}/status':
+    patch:
+      summary: "Advance or change the order's status."
+      operationId: advanceOrChangeTheOrdersStatus
+      description: "The state machine is enforced by OrderService::transitionTo(). Invalid\ntransitions (e.g. pending → delivered) return 422 with the DomainException\nmessage so the UI can surface it to the user."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: ''
+                  example: pending
+                  enum:
+                    - pending
+                    - preparing
+                    - ready
+                    - dispatched
+                    - delivered
+                    - cancelled
+                note:
+                  type: string
+                  description: validation.max.
+                  example: b
+                  nullable: true
+              required:
+                - status
+      security: []
+    parameters:
+      -
+        in: path
+        name: order_id
+        description: 'The ID of the order.'
+        example: 01KV958ZTFVBYHP104GWSEJDF1
+        required: true
+        schema:
+          type: string
+  '/api/v1/orders/{order_id}/assignee':
+    patch:
+      summary: 'Assign (or un-assign) a staff member to the order.'
+      operationId: assignorUnAssignAStaffMemberToTheOrder
+      description: "Passing assigned_to: null clears the assignment. The service enforces\nthat the assignee belongs to the same tenant as the order."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assigned_to:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: 16
+                  nullable: true
+      security: []
+    parameters:
+      -
+        in: path
+        name: order_id
+        description: 'The ID of the order.'
+        example: 01KV958ZTFVBYHP104GWSEJDF1
+        required: true
+        schema:
+          type: string
+  '/api/v1/orders/{order_id}/cancel':
+    post:
+      summary: 'Cancel the order.'
+      operationId: cancelTheOrder
+      description: "Delivered orders and already-cancelled orders throw DomainException from\nthe service — surfaced as 422 here."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: order_id
+        description: 'The ID of the order.'
+        example: 01KV958ZTFVBYHP104GWSEJDF1
+        required: true
+        schema:
+          type: string
+  '/api/v1/orders/{id}':
+    get:
+      summary: 'Full order detail including items, timeline, customer, branch, and assignee.'
+      operationId: fullOrderDetailIncludingItemsTimelineCustomerBranchAndAssignee
+      description: "Route-model binding resolves the order through BelongsToTenant — cross-tenant\nids are automatically 404."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the order.'
+        example: 01KV958ZTFVBYHP104GWSEJDF1
+        required: true
+        schema:
+          type: string
+  /api/v1/pos/products:
+    get:
+      summary: 'Product grid for the POS terminal with per-branch exact stock quantities.'
+      operationId: productGridForThePOSTerminalWithPerBranchExactStockQuantities
+      description: "Query parameters:\n  - branch_id      (required) — which branch's stock to resolve\n  - search         (string)   — matches product name, sku_root, or variant sku\n  - category_slug  (string)   — filter by category slug\n  - per_page       (int)      — page size, 1–100, default 20\n\nStock exposure: exact available_quantity per variant — unlike the storefront\nwhich only exposes in_stock/low_stock booleans."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branch_id:
+                  type: string
+                  description: ''
+                  example: architecto
+                search:
+                  type: string
+                  description: ''
+                  example: architecto
+                  nullable: true
+                category_slug:
+                  type: string
+                  description: ''
+                  example: architecto
+                  nullable: true
+                per_page:
+                  type: integer
+                  description: 'validation.min validation.max.'
+                  example: 22
+                  nullable: true
+              required:
+                - branch_id
+      security: []
+  /api/v1/pos/checkout:
+    post:
+      summary: 'POS checkout: create an order atomically and deduct inventory.'
+      operationId: pOSCheckoutCreateAnOrderAtomicallyAndDeductInventory
+      description: "Calls OrderService::createFromPos(). DomainException (insufficient stock\nor variant not found in tenant) is surfaced as 422 with a clear message.\nReturns 201 with PosOrderResource on success."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                items:
+                  type: array
+                  description: validation.min.
+                  example:
+                    - []
+                  items:
+                    type: object
+                    properties:
+                      product_variant_id:
+                        type: integer
+                        description: 'The <code>id</code> of an existing record in the product_variants table.'
+                        example: 16
+                      quantity:
+                        type: integer
+                        description: validation.min.
+                        example: 22
+                    required:
+                      - product_variant_id
+                      - quantity
+                payment_method:
+                  type: string
+                  description: ''
+                  example: card
+                  enum:
+                    - cash
+                    - card
+                    - transfer
+                    - other
+                customer_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the customers table.'
+                  example: 16
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+              required:
+                - branch_id
+                - items
+                - payment_method
+      security: []
+  '/api/v1/pos/orders/{order_id}/receipt':
+    get:
+      summary: 'Receipt data for a completed order.'
+      operationId: receiptDataForACompletedOrder
+      description: "Route-model binding resolves Order through BelongsToTenant scope — orders\nbelonging to other tenants are automatically 404."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: order_id
+        description: 'The ID of the order.'
+        example: 01KV958ZTFVBYHP104GWSEJDF1
+        required: true
+        schema:
+          type: string
+  /api/v1/quotations:
+    get:
+      summary: 'Paginated list of quotations with per-status counts for tab rendering.'
+      operationId: paginatedListOfQuotationsWithPerStatusCountsForTabRendering
+      description: "Query params:\n  ?status=       — filter to one status (counts always span all statuses)\n  ?customer_id=  — filter to a specific customer\n  ?date_from=    — ISO date lower bound on issue_date\n  ?date_to=      — ISO date upper bound on issue_date\n  ?search=       — LIKE match on quotation_number or customer name\n  ?per_page=     — page size (1–100, default 20)"
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Create a new quotation for the current tenant.'
+      operationId: createANewQuotationForTheCurrentTenant
+      description: "Delegates to QuotationService::create() which claims a sequence number,\ncreates the quotation, persists line items, and writes the initial history\nrow — all atomically."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the customers table.'
+                  example: 16
+                  nullable: true
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                  nullable: true
+                issue_date:
+                  type: string
+                  description: validation.date.
+                  example: '2026-07-04T03:07:07'
+                valid_until:
+                  type: string
+                  description: 'validation.date validation.after_or_equal.'
+                  example: '2052-07-27'
+                  nullable: true
+                discount_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 39
+                  nullable: true
+                tax_rate_bps:
+                  type: integer
+                  description: 'validation.min validation.max.'
+                  example: 7
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: z
+                  nullable: true
+                terms:
+                  type: string
+                  description: validation.max.
+                  example: m
+                  nullable: true
+                items:
+                  type: array
+                  description: validation.min.
+                  example:
+                    - []
+                  items:
+                    type: object
+                    properties:
+                      description:
+                        type: string
+                        description: validation.max.
+                        example: 'Eius et animi quos velit et.'
+                      quantity:
+                        type: integer
+                        description: validation.min.
+                        example: 16
+                      unit_price_cents:
+                        type: integer
+                        description: validation.min.
+                        example: 42
+                      product_id:
+                        type: integer
+                        description: 'The <code>id</code> of an existing record in the products table.'
+                        example: 16
+                        nullable: true
+                      sort_order:
+                        type: integer
+                        description: ''
+                        example: 16
+                        nullable: true
+                    required:
+                      - description
+                      - quantity
+                      - unit_price_cents
+              required:
+                - issue_date
+                - items
+      security: []
+  '/api/v1/quotations/{quotation_id}/send':
+    post:
+      summary: 'Mark the quotation as sent to the customer (draft → sent).'
+      operationId: markTheQuotationAsSentToTheCustomerdraftSent
+      description: "An optional note is stored in the status history. Invalid transitions\n(e.g. trying to send an already-accepted quotation) return 422 with\nthe DomainException message so the UI can surface it."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+                  description: validation.max.
+                  example: b
+                  nullable: true
+                convert_to_order:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: true
+      security: []
+    parameters:
+      -
+        in: path
+        name: quotation_id
+        description: 'The ID of the quotation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/quotations/{quotation_id}/accept':
+    post:
+      summary: 'Accept the quotation (draft|sent → accepted).'
+      operationId: acceptTheQuotationdraftsentAccepted
+      description: "When convert_to_order: true is passed in the body, the acceptance and order\ncreation are executed in a single transaction. The response will include\nconverted_order_id populated. Invalid transitions or already-converted\nquotations return 422 with the DomainException message."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+                  description: validation.max.
+                  example: b
+                  nullable: true
+                convert_to_order:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: true
+      security: []
+    parameters:
+      -
+        in: path
+        name: quotation_id
+        description: 'The ID of the quotation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/quotations/{quotation_id}/reject':
+    post:
+      summary: 'Reject the quotation (draft|sent → rejected).'
+      operationId: rejectTheQuotationdraftsentRejected
+      description: 'Invalid transitions (e.g. already-rejected, or accepted) return 422.'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+                  description: validation.max.
+                  example: b
+                  nullable: true
+                convert_to_order:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: true
+      security: []
+    parameters:
+      -
+        in: path
+        name: quotation_id
+        description: 'The ID of the quotation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/quotations/{quotation_id}/pdf':
+    get:
+      summary: 'Render and stream the quotation as a PDF document.'
+      operationId: renderAndStreamTheQuotationAsAPDFDocument
+      description: "The PDF is rendered on-demand (no disk cache in v1 — cheap to regenerate).\nContent-Disposition: inline so the browser opens the PDF in a new tab\nwithout forcing a download dialog — the E8 \"preview\" button depends on this.\n\nFilename: cotizacion-{quotation_number}.pdf (hyphens, lowercase, safe for any OS).\n\nAuthorization: requires 'view' on the quotation — same gate as show().\nCross-tenant ids are already 404 via BelongsToTenant route-model binding."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: quotation_id
+        description: 'The ID of the quotation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/quotations/{id}':
+    get:
+      summary: 'Full quotation detail including items, customer, branch, creator, and status history.'
+      operationId: fullQuotationDetailIncludingItemsCustomerBranchCreatorAndStatusHistory
+      description: "Route-model binding resolves the quotation through BelongsToTenant — cross-tenant\nids are automatically 404."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: "Update a draft quotation's scalar fields and line items."
+      operationId: updateADraftQuotationsScalarFieldsAndLineItems
+      description: "Line items are replaced wholesale — the caller must send the full desired\nitem list on every update. The service enforces that only draft quotations\nmay be edited; a non-draft returns 422."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the customers table.'
+                  example: 16
+                  nullable: true
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                  nullable: true
+                issue_date:
+                  type: string
+                  description: validation.date.
+                  example: '2026-07-04T03:07:07'
+                valid_until:
+                  type: string
+                  description: 'validation.date validation.after_or_equal.'
+                  example: '2052-07-27'
+                  nullable: true
+                discount_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 39
+                  nullable: true
+                tax_rate_bps:
+                  type: integer
+                  description: 'validation.min validation.max.'
+                  example: 7
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: z
+                  nullable: true
+                terms:
+                  type: string
+                  description: validation.max.
+                  example: m
+                  nullable: true
+                items:
+                  type: array
+                  description: validation.min.
+                  example:
+                    - []
+                  items:
+                    type: object
+                    properties:
+                      description:
+                        type: string
+                        description: validation.max.
+                        example: 'Eius et animi quos velit et.'
+                      quantity:
+                        type: integer
+                        description: validation.min.
+                        example: 16
+                      unit_price_cents:
+                        type: integer
+                        description: validation.min.
+                        example: 42
+                      product_id:
+                        type: integer
+                        description: 'The <code>id</code> of an existing record in the products table.'
+                        example: 16
+                        nullable: true
+                      sort_order:
+                        type: integer
+                        description: ''
+                        example: 16
+                        nullable: true
+                    required:
+                      - description
+                      - quantity
+                      - unit_price_cents
+              required:
+                - issue_date
+                - items
+      security: []
+    delete:
+      summary: 'Soft-delete the quotation.'
+      operationId: softDeleteTheQuotation
+      description: "The BelongsToTenant global scope ensures only the current tenant's\nquotations are accessible — cross-tenant ids 404 before reaching here."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the quotation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/quotations/{quotation_id}':
+    patch:
+      summary: "Update a draft quotation's scalar fields and line items."
+      operationId: updateADraftQuotationsScalarFieldsAndLineItems
+      description: "Line items are replaced wholesale — the caller must send the full desired\nitem list on every update. The service enforces that only draft quotations\nmay be edited; a non-draft returns 422."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the customers table.'
+                  example: 16
+                  nullable: true
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                  nullable: true
+                issue_date:
+                  type: string
+                  description: validation.date.
+                  example: '2026-07-04T03:07:07'
+                valid_until:
+                  type: string
+                  description: 'validation.date validation.after_or_equal.'
+                  example: '2052-07-27'
+                  nullable: true
+                discount_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 39
+                  nullable: true
+                tax_rate_bps:
+                  type: integer
+                  description: 'validation.min validation.max.'
+                  example: 7
+                  nullable: true
+                notes:
+                  type: string
+                  description: validation.max.
+                  example: z
+                  nullable: true
+                terms:
+                  type: string
+                  description: validation.max.
+                  example: m
+                  nullable: true
+                items:
+                  type: array
+                  description: validation.min.
+                  example:
+                    - []
+                  items:
+                    type: object
+                    properties:
+                      description:
+                        type: string
+                        description: validation.max.
+                        example: 'Eius et animi quos velit et.'
+                      quantity:
+                        type: integer
+                        description: validation.min.
+                        example: 16
+                      unit_price_cents:
+                        type: integer
+                        description: validation.min.
+                        example: 42
+                      product_id:
+                        type: integer
+                        description: 'The <code>id</code> of an existing record in the products table.'
+                        example: 16
+                        nullable: true
+                      sort_order:
+                        type: integer
+                        description: ''
+                        example: 16
+                        nullable: true
+                    required:
+                      - description
+                      - quantity
+                      - unit_price_cents
+              required:
+                - issue_date
+                - items
+      security: []
+    parameters:
+      -
+        in: path
+        name: quotation_id
+        description: 'The ID of the quotation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/reservations/settings:
+    get:
+      summary: "Return the current tenant's reservation settings."
+      operationId: returnTheCurrentTenantsReservationSettings
+      description: "Read access is available to all tenant staff so they can see the occasion\nlist when capturing reservations. Write is restricted — see update()."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: "Update the current tenant's reservation settings."
+      operationId: updateTheCurrentTenantsReservationSettings
+      description: 'Restricted to owner and admin roles — see ReservationPolicy::manageSettings().'
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deposit_pct:
+                  type: integer
+                  description: 'validation.min validation.max.'
+                  example: 1
+                occasions:
+                  type: array
+                  description: 'validation.min validation.max.'
+                  example:
+                    - 'n'
+                  items:
+                    type: string
+              required:
+                - deposit_pct
+                - occasions
+      security: []
+  /api/v1/reservations:
+    get:
+      summary: 'Paginated list of reservations with per-status counts for tab rendering.'
+      operationId: paginatedListOfReservationsWithPerStatusCountsForTabRendering
+      description: "Query params:\n  ?branch_id=    — filter to a specific branch\n  ?status=       — filter to one status (counts always span all statuses)\n  ?customer_id=  — filter to a specific customer\n  ?date_from=    — ISO date lower bound on event_date\n  ?date_to=      — ISO date upper bound on event_date\n  ?search=       — LIKE match on reservation_number\n  ?per_page=     — page size (1–100, default 20)"
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Capture a new reservation for the current tenant.'
+      operationId: captureANewReservationForTheCurrentTenant
+      description: "Delegates to ReservationService::capture() which claims a sequence number,\ncreates the reservation, and writes the initial history row — all atomically."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: validation.max.
+                  example: 'Eius et animi quos velit et.'
+                occasion:
+                  type: string
+                  description: validation.max.
+                  example: v
+                  nullable: true
+                event_date:
+                  type: string
+                  description: validation.date.
+                  example: '2026-07-04T03:07:07'
+                  nullable: true
+                total_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 42
+                deposit_required_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 37
+                  nullable: true
+                customer_id:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the customers table.'
+                  example: 16
+                  nullable: true
+                branch_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the branches table.'
+                  example: architecto
+                  nullable: true
+                special_instructions:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                admin_notes:
+                  type: string
+                  description: validation.max.
+                  example: g
+                  nullable: true
+              required:
+                - description
+                - total_cents
+      security: []
+  '/api/v1/reservations/{reservation_id}/status':
+    patch:
+      summary: "Advance or change the reservation's status."
+      operationId: advanceOrChangeTheReservationsStatus
+      description: "When the target status is 'confirmed', the request is routed through\nReservationService::confirm() which enforces the deposit coverage rule.\nA 'force' boolean in the request body allows admin override.\n\nAll other transitions use ReservationService::transitionTo() directly.\nInvalid transitions return 422 with the DomainException message so the\nUI can surface it to the user."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: ''
+                  example: inquiry
+                  enum:
+                    - inquiry
+                    - confirmed
+                    - in_progress
+                    - ready
+                    - delivered
+                    - cancelled
+                note:
+                  type: string
+                  description: validation.max.
+                  example: b
+                  nullable: true
+                force:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: true
+              required:
+                - status
+      security: []
+    parameters:
+      -
+        in: path
+        name: reservation_id
+        description: 'The ID of the reservation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/reservations/{reservation_id}/assignee':
+    patch:
+      summary: 'Assign (or un-assign) a team member to the reservation.'
+      operationId: assignorUnAssignATeamMemberToTheReservation
+      description: "PATCH /api/v1/reservations/{reservation}/assignee\nBody: { assigned_to: int|null }\n\nPassing null un-assigns the current assignee. The ReservationService enforces\nthat the assignee belongs to the same tenant — a cross-tenant user is rejected\nwith 422. Returns the full ReservationResource after update."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assigned_to:
+                  type: integer
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: 16
+                  nullable: true
+      security: []
+    parameters:
+      -
+        in: path
+        name: reservation_id
+        description: 'The ID of the reservation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/reservations/{reservation_id}/payments':
+    post:
+      summary: 'Record a partial payment against the reservation.'
+      operationId: recordAPartialPaymentAgainstTheReservation
+      description: "After recording, deposit_paid_cents is authoritatively recomputed from the\nDB sum (not incremented) — see ReservationService::recordPayment(). The\nresponse includes the updated payments list so the UI can refresh the balance\ndisplay without a second round-trip.\n\nOverpayment and invalid payment method are surfaced as 422."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount_cents:
+                  type: integer
+                  description: validation.min.
+                  example: 16
+                payment_method:
+                  type: string
+                  description: ''
+                  example: transfer
+                  enum:
+                    - cash
+                    - card
+                    - transfer
+                    - other
+                reference:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                paid_at:
+                  type: string
+                  description: validation.date.
+                  example: '2026-07-04T03:07:07'
+                  nullable: true
+              required:
+                - amount_cents
+                - payment_method
+      security: []
+    parameters:
+      -
+        in: path
+        name: reservation_id
+        description: 'The ID of the reservation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/reservations/{reservation_id}/convert':
+    post:
+      summary: 'Convert the reservation to an Order.'
+      operationId: convertTheReservationToAnOrder
+      description: "Delegates to ReservationService::convertToOrder() which atomically creates\nthe linked Order and transitions the reservation to 'delivered'. The\nresponse returns the resulting order's id and number so the frontend can\nnavigate to the order detail page.\n\nIdempotency: a second call on an already-converted reservation returns 422\nwith the DomainException message (\"already converted\")."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: reservation_id
+        description: 'The ID of the reservation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/reservations/{reservation_id}/cancel':
+    post:
+      summary: 'Cancel the reservation.'
+      operationId: cancelTheReservation
+      description: "Delivered and already-cancelled reservations throw DomainException from\nthe service — surfaced as 422 here."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: reservation_id
+        description: 'The ID of the reservation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/v1/reservations/{id}':
+    get:
+      summary: 'Full reservation detail including payments, timeline, customer, branch, and assignee.'
+      operationId: fullReservationDetailIncludingPaymentsTimelineCustomerBranchAndAssignee
+      description: "Route-model binding resolves the reservation through BelongsToTenant — cross-tenant\nids are automatically 404."
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the reservation.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/v1/settings:
+    get:
+      summary: ''
+      operationId: getApiV1Settings
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  '/api/v1/settings/{group}':
+    post:
+      summary: ''
+      operationId: postApiV1SettingsGroup
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: group
+        description: ''
+        example: zmi
+        required: true
+        schema:
+          type: string
+  /api/v1/storefront/tenant:
+    get:
+      summary: ''
+      operationId: getApiV1StorefrontTenant
+      description: ''
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Route not found.'
+                  error_code: route.not_found
+                  meta:
+                    request_id: eeae1b0a-5b08-44ef-8bc9-3741ec19f8a5
+                properties:
+                  message:
+                    type: string
+                    example: 'Route not found.'
+                  error_code:
+                    type: string
+                    example: route.not_found
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: eeae1b0a-5b08-44ef-8bc9-3741ec19f8a5
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/storefront/categories:
+    get:
+      summary: "Active root categories with their first-level children, each annotated with\na count of currently active products."
+      operationId: activeRootCategoriesWithTheirFirstLevelChildrenEachAnnotatedWithACountOfCurrentlyActiveProducts
+      description: "Products count is loaded via a constrained relationship count so only\nactive products are counted (inactive products are invisible in the storefront)."
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Route not found.'
+                  error_code: route.not_found
+                  meta:
+                    request_id: 59634da3-a652-4d7f-bed5-6678e0652dcf
+                properties:
+                  message:
+                    type: string
+                    example: 'Route not found.'
+                  error_code:
+                    type: string
+                    example: route.not_found
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: 59634da3-a652-4d7f-bed5-6678e0652dcf
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/storefront/products/featured:
+    get:
+      summary: 'Active featured products for the storefront home (hero section).'
+      operationId: activeFeaturedProductsForTheStorefrontHomeheroSection
+      description: 'Returns up to 8 featured active products sorted by featured+newest.'
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Route not found.'
+                  error_code: route.not_found
+                  meta:
+                    request_id: c7adcfed-7e61-455c-89b1-c53be41b3a62
+                properties:
+                  message:
+                    type: string
+                    example: 'Route not found.'
+                  error_code:
+                    type: string
+                    example: route.not_found
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: c7adcfed-7e61-455c-89b1-c53be41b3a62
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/storefront/products:
+    get:
+      summary: 'Paginated active products with optional filters.'
+      operationId: paginatedActiveProductsWithOptionalFilters
+      description: "Query parameters:\n  - category_slug (string) — filter to products in a category\n  - tag_slug      (string) — filter to products with a tag\n  - search        (string) — name LIKE search\n  - sort          (string) — featured|price_asc|price_desc|newest (default: featured)\n  - per_page      (int)    — page size, 1-48, default 16"
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Route not found.'
+                  error_code: route.not_found
+                  meta:
+                    request_id: b05dd13b-f6d2-417b-b62e-93eee0c93b6f
+                properties:
+                  message:
+                    type: string
+                    example: 'Route not found.'
+                  error_code:
+                    type: string
+                    example: route.not_found
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: b05dd13b-f6d2-417b-b62e-93eee0c93b6f
+      tags:
+        - Endpoints
+      security: []
+  '/api/v1/storefront/products/{slug}':
+    get:
+      summary: 'Single active product detail with variants and stock availability.'
+      operationId: singleActiveProductDetailWithVariantsAndStockAvailability
+      description: "Returns 404 when the product is inactive or belongs to a different tenant\n(BelongsToTenant scope ensures the latter automatically)."
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Route not found.'
+                  error_code: route.not_found
+                  meta:
+                    request_id: 718a1429-4d1e-4654-b66d-d8164364bc83
+                properties:
+                  message:
+                    type: string
+                    example: 'Route not found.'
+                  error_code:
+                    type: string
+                    example: route.not_found
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: 718a1429-4d1e-4654-b66d-d8164364bc83
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: slug
+        description: 'The slug of the product.'
+        example: 0cl
+        required: true
+        schema:
+          type: string
+  /api/v1/super-admin/billing/metrics:
+    get:
+      summary: ''
+      operationId: getApiV1SuperAdminBillingMetrics
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/super-admin/tenants:
+    get:
+      summary: ''
+      operationId: getApiV1SuperAdminTenants
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  '/api/v1/super-admin/tenants/{id}':
+    get:
+      summary: ''
+      operationId: getApiV1SuperAdminTenantsId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the tenant.'
+        example: 01kv9581vv2cfb0439s4n3s4h6
+        required: true
+        schema:
+          type: string
+  '/api/v1/super-admin/tenants/{tenant_id}/extend-trial':
+    post:
+      summary: ''
+      operationId: postApiV1SuperAdminTenantsTenant_idExtendTrial
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: 'validation.min validation.max.'
+                  example: b
+                days:
+                  type: integer
+                  description: 'validation.min validation.max.'
+                  example: 22
+              required:
+                - reason
+                - days
+      security: []
+    parameters:
+      -
+        in: path
+        name: tenant_id
+        description: 'The ID of the tenant.'
+        example: 01kv9581vv2cfb0439s4n3s4h6
+        required: true
+        schema:
+          type: string
+  '/api/v1/super-admin/tenants/{tenant_id}/suspend':
+    post:
+      summary: ''
+      operationId: postApiV1SuperAdminTenantsTenant_idSuspend
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: 'validation.min validation.max.'
+                  example: b
+              required:
+                - reason
+      security: []
+    parameters:
+      -
+        in: path
+        name: tenant_id
+        description: 'The ID of the tenant.'
+        example: 01kv9581vv2cfb0439s4n3s4h6
+        required: true
+        schema:
+          type: string
+  '/api/v1/super-admin/tenants/{tenant_id}/reactivate':
+    post:
+      summary: ''
+      operationId: postApiV1SuperAdminTenantsTenant_idReactivate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: 'validation.min validation.max.'
+                  example: b
+              required:
+                - reason
+      security: []
+    parameters:
+      -
+        in: path
+        name: tenant_id
+        description: 'The ID of the tenant.'
+        example: 01kv9581vv2cfb0439s4n3s4h6
+        required: true
+        schema:
+          type: string
+  /api/v1/team:
+    get:
+      summary: ''
+      operationId: getApiV1Team
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                  error_code: auth.unauthenticated
+                  meta:
+                    request_id: ''
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+                  error_code:
+                    type: string
+                    example: auth.unauthenticated
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: ''
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/tenants/check-slug:
+    get:
+      summary: ''
+      operationId: getApiV1TenantsCheckSlug
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  data:
+                    available: false
+                    reason: format
+                    slug: ''
+                  meta:
+                    request_id: db65ac33-e7d5-4c42-bda3-f87b64d830f1
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      available:
+                        type: boolean
+                        example: false
+                      reason:
+                        type: string
+                        example: format
+                      slug:
+                        type: string
+                        example: ''
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: db65ac33-e7d5-4c42-bda3-f87b64d830f1
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/plans:
+    get:
+      summary: ''
+      operationId: getApiV1Plans
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  data:
+                    -
+                      id: 1
+                      slug: basico
+                      name: Basico
+                      description: 'Plan de entrada para negocios pequenos con una sola sucursal.'
+                      price_monthly_cents: 900
+                      price_yearly_cents: 9000
+                      currency: USD
+                      features:
+                        - '1 sucursal'
+                        - 'Catalogo publico con WhatsApp'
+                        - 'POS basico'
+                        - 'Hasta 50 productos'
+                        - 'Reportes mensuales'
+                      limits:
+                        max_users: 3
+                        max_branches: 1
+                        max_products: 50
+                        custom_domain: false
+                        pdf_quotations: false
+                        max_orders_per_month: 200
+                        ocr_receipts_per_month: 0
+                      sort_order: 1
+                    -
+                      id: 2
+                      slug: pro
+                      name: Pro
+                      description: 'Para negocios en crecimiento con multiples sucursales y flujos avanzados.'
+                      price_monthly_cents: 2900
+                      price_yearly_cents: 29000
+                      currency: USD
+                      features:
+                        - 'Hasta 3 sucursales'
+                        - 'Catalogo + WhatsApp + checkout web'
+                        - 'POS completo con inventario en tiempo real'
+                        - 'Reservas con adelantos'
+                        - 'Cotizaciones PDF'
+                        - 'Gastos con OCR (50/mes)'
+                        - 'Dashboard con metricas'
+                        - 'Soporte prioritario'
+                      limits:
+                        max_users: 10
+                        max_branches: 3
+                        max_products: 1000
+                        custom_domain: false
+                        pdf_quotations: true
+                        max_orders_per_month: 5000
+                        ocr_receipts_per_month: 50
+                      sort_order: 2
+                    -
+                      id: 3
+                      slug: enterprise
+                      name: Enterprise
+                      description: 'Para cadenas y franquicias: sucursales ilimitadas, SLA 99.9%, custom domain.'
+                      price_monthly_cents: 9900
+                      price_yearly_cents: 99000
+                      currency: USD
+                      features:
+                        - 'Sucursales ilimitadas'
+                        - 'Todo lo de Pro'
+                        - 'Custom domain con SSL'
+                        - 'API access para integraciones'
+                        - 'OCR ilimitado'
+                        - 'Multi-pasarela de pago'
+                        - 'SLA 99.9%'
+                        - 'Onboarding dedicado'
+                      limits:
+                        max_users: null
+                        max_branches: null
+                        max_products: null
+                        custom_domain: true
+                        pdf_quotations: true
+                        max_orders_per_month: null
+                        ocr_receipts_per_month: null
+                      sort_order: 3
+                  meta:
+                    request_id: af182b39-d9c2-4c30-9430-45d1ee883e67
+                properties:
+                  data:
+                    type: array
+                    example:
+                      -
+                        id: 1
+                        slug: basico
+                        name: Basico
+                        description: 'Plan de entrada para negocios pequenos con una sola sucursal.'
+                        price_monthly_cents: 900
+                        price_yearly_cents: 9000
+                        currency: USD
+                        features:
+                          - '1 sucursal'
+                          - 'Catalogo publico con WhatsApp'
+                          - 'POS basico'
+                          - 'Hasta 50 productos'
+                          - 'Reportes mensuales'
+                        limits:
+                          max_users: 3
+                          max_branches: 1
+                          max_products: 50
+                          custom_domain: false
+                          pdf_quotations: false
+                          max_orders_per_month: 200
+                          ocr_receipts_per_month: 0
+                        sort_order: 1
+                      -
+                        id: 2
+                        slug: pro
+                        name: Pro
+                        description: 'Para negocios en crecimiento con multiples sucursales y flujos avanzados.'
+                        price_monthly_cents: 2900
+                        price_yearly_cents: 29000
+                        currency: USD
+                        features:
+                          - 'Hasta 3 sucursales'
+                          - 'Catalogo + WhatsApp + checkout web'
+                          - 'POS completo con inventario en tiempo real'
+                          - 'Reservas con adelantos'
+                          - 'Cotizaciones PDF'
+                          - 'Gastos con OCR (50/mes)'
+                          - 'Dashboard con metricas'
+                          - 'Soporte prioritario'
+                        limits:
+                          max_users: 10
+                          max_branches: 3
+                          max_products: 1000
+                          custom_domain: false
+                          pdf_quotations: true
+                          max_orders_per_month: 5000
+                          ocr_receipts_per_month: 50
+                        sort_order: 2
+                      -
+                        id: 3
+                        slug: enterprise
+                        name: Enterprise
+                        description: 'Para cadenas y franquicias: sucursales ilimitadas, SLA 99.9%, custom domain.'
+                        price_monthly_cents: 9900
+                        price_yearly_cents: 99000
+                        currency: USD
+                        features:
+                          - 'Sucursales ilimitadas'
+                          - 'Todo lo de Pro'
+                          - 'Custom domain con SSL'
+                          - 'API access para integraciones'
+                          - 'OCR ilimitado'
+                          - 'Multi-pasarela de pago'
+                          - 'SLA 99.9%'
+                          - 'Onboarding dedicado'
+                        limits:
+                          max_users: null
+                          max_branches: null
+                          max_products: null
+                          custom_domain: true
+                          pdf_quotations: true
+                          max_orders_per_month: null
+                          ocr_receipts_per_month: null
+                        sort_order: 3
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        slug:
+                          type: string
+                          example: basico
+                        name:
+                          type: string
+                          example: Basico
+                        description:
+                          type: string
+                          example: 'Plan de entrada para negocios pequenos con una sola sucursal.'
+                        price_monthly_cents:
+                          type: integer
+                          example: 900
+                        price_yearly_cents:
+                          type: integer
+                          example: 9000
+                        currency:
+                          type: string
+                          example: USD
+                        features:
+                          type: array
+                          example:
+                            - '1 sucursal'
+                            - 'Catalogo publico con WhatsApp'
+                            - 'POS basico'
+                            - 'Hasta 50 productos'
+                            - 'Reportes mensuales'
+                          items:
+                            type: string
+                        limits:
+                          type: object
+                          properties:
+                            max_users:
+                              type: integer
+                              example: 3
+                            max_branches:
+                              type: integer
+                              example: 1
+                            max_products:
+                              type: integer
+                              example: 50
+                            custom_domain:
+                              type: boolean
+                              example: false
+                            pdf_quotations:
+                              type: boolean
+                              example: false
+                            max_orders_per_month:
+                              type: integer
+                              example: 200
+                            ocr_receipts_per_month:
+                              type: integer
+                              example: 0
+                        sort_order:
+                          type: integer
+                          example: 1
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        example: af182b39-d9c2-4c30-9430-45d1ee883e67
+      tags:
+        - Endpoints
+      security: []
+  /api/v1/tenants:
+    post:
+      summary: 'Provision a new tenant for the authenticated user.'
+      operationId: provisionANewTenantForTheAuthenticatedUser
+      description: "Creates: Tenant + Branch (main) + Subscription (trialing) + tenant_users (owner).\nAll four in one DB transaction — if any step fails, none of them persist.\n\nThe user becomes the owner of the new tenant automatically.\nThis endpoint is the backend for the onboarding wizard (issue #13)."
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slug:
+                  type: string
+                  description: ''
+                  example: architecto
+                name:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                business_name:
+                  type: string
+                  description: validation.max.
+                  example: g
+                country_code:
+                  type: string
+                  description: validation.size.
+                  example: zm
+                currency:
+                  type: string
+                  description: validation.size.
+                  example: iyv
+                language:
+                  type: string
+                  description: 'validation.min validation.max.'
+                  example: d
+                timezone:
+                  type: string
+                  description: ''
+                  example: Asia/Yekaterinburg
+                plan_slug:
+                  type: string
+                  description: validation.max.
+                  example: 'n'
+                  nullable: true
+                starter_template:
+                  type: string
+                  description: ''
+                  example: accesorios
+                  enum:
+                    - floreria
+                    - accesorios
+                    - peluches
+                    - reposteria
+                  nullable: true
+              required:
+                - slug
+                - name
+                - business_name
+                - country_code
+                - currency
+                - language
+                - timezone
       security: []

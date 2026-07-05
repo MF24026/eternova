@@ -87,6 +87,7 @@ async function loadProducts(page = 1): Promise<void> {
         })
 
         products.value = result.data
+        store.setTaxConfig(result.tax)
 
         // Derive categories from the loaded products — deduped by slug.
         if (page === 1 && activeCategory.value === 'all' && !searchQuery.value) {
@@ -241,6 +242,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
                 :subtotal-cents="store.subtotalCents"
                 :tax-cents="store.taxCents"
                 :total-cents="store.totalCents"
+                :tax="store.taxConfig"
                 :is-submitting="isSubmitting"
                 :format-cents="formatCents"
                 :selected-customer-name="selectedCustomerName"
@@ -281,6 +283,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
             :subtotal-cents="store.subtotalCents"
             :tax-cents="store.taxCents"
             :total-cents="store.totalCents"
+            :tax="store.taxConfig"
             :is-submitting="isSubmitting"
             :format-cents="formatCents"
             :selected-customer-name="selectedCustomerName"

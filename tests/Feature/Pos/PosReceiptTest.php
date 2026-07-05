@@ -103,7 +103,9 @@ final class PosReceiptTest extends TestCase
         $this->assertNotEmpty($data['order_number']);
         $this->assertSame('cash', $data['payment_method']);
         $this->assertSame('paid', $data['payment_status']);
-        $this->assertSame(5000, $data['total_cents']); // 2500 * 2
+        // 2500 × 2 = 5000 subtotal. Tax is off by default (opt-in per tenant),
+        // and this test does not enable it, so tax is 0 and total equals subtotal.
+        $this->assertSame(5000, $data['total_cents']);
 
         // Business info from tenant
         $this->assertSame('Flores del Valle', $data['business']['name']);

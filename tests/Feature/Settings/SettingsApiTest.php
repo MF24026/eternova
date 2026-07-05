@@ -125,6 +125,7 @@ final class SettingsApiTest extends TestCase
         $response = $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
             'enabled' => true,
             'rate_bps' => 10000, // over the 9999 max
+            'prices_include_tax' => false,
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrorFor('rate_bps');
@@ -139,6 +140,7 @@ final class SettingsApiTest extends TestCase
             'rate_bps' => 1300,
             'id_label' => 'DUI',
             'id_number' => '04210323-5', // wrong DUI check digit
+            'prices_include_tax' => false,
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrorFor('id_number');
@@ -153,6 +155,7 @@ final class SettingsApiTest extends TestCase
             'rate_bps' => 1300,
             'id_label' => 'DUI',
             'id_number' => '04210323-4',
+            'prices_include_tax' => false,
         ])->assertOk();
 
         $stored = BranchSetting::withoutGlobalScopes()
@@ -162,6 +165,21 @@ final class SettingsApiTest extends TestCase
             ->value('value');
 
         $this->assertSame('04210323-4', $stored);
+    }
+
+    public function test_owner_can_toggle_prices_include_tax(): void
+    {
+        ['tenant' => $tenant, 'owner' => $owner] = $this->setupTenant();
+
+        $this->tenantPostJson($tenant, $owner, '/api/v1/settings/tax', [
+            'enabled' => true,
+            'rate_bps' => 1300,
+            'id_label' => 'NIT',
+            'id_number' => null,
+            'prices_include_tax' => true,
+        ])->assertOk();
+
+        $this->assertTrue(BranchSetting::resolvedGroup('tax')['prices_include_tax']);
     }
 
     public function test_owner_can_toggle_notifications(): void

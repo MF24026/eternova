@@ -12,6 +12,8 @@ use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderStatusHistory;
 use App\Modules\Orders\Repositories\OrderRepositoryInterface;
+use App\Modules\Orders\Support\TaxCalculator;
+use App\Modules\Settings\Models\BranchSetting;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use App\Modules\Tenancy\Scopes\TenantScope;
@@ -28,8 +30,10 @@ use InvalidArgumentException;
  * If ANY product variant has insufficient stock, the entire order is rolled back —
  * no partial orders, no phantom rows in order_items.
  *
- * Tax handling (v1): tax_cents = 0 for all orders.
- * TODO(#80): read a per-tenant tax_rate from tenant Settings when that module ships.
+ * Tax handling: createFromPos computes IVA from the branch tax settings
+ * (BranchSetting::resolvedGroup('tax')) via TaxCalculator, persisting the
+ * breakdown plus a tax_rate_bps snapshot. Reservation- and quotation-derived
+ * orders keep their own tax handling and are not touched here.
  *
  * Cancel / restock (v1): cancel() sets status=cancelled only. It does NOT restock.
  * Rationale: auto-restock on cancel opens a window for fraudulent "cancel to get free
@@ -101,11 +105,11 @@ final readonly class OrderService
 
             [$subtotalCents, $itemRows] = $this->buildItemRows($resolvedItems);
 
-            // Tax v1: always zero.
-            // TODO(#80): derive from tenant Settings tax_rate when that module ships.
-            $taxCents = 0;
-            $discountCents = 0;
-            $totalCents = $subtotalCents + $taxCents - $discountCents;
+            // Tax: resolve the branch's tax settings and compute the breakdown.
+            // Server is authoritative; the POS preview only mirrors this.
+            $discountCents = 0; // POS has no discount UI yet
+            $tax = BranchSetting::resolvedGroup('tax', $branch->id);
+            $breakdown = (new TaxCalculator)->compute($subtotalCents, $discountCents, $tax);
 
             $order = $this->orders->create([
                 'tenant_id' => $tenant->id,
@@ -115,10 +119,11 @@ final readonly class OrderService
                 'tracking_token' => $this->generateTrackingToken(),
                 'status' => 'preparing',
                 'source' => 'pos',
-                'subtotal_cents' => $subtotalCents,
-                'tax_cents' => $taxCents,
-                'discount_cents' => $discountCents,
-                'total_cents' => $totalCents,
+                'subtotal_cents' => $breakdown->subtotalCents,
+                'tax_cents' => $breakdown->taxCents,
+                'tax_rate_bps' => $breakdown->rateBpsApplied,
+                'discount_cents' => $breakdown->discountCents,
+                'total_cents' => $breakdown->totalCents,
                 'payment_method' => $paymentMethod,
                 'payment_status' => 'paid',
                 'notes' => $notes,
@@ -165,7 +170,8 @@ final readonly class OrderService
                 'order_number' => $order->order_number,
                 'tenant_id' => $tenant->id,
                 'branch_id' => $branch->id,
-                'total_cents' => $totalCents,
+                'total_cents' => $order->total_cents,
+                'tax_rate_bps' => $order->tax_rate_bps,
                 'item_count' => count($itemRows),
                 'user_id' => $user?->id,
             ]);

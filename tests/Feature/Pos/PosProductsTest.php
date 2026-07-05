@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\ProductVariant;
 use App\Modules\Inventory\Services\InventoryService;
+use App\Modules\Settings\Models\BranchSetting;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -170,6 +171,26 @@ final class PosProductsTest extends TestCase
         $this->assertSame(42, $foundVariant['available_quantity']);
         // Both convenience flags also present
         $this->assertArrayHasKey('in_stock', $foundVariant);
+    }
+
+    public function test_products_response_includes_branch_tax_config(): void
+    {
+        ['tenant' => $tenant, 'branch' => $branch, 'user' => $user] = $this->setupTenant();
+
+        // setupTenant() already binds currentTenant — writeDefault() requires it.
+        BranchSetting::writeDefault('tax', [
+            'enabled' => true,
+            'rate_bps' => 1300,
+            'prices_include_tax' => false,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson($this->productsUrl($tenant, "?branch_id={$branch->id}"))
+            ->assertOk();
+
+        $response->assertJsonPath('tax.enabled', true)
+            ->assertJsonPath('tax.rate_bps', 1300)
+            ->assertJsonPath('tax.prices_include_tax', false);
     }
 
     public function test_inactive_products_are_excluded_from_pos_grid(): void

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { useTenantStore } from '@/stores/tenant'
+import { computeTax } from '@/components/Admin/Pos/computeTax'
+import type { TaxConfig } from '@/components/Admin/Pos/computeTax'
 import type { PosCartLine, PosPaymentMethod, PosProduct, PosProductVariant } from '@/types/domain/POS'
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
@@ -62,6 +64,11 @@ export const usePosStore = defineStore('pos', () => {
     const customerId = ref<number | null>(persisted.customerId ?? null)
     const notes = ref<string>(persisted.notes ?? '')
 
+    // Tax configuration resolved from the products endpoint for the active branch.
+    // Not persisted — refreshed on every product load so it always reflects the
+    // current branch settings.
+    const taxConfig = ref<TaxConfig>({ enabled: false, rate_bps: 0, prices_include_tax: false })
+
     // ── Persistence ───────────────────────────────────────────────────────────
 
     function persist(): void {
@@ -85,22 +92,25 @@ export const usePosStore = defineStore('pos', () => {
     const isEmpty = computed((): boolean => lines.value.length === 0)
 
     /**
-     * Subtotal in cents, computed client-side from variant prices.
-     *
-     * Money correctness note: all prices are in cents from the backend.
-     * We do NOT add a client-side tax here — tax_cents from the backend is
-     * currently 0. The "Cobrar" button amount equals subtotalCents, which
-     * matches what the backend will actually charge. After checkout we show
-     * the authoritative totals from the 201 response.
+     * Raw line total in cents — sum of (price × qty) before tax adjustments.
+     * For inclusive pricing, this is the gross amount (tax already embedded).
      */
-    const subtotalCents = computed((): number =>
+    const rawSubtotalCents = computed((): number =>
         lines.value.reduce((sum, l) => sum + l.priceCents * l.quantity, 0),
     )
 
-    // Tax is zero until the backend implements tax logic.
-    const taxCents = computed((): number => 0)
+    /**
+     * Display-only tax breakdown derived from the active branch tax config.
+     * The server recomputes authoritatively at checkout — these values are for
+     * the live cart preview only and are never sent to the backend.
+     */
+    const taxTotals = computed(() => computeTax(rawSubtotalCents.value, 0, taxConfig.value))
 
-    const totalCents = computed((): number => subtotalCents.value + taxCents.value)
+    // subtotalCents = pre-tax base (equals rawSubtotalCents for exclusive tax,
+    // the net price extracted for inclusive tax).
+    const subtotalCents = computed((): number => taxTotals.value.subtotalCents)
+    const taxCents = computed((): number => taxTotals.value.taxCents)
+    const totalCents = computed((): number => taxTotals.value.totalCents)
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -186,6 +196,10 @@ export const usePosStore = defineStore('pos', () => {
         notes.value = text
     }
 
+    function setTaxConfig(config: TaxConfig): void {
+        taxConfig.value = config
+    }
+
     return {
         // State
         lines,
@@ -193,6 +207,7 @@ export const usePosStore = defineStore('pos', () => {
         paymentMethod,
         customerId,
         notes,
+        taxConfig,
         // Getters
         lineCount,
         isEmpty,
@@ -210,5 +225,6 @@ export const usePosStore = defineStore('pos', () => {
         setPaymentMethod,
         setCustomer,
         setNotes,
+        setTaxConfig,
     }
 })

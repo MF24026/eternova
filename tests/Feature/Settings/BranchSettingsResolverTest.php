@@ -34,8 +34,9 @@ final class BranchSettingsResolverTest extends TestCase
         $tax = BranchSetting::resolvedGroup('tax');
 
         // No rows yet → coded defaults from config/tenant-settings.php.
+        // Tax ships OFF by default (conservative rollout — each tenant opts in).
         $this->assertSame(1300, $tax['rate_bps']);
-        $this->assertTrue($tax['enabled']);
+        $this->assertFalse($tax['enabled']);
         $this->assertNull($tax['id_label']);
     }
 

@@ -66,6 +66,7 @@ final class UpdateSettingsRequest extends FormRequest
                 'rate_bps' => ['required', 'integer', 'min:0', 'max:9999'],
                 'id_label' => ['nullable', 'string', 'max:20'],
                 'id_number' => ['nullable', 'string', 'max:40', new ValidTaxId($this->tenantCountryCode())],
+                'prices_include_tax' => ['required', 'boolean'],
             ],
             'orders' => [
                 'auto_confirm' => ['required', 'boolean'],
@@ -104,7 +105,7 @@ final class UpdateSettingsRequest extends FormRequest
         $group = (string) $this->route('group');
 
         $booleanKeys = match ($group) {
-            'tax' => ['enabled'],
+            'tax' => ['enabled', 'prices_include_tax'],
             'orders' => ['auto_confirm'],
             'notifications' => array_keys((array) config('tenant-settings.defaults.notifications', [])),
             default => [],

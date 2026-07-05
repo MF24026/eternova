@@ -15,6 +15,7 @@ use App\Modules\POS\Http\Requests\PosCheckoutRequest;
 use App\Modules\POS\Http\Resources\PosOrderResource;
 use App\Modules\POS\Http\Resources\PosProductCollection;
 use App\Modules\POS\Http\Resources\PosReceiptResource;
+use App\Modules\Settings\Models\BranchSetting;
 use App\Modules\Tenancy\Models\Branch;
 use DomainException;
 use Illuminate\Database\Eloquent\Builder;
@@ -93,8 +94,17 @@ final class PosController extends Controller
 
         $stockMap = $this->buildStockMapForBranch($branch, $variantIds);
 
+        $tax = BranchSetting::resolvedGroup('tax', $branch->id);
+
         return (new PosProductCollection($paginated))
-            ->additional(['stock' => $stockMap]);
+            ->additional([
+                'stock' => $stockMap,
+                'tax' => [
+                    'enabled' => (bool) ($tax['enabled'] ?? false),
+                    'rate_bps' => (int) ($tax['rate_bps'] ?? 0),
+                    'prices_include_tax' => (bool) ($tax['prices_include_tax'] ?? false),
+                ],
+            ]);
     }
 
     /**
