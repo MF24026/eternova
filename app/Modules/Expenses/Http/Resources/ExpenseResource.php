@@ -44,7 +44,7 @@ final class ExpenseResource extends BaseResource
             'is_verified' => $expense->is_verified,
             'ocr_data' => $expense->ocr_data,
             'receipt_url' => $expense->receipt_path
-                ? Storage::disk(config('expenses.receipt_disk'))->url($expense->receipt_path)
+                ? $this->resolveReceiptUrl($expense->receipt_path)
                 : null,
             'notes' => $expense->notes,
             'created_at' => $expense->created_at?->toIso8601String(),
@@ -75,5 +75,27 @@ final class ExpenseResource extends BaseResource
                 ],
             ),
         ];
+    }
+
+    /**
+     * Resolve a browser-usable URL for the receipt.
+     *
+     * A private object-storage disk (R2/S3) has no public path, so we mint a
+     * short-lived signed URL. The local "public" disk does not support signed
+     * URLs and serves a permanent /storage path instead — fall back to url().
+     */
+    private function resolveReceiptUrl(string $path): string
+    {
+        $disk = Storage::disk(config('expenses.receipt_disk'));
+
+        try {
+            return $disk->temporaryUrl(
+                $path,
+                now()->addMinutes((int) config('expenses.receipt_url_ttl', 30)),
+            );
+        } catch (\RuntimeException) {
+            // Driver does not support temporary URLs (e.g. local) — use url().
+            return $disk->url($path);
+        }
     }
 }
