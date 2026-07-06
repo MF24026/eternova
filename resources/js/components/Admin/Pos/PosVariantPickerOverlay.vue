@@ -95,7 +95,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         >
             <div
                 v-if="show && product"
-                class="fixed inset-0 z-[60] grid place-items-center p-0 sm:p-5"
+                class="fixed inset-0 z-[90] grid place-items-center p-0 sm:p-5"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="pos-variant-title"
