@@ -411,8 +411,8 @@ watch(() => route.name, () => maybeStartTour())
 .admin-topbar {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
+    gap: 10px;
+    padding: 16px 14px;
     background: var(--surface);
     position: sticky;
     top: 0;
@@ -488,6 +488,7 @@ watch(() => route.name, () => maybeStartTour())
     }
 
     .admin-topbar {
+        gap: 16px;
         padding: 20px 32px;
     }
 
