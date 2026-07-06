@@ -46,7 +46,7 @@ const recentOrders = [
         <div class="card" style="padding: 20px; height: 100%; display: flex; flex-direction: column">
             <div class="flex gap-3 mb-4">
                 <div class="relative flex-1">
-                    <AppInput v-model="searchQuery" placeholder="Buscar por nombre, telefono...">
+                    <AppInput v-model="searchQuery" placeholder="Buscar por nombre, teléfono...">
                         <template #icon><Search :size="16" /></template>
                     </AppInput>
                 </div>
@@ -55,7 +55,7 @@ const recentOrders = [
 
             <!-- Desktop header -->
             <div class="cust-header">
-                <div v-for="h in ['', 'Cliente', 'Contacto', 'Zona', 'Pedidos', 'Total', 'Ultimo']" :key="h" class="label" style="font-size: 10px">{{ h }}</div>
+                <div v-for="h in ['', 'Cliente', 'Contacto', 'Zona', 'Pedidos', 'Total', 'último']" :key="h" class="label" style="font-size: 10px">{{ h }}</div>
             </div>
 
             <div class="scroll flex flex-col gap-1.5 flex-1 min-h-0">

@@ -160,7 +160,7 @@ async function fetchExpenses(page = 1): Promise<void> {
 async function deleteExpense(expense: Expense): Promise<void> {
     const confirmed = await confirm({
         title: 'Eliminar gasto',
-        message: `"${expense.description}" se eliminara permanentemente. Esta accion no se puede deshacer.`,
+        message: `"${expense.description}" se eliminara permanentemente. Esta acción no se puede deshacer.`,
         confirmLabel: 'Eliminar',
         variant: 'danger',
     })
@@ -297,7 +297,7 @@ function asExpense(row: Row): Expense {
             data-testid="period-total"
         >
             <div class="flex-1">
-                <p class="label-gilt">Total del periodo</p>
+                <p class="label-gilt">Total del período</p>
                 <p class="serif text-2xl text-primary tracking-tighter leading-none mt-0.5">
                     {{ formatCents(periodTotalCents) }}
                 </p>

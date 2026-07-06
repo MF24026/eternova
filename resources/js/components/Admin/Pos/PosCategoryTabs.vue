@@ -19,7 +19,7 @@ const ALL_SLUG = 'all'
         class="scroll"
         style="overflow-x: auto; white-space: nowrap; padding-bottom: 2px"
         role="tablist"
-        aria-label="Categorias"
+        aria-label="Categorías"
     >
         <div class="tabs inline-flex">
             <button

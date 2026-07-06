@@ -55,12 +55,12 @@ async function handleSubmit() {
         <p class="label-gilt">Panel del negocio</p>
         <h1 class="serif auth-title">Bienvenido<br>de nuevo.</h1>
         <p class="auth-subtitle">
-            Tu jardin te espera. Ingresa con tus credenciales para continuar.
+            Tu jardín te espera. Ingresa con tus credenciales para continuar.
         </p>
 
         <form class="auth-form" novalidate @submit.prevent="handleSubmit">
             <div class="auth-field-group">
-                <label for="email" class="field-label">Correo electronico</label>
+                <label for="email" class="field-label">Correo electrónico</label>
                 <input
                     id="email"
                     v-model="email"
@@ -75,7 +75,7 @@ async function handleSubmit() {
             </div>
 
             <div class="auth-field-group">
-                <label for="password" class="field-label">Contrasena</label>
+                <label for="password" class="field-label">Contraseña</label>
                 <input
                     id="password"
                     v-model="password"
@@ -88,7 +88,7 @@ async function handleSubmit() {
                 >
                 <p v-if="v.errors.password || fieldErrors.password" class="auth-field-error" role="alert" data-testid="error-password">{{ v.errors.password || fieldErrors.password }}</p>
                 <router-link :to="{ name: 'forgot-password' }" class="auth-forgot-link" data-testid="forgot-link">
-                    Olvidaste tu contrasena?
+                    Olvidaste tu contraseña?
                 </router-link>
             </div>
 

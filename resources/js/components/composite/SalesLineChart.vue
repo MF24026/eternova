@@ -101,7 +101,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
             class="flex h-full items-center justify-center text-center text-sm text-on-surface-variant"
             data-testid="sales-chart-empty"
         >
-            Sin ventas en este periodo.
+            Sin ventas en este período.
         </div>
         <Line v-else :data="chartData" :options="chartOptions" />
     </div>

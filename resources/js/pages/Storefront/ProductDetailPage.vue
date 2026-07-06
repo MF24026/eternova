@@ -230,7 +230,7 @@ function toneFromId(id: number): SurrogateTone {
                 :to="{ name: 'storefront.products' }"
                 class="hover:text-on-surface transition-colors"
             >
-                Catalogo
+                Catálogo
             </RouterLink>
             <ChevronRight :size="12" class="opacity-50 shrink-0" />
             <span
@@ -271,7 +271,7 @@ function toneFromId(id: number): SurrogateTone {
                         class="glass absolute"
                         style="top: 20px; right: 20px; padding: 6px 12px; border-radius: 999px"
                     >
-                        <span class="label-gilt" style="color: var(--primary)">Edicion limitada</span>
+                        <span class="label-gilt" style="color: var(--primary)">Edición limitada</span>
                     </div>
                 </div>
 
@@ -467,8 +467,8 @@ function toneFromId(id: number): SurrogateTone {
             v-if="relatedProducts.length"
             class="px-6 pb-14 sm:px-10 lg:px-20 lg:pb-24"
         >
-            <div class="label-gilt" style="margin-bottom: 12px">Tambien te puede gustar</div>
-            <h3 class="serif" style="font-size: 36px; margin: 0 0 24px">Del mismo jardin.</h3>
+            <div class="label-gilt" style="margin-bottom: 12px">También te puede gustar</div>
+            <h3 class="serif" style="font-size: 36px; margin: 0 0 24px">Del mismo jardín.</h3>
 
             <div
                 class="grid grid-cols-2 md:grid-cols-3 gap-5"
@@ -518,7 +518,7 @@ function toneFromId(id: number): SurrogateTone {
             class="hover:underline ml-1"
             style="color: var(--primary)"
         >
-            Volver al catalogo
+            Volver al catálogo
         </RouterLink>
     </div>
 </template>

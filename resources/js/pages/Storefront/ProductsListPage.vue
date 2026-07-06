@@ -77,8 +77,8 @@ onMounted(async () => {
     useHead({
         title: `Productos — ${store.tenant?.business_name ?? 'Tienda'}`,
         description: store.tenant?.business_name
-            ? `Catalogo de ${store.tenant.business_name}`
-            : 'Catalogo de productos',
+            ? `Catálogo de ${store.tenant.business_name}`
+            : 'Catálogo de productos',
         url: window.location.href,
         type: 'website',
     })
@@ -111,7 +111,7 @@ function toneFromId(id: number): SurrogateTone {
     <section
         class="tier px-6 py-12 sm:px-10 lg:px-20"
     >
-        <div class="label-gilt" style="margin-bottom: 12px">Catalogo</div>
+        <div class="label-gilt" style="margin-bottom: 12px">Catálogo</div>
         <h1 class="serif" style="font-size: 48px; margin: 0">
             {{ store.tenant?.business_name ? `Todo de ${store.tenant.business_name}` : 'Todos los productos' }}
         </h1>
@@ -168,7 +168,7 @@ function toneFromId(id: number): SurrogateTone {
                 v-if="store.categories.length"
                 class="flex flex-wrap gap-2"
                 role="group"
-                aria-label="Filtrar por categoria"
+                aria-label="Filtrar por categoría"
             >
                 <button
                     type="button"
@@ -207,7 +207,7 @@ function toneFromId(id: number): SurrogateTone {
         <AppEmptyState
             v-else-if="store.products.length === 0"
             title="Sin resultados"
-            description="Intenta con otro termino de busqueda o una categoria diferente."
+            description="Intenta con otro termino de busqueda o una categoría diferente."
         />
 
         <!-- Product grid — card style matches the curated grid on home -->
@@ -268,7 +268,7 @@ function toneFromId(id: number): SurrogateTone {
             style="background: var(--surface-low); border-radius: var(--r-lg); padding: 14px 20px"
         >
             <p class="text-sm" style="color: var(--on-surface-variant)">
-                Pagina {{ currentPage }} de {{ lastPage }}
+                Página {{ currentPage }} de {{ lastPage }}
                 <span v-if="store.pagination.meta"> ({{ store.pagination.meta.total }} productos)</span>
             </p>
 

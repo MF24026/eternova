@@ -52,17 +52,17 @@ onMounted(() => {
         </div>
 
         <div v-if="store.createdTenantSlug" class="w-full rounded-xl bg-surface-low p-4 dark:bg-surface-mid">
-            <p class="text-xs text-on-surface-variant mb-1">Tu panel de administracion:</p>
+            <p class="text-xs text-on-surface-variant mb-1">Tu panel de administración:</p>
             <p class="text-sm font-medium text-primary break-all">{{ tenantUrl }}</p>
         </div>
 
         <p class="text-xs text-on-surface-variant">
-            Si no eres redirigido automaticamente,
+            Si no eres redirigido automáticamente,
             <a
                 :href="tenantUrl"
                 class="text-primary hover:underline underline-offset-2"
             >
-                haz clic aqui
+                haz clic aquí
             </a>.
         </p>
     </div>

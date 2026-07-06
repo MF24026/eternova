@@ -42,7 +42,7 @@ const mobileMenuOpen = ref(false)
                             to="/login"
                             class="text-sm text-on-surface-variant hover:text-primary transition-colors"
                         >
-                            Iniciar sesion
+                            Iniciar sesión
                         </RouterLink>
                         <RouterLink
                             to="/signup"
@@ -99,7 +99,7 @@ const mobileMenuOpen = ref(false)
                             class="py-2.5 text-sm text-on-surface-variant"
                             @click="mobileMenuOpen = false"
                         >
-                            Iniciar sesion
+                            Iniciar sesión
                         </RouterLink>
                         <RouterLink
                             to="/signup"
@@ -127,7 +127,7 @@ const mobileMenuOpen = ref(false)
                     <div class="lg:col-span-1">
                         <p class="font-serif text-xl text-primary tracking-tighter mb-4">Eternova</p>
                         <p class="text-sm text-on-surface-variant leading-relaxed">
-                            Gestion integral para negocios de regalos, flores y accesorios en Latinoamerica.
+                            Gestión integral para negocios de regalos, flores y accesorios en Latinoamerica.
                         </p>
                     </div>
                     <div>
@@ -148,7 +148,7 @@ const mobileMenuOpen = ref(false)
                         <p class="text-xs font-semibold uppercase tracking-[0.05em] text-on-surface-variant mb-4">Legal</p>
                         <div class="flex flex-col gap-2.5">
                             <RouterLink to="/privacidad" class="text-sm text-on-surface-variant hover:text-primary transition-colors">Privacidad</RouterLink>
-                            <RouterLink to="/terminos" class="text-sm text-on-surface-variant hover:text-primary transition-colors">Terminos</RouterLink>
+                            <RouterLink to="/términos" class="text-sm text-on-surface-variant hover:text-primary transition-colors">Términos</RouterLink>
                         </div>
                     </div>
                 </div>

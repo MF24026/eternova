@@ -12,7 +12,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
                 Gestiona tu negocio con elegancia
             </h1>
             <p class="text-on-surface-variant text-lg mb-10">
-                Catalogo digital, pedidos, inventario y mas — todo en un solo lugar.
+                Catálogo digital, pedidos, inventario y mas — todo en un solo lugar.
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
@@ -26,7 +26,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
                     :to="{ name: 'login' }"
                     class="inline-flex items-center justify-center px-8 py-3 rounded-full bg-surface-high text-on-surface font-medium text-sm hover:bg-surface-highest transition-colors dark:bg-surface-mid dark:hover:bg-surface-high"
                 >
-                    Iniciar sesion
+                    Iniciar sesión
                 </RouterLink>
             </div>
         </main>

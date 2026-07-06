@@ -64,22 +64,22 @@ function goToLogin() {
         <!-- Success -->
         <template v-else-if="done">
             <span class="auth-badge"><CheckCircle2 :size="26" /></span>
-            <h1 class="serif auth-title" data-testid="reset-done">Contrasena<br>actualizada.</h1>
-            <p class="auth-subtitle">Ya puedes iniciar sesion con tu nueva contrasena.</p>
+            <h1 class="serif auth-title" data-testid="reset-done">Contraseña<br>actualizada.</h1>
+            <p class="auth-subtitle">Ya puedes iniciar sesión con tu nueva contraseña.</p>
             <button type="button" class="btn btn-primary auth-submit" data-testid="reset-go-login" @click="goToLogin">
-                Iniciar sesion
+                Iniciar sesión
             </button>
         </template>
 
         <!-- Form -->
         <template v-else>
             <p class="label-gilt">Restablecer</p>
-            <h1 class="serif auth-title">Crea una nueva<br>contrasena.</h1>
+            <h1 class="serif auth-title">Crea una nueva<br>contraseña.</h1>
             <p class="auth-subtitle">Para la cuenta <strong>{{ email }}</strong>.</p>
 
             <form class="auth-form" novalidate @submit.prevent="handleSubmit">
                 <div class="auth-field-group">
-                    <label for="password" class="field-label">Nueva contrasena</label>
+                    <label for="password" class="field-label">Nueva contraseña</label>
                     <input
                         id="password"
                         v-model="password"
@@ -94,7 +94,7 @@ function goToLogin() {
                 </div>
 
                 <div class="auth-field-group">
-                    <label for="password_confirmation" class="field-label">Confirmar contrasena</label>
+                    <label for="password_confirmation" class="field-label">Confirmar contraseña</label>
                     <input
                         id="password_confirmation"
                         v-model="passwordConfirmation"
@@ -112,14 +112,14 @@ function goToLogin() {
 
                 <button type="submit" class="btn btn-primary auth-submit" data-testid="reset-submit" :disabled="submitting">
                     <Loader2 v-if="submitting" :size="16" class="auth-spin" />
-                    <span v-else>Actualizar contrasena</span>
+                    <span v-else>Actualizar contraseña</span>
                 </button>
             </form>
         </template>
 
         <p class="auth-footer">
             <router-link :to="{ name: 'login' }" class="auth-link auth-back-link">
-                <ArrowLeft :size="14" /> Volver a iniciar sesion
+                <ArrowLeft :size="14" /> Volver a iniciar sesión
             </router-link>
         </p>
     </AuthShell>

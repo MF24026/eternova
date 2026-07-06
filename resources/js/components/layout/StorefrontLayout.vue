@@ -116,7 +116,7 @@ function businessNameParts(name: string): [string, string] {
                         style="color: var(--on-surface-variant); letter-spacing: .02em"
                         active-class="!text-primary"
                     >
-                        Catalogo
+                        Catálogo
                     </RouterLink>
                     <template v-if="store.categories.length">
                         <RouterLink
@@ -204,7 +204,7 @@ function businessNameParts(name: string): [string, string] {
                         style="color: var(--on-surface-variant)"
                         @click="mobileMenuOpen = false"
                     >
-                        Catalogo
+                        Catálogo
                     </RouterLink>
                     <RouterLink
                         v-for="cat in store.categories.slice(0, 4)"
@@ -265,7 +265,7 @@ function businessNameParts(name: string): [string, string] {
                         class="leading-relaxed text-sm"
                         style="color: var(--on-surface-variant); max-width: 320px"
                     >
-                        Catalogo de productos disponibles. Contactanos por WhatsApp para realizar tu pedido.
+                        Catálogo de productos disponibles. Contactanos por WhatsApp para realizar tu pedido.
                     </p>
                     <div class="flex gap-2.5 mt-5">
                         <a
@@ -282,11 +282,11 @@ function businessNameParts(name: string): [string, string] {
                             v-if="store.tenant?.whatsapp_number"
                             :href="`tel:+${store.tenant.whatsapp_number}`"
                             class="btn-icon"
-                            aria-label="Telefono"
+                            aria-label="Teléfono"
                         >
                             <Phone :size="18" />
                         </a>
-                        <a href="#" class="btn-icon" aria-label="Ubicacion">
+                        <a href="#" class="btn-icon" aria-label="Ubicación">
                             <MapPin :size="18" />
                         </a>
                     </div>

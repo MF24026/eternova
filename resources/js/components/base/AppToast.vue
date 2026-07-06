@@ -61,7 +61,7 @@ const toasts = computed(() => ui.toasts)
                     <button
                         type="button"
                         class="shrink-0 opacity-70 hover:opacity-100 transition-opacity"
-                        aria-label="Cerrar notificacion"
+                        aria-label="Cerrar notificación"
                         @click="ui.removeToast(toast.id)"
                     >
                         <X :size="14" />

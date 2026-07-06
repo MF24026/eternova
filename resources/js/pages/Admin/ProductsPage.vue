@@ -143,14 +143,14 @@ function closeSlider() { editing.value = null }
                     <AppInput :model-value="editing.price ? `$${(Number(editing.price) * 0.4).toFixed(2)}` : ''" label="Costo" placeholder="$0.00" @update:model-value="() => {}" />
                 </div>
                 <div>
-                    <label class="field-label">Categoria</label>
+                    <label class="field-label">Categoría</label>
                     <select v-model="editing.cat" class="field mt-1.5">
                         <option v-for="c in CATEGORIES" :key="c.id" :value="c.id">{{ c.name }}</option>
                     </select>
                 </div>
                 <div>
-                    <label class="field-label">Descripcion</label>
-                    <textarea v-model="editing.desc" class="field mt-1.5" rows="3" placeholder="Descripcion del producto..." />
+                    <label class="field-label">Descripción</label>
+                    <textarea v-model="editing.desc" class="field mt-1.5" rows="3" placeholder="Descripción del producto..." />
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <AppInput model-value="12" label="Stock inicial" @update:model-value="() => {}" />

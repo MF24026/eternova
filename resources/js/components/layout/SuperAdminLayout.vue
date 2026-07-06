@@ -169,7 +169,7 @@ async function handleLogout() {
                         class="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-200"
                         :class="sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'"
                     >
-                        Cerrar sesion
+                        Cerrar sesión
                     </span>
                 </button>
 

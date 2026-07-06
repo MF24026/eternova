@@ -62,7 +62,7 @@ function openEdit(product: Product): void {
 async function deleteProduct(product: Product): Promise<void> {
     const ok = await confirm({
         title: 'Archivar producto',
-        message: `"${product.name}" se ocultara del catalogo. Podras restaurarlo despues.`,
+        message: `"${product.name}" se ocultara del catálogo. Podras restaurarlo después.`,
         confirmLabel: 'Archivar',
         variant: 'danger',
     })
@@ -102,7 +102,7 @@ const totalProducts = computed(() => store.pagination.meta?.total ?? store.items
             <!-- Header -->
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div>
-                    <p class="label-gilt">Catalogo</p>
+                    <p class="label-gilt">Catálogo</p>
                     <p class="serif text-2xl text-on-surface">{{ totalProducts }} productos</p>
                 </div>
                 <AppButton :icon="Plus" @click="openCreate">Nuevo producto</AppButton>
@@ -142,7 +142,7 @@ const totalProducts = computed(() => store.pagination.meta?.total ?? store.items
                     class="text-sm rounded-xl px-3 py-2 focus:outline-none"
                     style="background: var(--surface-low); color: var(--on-surface)"
                 >
-                    <option :value="null">Todas las categorias</option>
+                    <option :value="null">Todas las categorías</option>
                     <option
                         v-for="cat in categoriesStore.items"
                         :key="cat.id"
@@ -305,7 +305,7 @@ const totalProducts = computed(() => store.pagination.meta?.total ?? store.items
                 style="border-top: 1px solid var(--outline-variant)"
             >
                 <p class="text-sm text-on-surface-variant">
-                    Pagina {{ store.pagination.meta.current_page }} de {{ store.pagination.meta.last_page }}
+                    Página {{ store.pagination.meta.current_page }} de {{ store.pagination.meta.last_page }}
                     ({{ store.pagination.meta.total }} productos)
                 </p>
                 <div class="flex gap-2">

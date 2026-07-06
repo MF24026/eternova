@@ -52,7 +52,7 @@ function shouldShowEllipsis(pages: number[], index: number): boolean {
                 type="button"
                 class="btn-icon"
                 :disabled="meta.current_page <= 1"
-                aria-label="Pagina anterior"
+                aria-label="Página anterior"
                 @click="emit('page-change', meta.current_page - 1)"
             >
                 <ChevronLeft :size="16" />
@@ -88,7 +88,7 @@ function shouldShowEllipsis(pages: number[], index: number): boolean {
                 type="button"
                 class="btn-icon"
                 :disabled="meta.current_page >= meta.last_page"
-                aria-label="Pagina siguiente"
+                aria-label="Página siguiente"
                 @click="emit('page-change', meta.current_page + 1)"
             >
                 <ChevronRight :size="16" />

@@ -14,7 +14,7 @@ import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '@/types/api'
 
 onMounted(() => {
-    document.title = 'Categorias — Eternova'
+    document.title = 'Categorías — Eternova'
     void loadCategories()
 })
 
@@ -206,10 +206,10 @@ async function submitForm(): Promise<void> {
     try {
         if (isEditing.value && editingCategory.value) {
             await store.update(editingCategory.value.id, payload)
-            toast.success('Categoria actualizada')
+            toast.success('Categoría actualizada')
         } else {
             await store.create(payload)
-            toast.success('Categoria creada')
+            toast.success('Categoría creada')
         }
         slideoverOpen.value = false
         void loadCategories()
@@ -218,7 +218,7 @@ async function submitForm(): Promise<void> {
         if (axiosError.response?.status === 422 && axiosError.response.data.errors) {
             formErrors.value = axiosError.response.data.errors as Record<string, string[]>
         } else {
-            toast.error('Error al guardar la categoria')
+            toast.error('Error al guardar la categoría')
         }
     } finally {
         isSaving.value = false
@@ -228,7 +228,7 @@ async function submitForm(): Promise<void> {
 // ── Delete / Restore ───────────────────────────────────────────────────────────
 async function deleteCategory(cat: Category): Promise<void> {
     const ok = await confirm({
-        title: 'Archivar categoria',
+        title: 'Archivar categoría',
         message: `"${cat.name}" se archivara y sus subcategorias quedaran sin padre.`,
         confirmLabel: 'Archivar',
         variant: 'danger',
@@ -237,21 +237,21 @@ async function deleteCategory(cat: Category): Promise<void> {
 
     try {
         await store.remove(cat.id)
-        toast.success('Categoria archivada')
+        toast.success('Categoría archivada')
         if (selected.value?.id === cat.id) selected.value = null
         void loadCategories()
     } catch {
-        toast.error('No se pudo archivar la categoria')
+        toast.error('No se pudo archivar la categoría')
     }
 }
 
 async function restoreCategory(cat: Category): Promise<void> {
     try {
         await store.restore(cat.id)
-        toast.success('Categoria restaurada')
+        toast.success('Categoría restaurada')
         void loadCategories()
     } catch {
-        toast.error('No se pudo restaurar la categoria')
+        toast.error('No se pudo restaurar la categoría')
     }
 }
 
@@ -271,7 +271,7 @@ const totalSubcategories = computed(() =>
                 <div>
                     <p class="label-gilt">Estructura</p>
                     <p class="serif text-2xl text-on-surface">
-                        {{ totalCategories }} categorias &middot; {{ totalSubcategories }} subcategorias
+                        {{ totalCategories }} categorías &middot; {{ totalSubcategories }} subcategorias
                     </p>
                 </div>
                 <AppButton :icon="Plus" size="sm" @click="openCreate">Nueva</AppButton>
@@ -282,7 +282,7 @@ const totalSubcategories = computed(() =>
                 <div class="relative flex-1 min-w-40">
                     <AppInput
                         v-model="searchQuery"
-                        placeholder="Buscar categoria..."
+                        placeholder="Buscar categoría..."
                         class="pr-4"
                     >
                         <template #icon>
@@ -312,8 +312,8 @@ const totalSubcategories = computed(() =>
 
             <AppEmptyState
                 v-else-if="rootCategories.length === 0"
-                title="Sin categorias"
-                description="Crea tu primera categoria para organizar el catalogo."
+                title="Sin categorías"
+                description="Crea tu primera categoría para organizar el catálogo."
             />
 
             <div v-else class="scroll flex flex-col gap-2 flex-1 min-h-0">
@@ -350,7 +350,7 @@ const totalSubcategories = computed(() =>
                         <!-- Action buttons -->
                         <button
                             class="btn-icon w-7 h-7 shrink-0"
-                            aria-label="Editar categoria"
+                            aria-label="Editar categoría"
                             @click.stop="openEdit(node)"
                         >
                             <Pencil :size="12" />
@@ -359,7 +359,7 @@ const totalSubcategories = computed(() =>
                         <button
                             v-if="node.deleted_at === null"
                             class="btn-icon w-7 h-7 shrink-0"
-                            aria-label="Archivar categoria"
+                            aria-label="Archivar categoría"
                             @click.stop="deleteCategory(node)"
                         >
                             <Trash2 :size="12" />
@@ -368,7 +368,7 @@ const totalSubcategories = computed(() =>
                         <button
                             v-else
                             class="btn-icon w-7 h-7 shrink-0"
-                            aria-label="Restaurar categoria"
+                            aria-label="Restaurar categoría"
                             @click.stop="restoreCategory(node)"
                         >
                             <RotateCcw :size="12" />
@@ -426,7 +426,7 @@ const totalSubcategories = computed(() =>
                 <div class="aspect-[4/3] rounded-xl overflow-hidden mb-4" style="background: var(--gradient-soft)" />
                 <p class="serif text-2xl text-on-surface mb-1.5">{{ selected.name }}</p>
                 <p class="text-sm text-on-surface-variant mb-4 leading-relaxed">
-                    {{ selected.description ?? 'Sin descripcion.' }}
+                    {{ selected.description ?? 'Sin descripción.' }}
                 </p>
                 <div class="flex flex-col gap-2 text-sm mb-auto">
                     <div class="flex justify-between">
@@ -454,13 +454,13 @@ const totalSubcategories = computed(() =>
                     </div>
                 </div>
                 <AppButton :icon="Pencil" class="w-full justify-center mt-5" @click="openEdit(selected)">
-                    Editar categoria
+                    Editar categoría
                 </AppButton>
             </template>
 
             <div v-else class="flex-1 flex items-center justify-center">
                 <p class="text-sm text-on-surface-variant text-center">
-                    Selecciona una categoria para ver detalles.
+                    Selecciona una categoría para ver detalles.
                 </p>
             </div>
         </div>
@@ -469,8 +469,8 @@ const totalSubcategories = computed(() =>
     <!-- Create / Edit Slideover -->
     <AppSlideover
         v-model="slideoverOpen"
-        :title="isEditing ? 'Editar categoria' : 'Nueva categoria'"
-        subtitle="Organiza tu catalogo con categorias jerarquicas"
+        :title="isEditing ? 'Editar categoría' : 'Nueva categoría'"
+        subtitle="Organiza tu catálogo con categorías jerarquicas"
     >
         <form class="flex flex-col gap-4 p-6" @submit.prevent="submitForm">
             <AppInput
@@ -484,19 +484,19 @@ const totalSubcategories = computed(() =>
             <AppInput
                 v-model="form.slug"
                 label="Slug (opcional)"
-                placeholder="se genera automaticamente"
+                placeholder="se genera automáticamente"
                 :error="fieldError('slug')"
                 help-text="Solo letras minusculas, numeros y guiones"
             />
 
             <div class="field">
-                <label class="label-gilt mb-1 block">Descripcion</label>
+                <label class="label-gilt mb-1 block">Descripción</label>
                 <textarea
                     v-model="form.description"
                     class="w-full px-4 py-2.5 rounded-xl bg-surface-low text-on-surface text-sm resize-none
                            focus:outline-none focus:ring-2 focus:ring-primary/30"
                     rows="3"
-                    placeholder="Descripcion opcional del catalogo..."
+                    placeholder="Descripción opcional del catálogo..."
                 />
                 <p v-if="fieldError('description')" class="text-xs text-error mt-1">
                     {{ fieldError('description') }}
@@ -513,7 +513,7 @@ const totalSubcategories = computed(() =>
             />
 
             <div class="flex items-center justify-between p-3 rounded-xl" style="background: var(--surface-lowest)">
-                <span class="text-sm text-on-surface">Activa en catalogo</span>
+                <span class="text-sm text-on-surface">Activa en catálogo</span>
                 <button
                     type="button"
                     :class="[
@@ -544,7 +544,7 @@ const totalSubcategories = computed(() =>
                     class="flex-1 justify-center"
                     :disabled="isSaving"
                 >
-                    {{ isSaving ? 'Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear categoria') }}
+                    {{ isSaving ? 'Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear categoría') }}
                 </AppButton>
                 <AppButton
                     type="button"

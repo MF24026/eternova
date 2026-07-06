@@ -12,10 +12,10 @@ import AppHeader from '@/components/layout/AppHeader.vue'
                 404
             </p>
             <h1 class="text-xl font-semibold text-on-surface mb-3">
-                Pagina no encontrada
+                Página no encontrada
             </h1>
             <p class="text-on-surface-variant text-sm mb-8">
-                La direccion que buscas no existe o fue movida.
+                La dirección que buscas no existe o fue movida.
             </p>
             <RouterLink
                 :to="{ name: 'home' }"
