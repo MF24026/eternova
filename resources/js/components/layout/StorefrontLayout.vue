@@ -32,18 +32,18 @@ function businessNameParts(name: string): [string, string] {
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col overflow-x-clip" style="background: var(--surface); color: var(--on-surface)">
+    <div class="min-h-screen flex flex-col overflow-x-clip relative" style="background: var(--surface); color: var(--on-surface)">
 
         <!-- Ambient floating petals (subtle, non-interactive) -->
         <div
-            class="petal petal-anim pointer-events-none fixed"
+            class="petal petal-anim pointer-events-none absolute"
             style="top: -60px; right: -80px; width: 360px; height: 360px; opacity: .12; z-index: 0"
             aria-hidden="true"
         >
             <Petal tone="lilac" :size="1" />
         </div>
         <div
-            class="petal petal-anim pointer-events-none fixed"
+            class="petal petal-anim pointer-events-none absolute"
             style="bottom: -100px; left: -80px; width: 280px; height: 280px; opacity: .08; z-index: 0; animation-delay: -7s"
             aria-hidden="true"
         >
