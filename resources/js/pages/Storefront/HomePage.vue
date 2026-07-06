@@ -7,6 +7,7 @@ import { useHead } from '@/composables/useHead'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import Petal from '@/components/base/Petal.vue'
 import Surrogate from '@/components/base/Surrogate.vue'
+import ProductImage from '@/components/base/ProductImage.vue'
 
 const store = useStorefrontStore()
 
@@ -274,17 +275,11 @@ const activeCategoryTab = ref<string | null>(null)
                     class="relative overflow-hidden mb-3"
                     style="aspect-ratio: 1/1; border-radius: var(--r-xl)"
                 >
-                    <img
-                        v-if="product.default_image_url"
+                    <ProductImage
                         :src="product.default_image_url"
                         :alt="product.name"
-                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                    />
-                    <Surrogate
-                        v-else
-                        :tone="toneFromId(product.id)"
-                        :fill="true"
+                        :seed="product.id"
+                        img-class="transition-transform duration-500 group-hover:scale-105"
                     />
                 </div>
                 <div class="label-gilt" style="margin-bottom: 4px">
