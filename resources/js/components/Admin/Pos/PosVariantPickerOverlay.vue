@@ -218,6 +218,17 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                                                         <Plus :size="14" />
                                                     </button>
                                                 </div>
+                                                <button
+                                                    type="button"
+                                                    class="text-[13px] font-bold px-4 py-2 rounded-full transition-[filter] hover:brightness-95 disabled:opacity-30"
+                                                    style="background: var(--primary-container); color: var(--primary-dim)"
+                                                    :disabled="(qty[v.id] ?? 0) >= v.available_quantity"
+                                                    :aria-label="`Agregar ${variantLabel(v)}`"
+                                                    :data-testid="`pos-variant-add-${v.id}`"
+                                                    @click="inc(v)"
+                                                >
+                                                    Agregar
+                                                </button>
                                             </template>
                                             <span v-else class="text-sm text-on-surface-variant">No disponible</span>
                                         </div>
