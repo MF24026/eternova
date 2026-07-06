@@ -156,11 +156,11 @@ test.describe('Categories admin', () => {
 
         // Click "Nueva" button to open the slideover
         await page.getByRole('button', { name: 'Nueva' }).click()
-        await expect(page.getByRole('heading', { name: /nueva categoria/i })).toBeVisible()
+        await expect(page.getByRole('heading', { name: /nueva categoría/i })).toBeVisible()
 
         // Fill the form
         await page.getByLabel(/nombre/i).fill('Rosas Eternas')
-        await page.getByRole('button', { name: /crear categoria/i }).click()
+        await page.getByRole('button', { name: /crear categoría/i }).click()
 
         // Verify in list
         await expect(page.getByText('Rosas Eternas')).toBeVisible({ timeout: 5_000 })
@@ -176,7 +176,7 @@ test.describe('Categories admin', () => {
 
         // Click the edit button on the category
         await page.getByRole('button', { name: /editar/i }).first().click()
-        await expect(page.getByRole('heading', { name: /editar categoria/i })).toBeVisible()
+        await expect(page.getByRole('heading', { name: /editar categoría/i })).toBeVisible()
 
         // Change the name
         const nameInput = page.getByLabel(/nombre/i)
@@ -251,7 +251,7 @@ test.describe('Categories admin', () => {
         await page.getByRole('button', { name: 'Nueva' }).click()
         await page.getByLabel(/nombre/i).fill('Segunda')
         await page.getByLabel(/slug/i).fill(slug)
-        await page.getByRole('button', { name: /crear categoria/i }).click()
+        await page.getByRole('button', { name: /crear categoría/i }).click()
 
         // Expect an inline validation error
         await expect(page.getByText(/ya ha sido tomado|already been taken|duplicate/i)).toBeVisible({

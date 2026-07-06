@@ -123,7 +123,7 @@ test.describe('Login flow', () => {
 
         // Open the user menu (trigger is labelled with the user's name), then log out.
         await page.getByRole('button', { name: new RegExp(user.name) }).first().click()
-        await page.getByRole('menuitem', { name: 'Cerrar sesion' }).click()
+        await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click()
 
         await page.waitForURL(`${baseURL}/login`, { timeout: 10_000 })
         await expect(page).toHaveURL(`${baseURL}/login`)

@@ -19,7 +19,7 @@ test.describe('SPA routing', () => {
 
         // Both CTAs from HomePage.vue must be present
         await expect(page.getByRole('link', { name: 'Crear cuenta gratis' })).toBeVisible()
-        await expect(page.getByRole('link', { name: 'Iniciar sesion' })).toBeVisible()
+        await expect(page.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
     })
 
     test('unauthenticated dashboard access redirects to login', async ({ page }) => {

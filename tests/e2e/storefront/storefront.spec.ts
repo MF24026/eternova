@@ -314,6 +314,6 @@ test.describe('Storefront — Mobile (375px)', () => {
         await page.getByLabel('Abrir menu').click()
 
         // Mobile nav should now contain the Catalogo link
-        await expect(page.getByRole('navigation').filter({ hasText: 'Catalogo' }).last()).toBeVisible()
+        await expect(page.getByRole('navigation').filter({ hasText: 'Catálogo' }).last()).toBeVisible()
     })
 })
