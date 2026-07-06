@@ -37,6 +37,10 @@ function dayLabel(date: string): string {
     return d.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })
 }
 
+// Empty state: an all-zero (or absent) series would otherwise draw a bare grid
+// with a flat line pinned to the axis, which reads as broken rather than empty.
+const hasData = computed(() => props.points.some((p) => p.total_cents > 0))
+
 const chartData = computed<ChartData<'line'>>(() => {
     const color = brandColor()
     return {
@@ -92,6 +96,13 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
 
 <template>
     <div style="height: 180px">
-        <Line :data="chartData" :options="chartOptions" />
+        <div
+            v-if="!hasData"
+            class="flex h-full items-center justify-center text-center text-sm text-on-surface-variant"
+            data-testid="sales-chart-empty"
+        >
+            Sin ventas en este periodo.
+        </div>
+        <Line v-else :data="chartData" :options="chartOptions" />
     </div>
 </template>
