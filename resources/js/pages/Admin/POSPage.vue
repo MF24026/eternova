@@ -5,13 +5,14 @@ import PosCartPanel from '@/components/Admin/Pos/PosCartPanel.vue'
 import PosCartBottomBar from '@/components/Admin/Pos/PosCartBottomBar.vue'
 import PosCustomerSelector from '@/components/Admin/Pos/PosCustomerSelector.vue'
 import PosReceiptSlideover from '@/components/Admin/Pos/PosReceiptSlideover.vue'
+import PosVariantPickerOverlay from '@/components/Admin/Pos/PosVariantPickerOverlay.vue'
 import AppSlideover from '@/components/base/AppSlideover.vue'
 import { usePosStore } from '@/stores/pos'
 import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useToast } from '@/composables/useToast'
 import PosService from '@/services/PosService'
-import type { PosProduct, PosProductCategory, PosPaymentMethod, PosReceipt } from '@/types/domain/POS'
+import type { PosProduct, PosProductVariant, PosProductCategory, PosPaymentMethod, PosReceipt } from '@/types/domain/POS'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '@/types/api'
 
@@ -177,10 +178,30 @@ function handleNewSale(): void {
 
 // ── Cart event handlers ───────────────────────────────────────────────────────
 
+const variantPickerOpen = ref(false)
+const variantPickerProduct = ref<PosProduct | null>(null)
+
 function handleSelectProduct(product: PosProduct): void {
-    const variant = product.variants[0]
-    if (!variant) return
-    store.addVariant(product, variant)
+    // 0 or 1 variant: keep the instant-add fast path.
+    if (product.variants.length <= 1) {
+        const variant = product.variants[0]
+        if (variant) store.addVariant(product, variant)
+        return
+    }
+    variantPickerProduct.value = product
+    variantPickerOpen.value = true
+}
+
+function handleVariantPickerConfirm(
+    picks: Array<{ variant: PosProductVariant; quantity: number }>,
+): void {
+    const product = variantPickerProduct.value
+    if (!product) return
+    for (const { variant, quantity } of picks) {
+        // addVariant adds one unit and already caps at available_quantity.
+        for (let i = 0; i < quantity; i++) store.addVariant(product, variant)
+    }
+    variantPickerOpen.value = false
 }
 
 function handlePaymentMethodChange(method: PosPaymentMethod): void {
@@ -309,6 +330,15 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
         v-model="receiptOpen"
         :receipt="receiptData"
         @new-sale="handleNewSale"
+    />
+
+    <!-- ── Variant picker overlay (products with 2+ variants) ─────────────────── -->
+    <PosVariantPickerOverlay
+        :show="variantPickerOpen"
+        :product="variantPickerProduct"
+        :format-cents="formatCents"
+        @close="variantPickerOpen = false"
+        @confirm="handleVariantPickerConfirm"
     />
 </template>
 
