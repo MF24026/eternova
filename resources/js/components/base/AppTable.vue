@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends Record<string, unknown>">
 import { computed } from 'vue'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 export interface TableColumn<Row = Record<string, unknown>> {
     key: string
@@ -49,12 +50,16 @@ const alignClass: Record<string, string> = {
 // Columns shown in the mobile stacked-card layout. Consumers can opt a noisy
 // column out with `hideOnMobile` so the card stays scannable.
 const mobileColumns = computed(() => props.columns.filter((col) => !col.hideOnMobile))
+
+// Render only the layout that applies (md = 768px). Rendering both and hiding one
+// with CSS duplicated every slotted cell testid/id in the DOM.
+const isDesktop = useMediaQuery('(min-width: 768px)')
 </script>
 
 <template>
     <div class="w-full overflow-x-auto rounded-xl bg-surface-lowest dark:bg-surface-low shadow-[var(--shadow-ambient)]">
         <!-- Desktop / tablet: classic table (md and up) -->
-        <table class="hidden w-full text-sm md:table" data-testid="app-table-desktop">
+        <table v-if="isDesktop" class="w-full text-sm" data-testid="app-table-desktop">
             <thead>
                 <tr class="bg-surface-low dark:bg-surface-mid">
                     <th
@@ -144,7 +149,7 @@ const mobileColumns = computed(() => props.columns.filter((col) => !col.hideOnMo
 
         <!-- Mobile: stacked cards (< md). Reuses the same cell slots so consumers
              need no changes; each row becomes a label:value card. -->
-        <div class="flex flex-col gap-2 p-2 md:hidden" data-testid="app-table-mobile-cards">
+        <div v-else class="flex flex-col gap-2 p-2" data-testid="app-table-mobile-cards">
             <!-- Loading skeleton cards -->
             <template v-if="loading">
                 <div
