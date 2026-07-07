@@ -215,6 +215,16 @@ function close(): void {
                         {{ formatCents(receipt.total_cents) }}
                     </span>
                 </div>
+                <template v-if="receipt.amount_received_cents !== null">
+                    <div class="flex justify-between pt-2" style="color: var(--on-surface-variant)">
+                        <span>Recibí</span>
+                        <span class="tabular-nums" data-testid="pos-receipt-received">{{ formatCents(receipt.amount_received_cents) }}</span>
+                    </div>
+                    <div class="flex justify-between" style="color: var(--on-surface-variant)">
+                        <span>Vuelto</span>
+                        <span class="tabular-nums" data-testid="pos-receipt-change">{{ formatCents(receipt.change_cents ?? 0) }}</span>
+                    </div>
+                </template>
             </div>
 
             <!-- Success badge -->
@@ -356,6 +366,16 @@ function close(): void {
             <span>TOTAL</span>
             <span>{{ formatCents(receipt.total_cents) }}</span>
         </div>
+        <template v-if="receipt.amount_received_cents !== null">
+            <div style="display: flex; justify-content: space-between; margin-top: 6px">
+                <span>Recibí</span>
+                <span>{{ formatCents(receipt.amount_received_cents) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between">
+                <span>Vuelto</span>
+                <span>{{ formatCents(receipt.change_cents ?? 0) }}</span>
+            </div>
+        </template>
 
         <div style="border-top: 1px dashed #999; margin: 10px 0 6px" />
         <div style="text-align: center; font-size: 10px; color: #888">

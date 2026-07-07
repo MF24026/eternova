@@ -6,6 +6,7 @@ import PosCartBottomBar from '@/components/Admin/Pos/PosCartBottomBar.vue'
 import PosCustomerSelector from '@/components/Admin/Pos/PosCustomerSelector.vue'
 import PosReceiptSlideover from '@/components/Admin/Pos/PosReceiptSlideover.vue'
 import PosVariantPickerOverlay from '@/components/Admin/Pos/PosVariantPickerOverlay.vue'
+import PosCheckoutOverlay from '@/components/Admin/Pos/PosCheckoutOverlay.vue'
 import AppSlideover from '@/components/base/AppSlideover.vue'
 import { usePosStore } from '@/stores/pos'
 import { useBranches } from '@/composables/useBranches'
@@ -119,7 +120,16 @@ const isSubmitting = ref(false)
 const receiptData = ref<PosReceipt | null>(null)
 const receiptOpen = ref(false)
 
-async function handleCheckout(): Promise<void> {
+const checkoutOverlayOpen = ref(false)
+
+// The "Cobrar" button opens the checkout overlay (method + cash tendered + change);
+// the actual sale is submitted from the overlay's confirm.
+function openCheckout(): void {
+    if (store.isEmpty || isSubmitting.value) return
+    checkoutOverlayOpen.value = true
+}
+
+async function submitCheckout(amountReceivedCents: number | null): Promise<void> {
     if (store.isEmpty || isSubmitting.value) return
 
     isSubmitting.value = true
@@ -132,9 +142,12 @@ async function handleCheckout(): Promise<void> {
                 quantity: l.quantity,
             })),
             payment_method: store.paymentMethod,
+            amount_received_cents: amountReceivedCents,
             customer_id: store.customerId ?? undefined,
             notes: store.notes || undefined,
         })
+
+        checkoutOverlayOpen.value = false
 
         // The sale is committed at this point. Clear the cart and refresh stock
         // immediately so a subsequent receipt-fetch failure can never leave the
@@ -271,7 +284,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
                 @decrement="store.decrementLine"
                 @remove-line="store.removeLine"
                 @update:payment-method="handlePaymentMethodChange"
-                @checkout="handleCheckout"
+                @checkout="openCheckout"
                 @open-customer-selector="customerSelectorOpen = true"
             />
         </div>
@@ -313,7 +326,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
             @decrement="store.decrementLine"
             @remove-line="store.removeLine"
             @update:payment-method="handlePaymentMethodChange"
-            @checkout="handleCheckout"
+            @checkout="openCheckout"
             @open-customer-selector="customerSelectorOpen = true"
         />
     </AppSlideover>
@@ -339,6 +352,21 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
         :format-cents="formatCents"
         @close="variantPickerOpen = false"
         @confirm="handleVariantPickerConfirm"
+    />
+
+    <!-- ── Checkout overlay (payment method + cash tendered + change) ──────────── -->
+    <PosCheckoutOverlay
+        :show="checkoutOverlayOpen"
+        :lines="store.lines"
+        :subtotal-cents="store.subtotalCents"
+        :tax-cents="store.taxCents"
+        :total-cents="store.totalCents"
+        :payment-method="store.paymentMethod"
+        :format-cents="formatCents"
+        :submitting="isSubmitting"
+        @update:payment-method="store.setPaymentMethod"
+        @close="checkoutOverlayOpen = false"
+        @confirm="submitCheckout($event.amountReceivedCents)"
     />
 </template>
 
