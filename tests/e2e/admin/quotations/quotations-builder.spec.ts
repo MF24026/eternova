@@ -34,7 +34,7 @@ async function login(page: Page): Promise<void> {
 }
 
 async function gotoQuotationsPage(page: Page): Promise<void> {
-    await page.goto(QUOTATIONS_URL)
+    await page.goto(QUOTATIONS_URL, { waitUntil: 'domcontentloaded' })
     await page.waitForSelector('h1:has-text("Cotizaciones")', { timeout: 15_000 })
     await waitForNoSkeleton(page)
 }
@@ -385,8 +385,10 @@ test.describe('Quotation builder — edit draft (S7-E7)', () => {
         await page.click('[data-testid="tab-draft"]')
         await waitForNoSkeleton(page)
 
-        // Find and click the edit button for the draft we just created (desktop table)
-        const editBtn = page.locator(`[data-testid="btn-edit-draft-${createdQuotation.id}"]`)
+        // Find and click the edit button for the draft we just created. AppTable
+        // renders both a desktop table and mobile cards, so the slotted testid
+        // appears twice; take the first (desktop table, visible at this viewport).
+        const editBtn = page.locator(`[data-testid="btn-edit-draft-${createdQuotation.id}"]`).first()
         if (await editBtn.count() > 0) {
             await editBtn.click()
         } else {
