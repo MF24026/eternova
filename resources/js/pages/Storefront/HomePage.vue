@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, watchEffect } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowRight } from 'lucide-vue-next'
+import { ArrowRight, ShoppingBag } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
+import { useQuickAdd } from '@/composables/useQuickAdd'
 import { useHead } from '@/composables/useHead'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import Petal from '@/components/base/Petal.vue'
@@ -10,6 +11,7 @@ import Surrogate from '@/components/base/Surrogate.vue'
 import ProductImage from '@/components/base/ProductImage.vue'
 
 const store = useStorefrontStore()
+const quickAdd = useQuickAdd()
 
 onMounted(async () => {
     await Promise.all([
@@ -281,6 +283,17 @@ const activeCategoryTab = ref<string | null>(null)
                         :seed="product.id"
                         img-class="transition-transform duration-500 group-hover:scale-105"
                     />
+
+                    <button
+                        type="button"
+                        class="absolute bottom-2 right-2 w-10 h-10 grid place-items-center rounded-full shadow-[var(--shadow-lifted)] transition-transform hover:scale-105 active:scale-95"
+                        style="background: var(--primary); color: var(--on-primary)"
+                        :aria-label="`Agregar ${product.name} al carrito`"
+                        :data-testid="`quick-add-btn-${product.slug}`"
+                        @click.stop.prevent="quickAdd.open(product)"
+                    >
+                        <ShoppingBag :size="16" aria-hidden="true" />
+                    </button>
                 </div>
                 <div class="label-gilt" style="margin-bottom: 4px">
                     {{ product.categories[0]?.name ?? 'Producto' }}
