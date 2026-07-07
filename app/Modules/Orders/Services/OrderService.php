@@ -89,6 +89,7 @@ final readonly class OrderService
         ?Customer $customer = null,
         ?User $user = null,
         ?string $notes = null,
+        ?int $amountReceivedCents = null,
     ): Order {
         if (empty($items)) {
             throw new InvalidArgumentException('Cannot create a POS order with no items.');
@@ -97,7 +98,7 @@ final readonly class OrderService
         $tenant = $this->resolveTenant($branch);
 
         return DB::transaction(function () use (
-            $branch, $items, $paymentMethod, $customer, $user, $notes, $tenant
+            $branch, $items, $paymentMethod, $customer, $user, $notes, $amountReceivedCents, $tenant
         ): Order {
             $orderNumber = $this->orders->nextOrderNumber($tenant);
 
@@ -110,6 +111,15 @@ final readonly class OrderService
             $discountCents = 0; // POS has no discount UI yet
             $tax = BranchSetting::resolvedGroup('tax', $branch->id);
             $breakdown = (new TaxCalculator)->compute($subtotalCents, $discountCents, $tax);
+
+            // Cash tendered must cover the total — you cannot give change on an
+            // underpayment. Only enforced for cash; card/transfer ignore it.
+            if ($paymentMethod === 'cash'
+                && $amountReceivedCents !== null
+                && $amountReceivedCents < $breakdown->totalCents
+            ) {
+                throw new DomainException('El efectivo recibido no cubre el total.');
+            }
 
             $order = $this->orders->create([
                 'tenant_id' => $tenant->id,
@@ -124,6 +134,7 @@ final readonly class OrderService
                 'tax_rate_bps' => $breakdown->rateBpsApplied,
                 'discount_cents' => $breakdown->discountCents,
                 'total_cents' => $breakdown->totalCents,
+                'amount_received_cents' => $paymentMethod === 'cash' ? $amountReceivedCents : null,
                 'payment_method' => $paymentMethod,
                 'payment_status' => 'paid',
                 'notes' => $notes,

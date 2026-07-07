@@ -139,6 +139,9 @@ final class PosController extends Controller
                 customer: $customer,
                 user: $user,
                 notes: $data['notes'] ?? null,
+                amountReceivedCents: isset($data['amount_received_cents'])
+                    ? (int) $data['amount_received_cents']
+                    : null,
             );
         } catch (DomainException $e) {
             Log::warning('POS checkout failed — domain error', [

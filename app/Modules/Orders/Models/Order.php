@@ -56,6 +56,7 @@ final class Order extends Model
         'tax_rate_bps',
         'discount_cents',
         'total_cents',
+        'amount_received_cents',
         'payment_method',
         'payment_status',
         'notes',
@@ -72,6 +73,7 @@ final class Order extends Model
         'tax_rate_bps' => 'integer',
         'discount_cents' => 'integer',
         'total_cents' => 'integer',
+        'amount_received_cents' => 'integer',
     ];
 
     /**

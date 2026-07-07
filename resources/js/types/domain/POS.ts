@@ -62,6 +62,8 @@ export interface PosCheckoutPayload {
     branch_id: string
     items: Array<{ product_variant_id: number; quantity: number }>
     payment_method: PosPaymentMethod
+    /** Cash tendered by the customer (cents). Only sent for cash sales. */
+    amount_received_cents?: number | null
     customer_id?: number
     notes?: string
 }
@@ -141,6 +143,8 @@ export interface PosReceipt {
     tax_cents: number
     discount_cents: number
     total_cents: number
+    amount_received_cents: number | null
+    change_cents: number | null
 }
 
 export interface PosReceiptResponse {

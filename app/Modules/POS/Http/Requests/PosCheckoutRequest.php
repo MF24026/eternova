@@ -51,6 +51,9 @@ final class PosCheckoutRequest extends FormRequest
             ],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'payment_method' => ['required', Rule::in(['cash', 'card', 'transfer', 'other'])],
+            // Cash tendered by the customer. Only meaningful for cash sales; the
+            // server derives change (received - total) and rejects underpayment.
+            'amount_received_cents' => ['nullable', 'integer', 'min:0'],
             'customer_id' => ['nullable', 'integer', tenant_exists('customers')],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
