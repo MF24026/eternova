@@ -5,8 +5,9 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
-import { Search, SlidersHorizontal, ArrowLeft, ArrowRight } from 'lucide-vue-next'
+import { Search, SlidersHorizontal, ArrowLeft, ArrowRight, ShoppingBag } from 'lucide-vue-next'
 import { useStorefrontStore } from '@/stores/storefront'
+import { useQuickAdd } from '@/composables/useQuickAdd'
 import { useHead } from '@/composables/useHead'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import AppEmptyState from '@/components/base/AppEmptyState.vue'
@@ -16,6 +17,7 @@ import type { StorefrontSortOption } from '@/types/domain/Storefront'
 const router = useRouter()
 const route = useRoute()
 const store = useStorefrontStore()
+const quickAdd = useQuickAdd()
 
 // ── Filter state (synced with URL query params) ────────────────────────────────
 const searchQuery = ref<string>('')
@@ -249,6 +251,18 @@ function toneFromId(id: number): SurrogateTone {
                     >
                         Destacado
                     </span>
+
+                    <!-- Quick-add: opens the variant sheet without leaving the grid -->
+                    <button
+                        type="button"
+                        class="absolute bottom-2 right-2 w-10 h-10 grid place-items-center rounded-full shadow-[var(--shadow-lifted)] transition-transform hover:scale-105 active:scale-95"
+                        style="background: var(--primary); color: var(--on-primary)"
+                        :aria-label="`Agregar ${product.name} al carrito`"
+                        :data-testid="`quick-add-btn-${product.slug}`"
+                        @click.stop.prevent="quickAdd.open(product)"
+                    >
+                        <ShoppingBag :size="16" aria-hidden="true" />
+                    </button>
                 </div>
                 <div class="label-gilt" style="margin-bottom: 4px">
                     {{ product.categories[0]?.name ?? 'Producto' }}

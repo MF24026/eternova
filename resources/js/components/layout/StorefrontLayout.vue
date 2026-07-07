@@ -7,6 +7,7 @@ import { useStorefrontBranding } from '@/composables/useStorefrontBranding'
 import { useTheme } from '@/composables/useTheme'
 import { useCartStore } from '@/stores/cart'
 import CartSlideover from '@/components/composite/storefront/CartSlideover.vue'
+import StorefrontQuickAddSheet from '@/components/composite/storefront/StorefrontQuickAddSheet.vue'
 import Petal from '@/components/base/Petal.vue'
 
 const store = useStorefrontStore()
@@ -238,6 +239,9 @@ function businessNameParts(name: string): [string, string] {
 
         <!-- Cart slideover — layout-level so it persists across navigation -->
         <CartSlideover v-model="cartOpen" />
+
+        <!-- Quick-add sheet — layout-level; opened from any product grid -->
+        <StorefrontQuickAddSheet />
 
         <!-- Footer -->
         <footer class="px-6 py-10 sm:px-10 lg:px-20 lg:pt-16 lg:pb-8 mt-20" style="background: var(--surface-low)">
