@@ -70,7 +70,7 @@ test.describe('AdminLayout — sidebar collapse/expand', () => {
         if (await userMenuBtn.count() > 0) {
             await userMenuBtn.click()
             // Should show logout option
-            const logoutBtn = page.locator('button:has-text("Cerrar sesion"), [role="menuitem"]:has-text("Cerrar sesion")')
+            const logoutBtn = page.locator('button:has-text("Cerrar sesión"), [role="menuitem"]:has-text("Cerrar sesión")')
             if (await logoutBtn.count() > 0) {
                 await expect(logoutBtn.first()).toBeVisible()
             }

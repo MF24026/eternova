@@ -67,7 +67,7 @@ async function handleSubmit() {
                         id="email"
                         v-model="email"
                         type="email"
-                        label="Correo electronico"
+                        label="Correo electrónico"
                         placeholder="tu@correo.com"
                         autocomplete="email"
                         :error="fieldErrors.email ?? ''"
@@ -77,8 +77,8 @@ async function handleSubmit() {
                         id="password"
                         v-model="password"
                         type="password"
-                        label="Contrasena"
-                        placeholder="Minimo 8 caracteres"
+                        label="Contraseña"
+                        placeholder="Mínimo 8 caracteres"
                         autocomplete="new-password"
                         :error="fieldErrors.password ?? ''"
                     />
@@ -95,7 +95,7 @@ async function handleSubmit() {
                 <p class="mt-5 text-center text-sm text-on-surface-variant">
                     Ya tienes cuenta?
                     <router-link :to="{ name: 'login' }" class="text-primary hover:underline font-medium">
-                        Iniciar sesion
+                        Iniciar sesión
                     </router-link>
                 </p>
             </AppCard>

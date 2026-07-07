@@ -320,7 +320,7 @@ const paginationMeta = computed<PaginatedMeta | null>(() => {
                 <template #empty>
                     <AppEmptyState
                         title="Sin registros de inventario"
-                        description="El inventario aparece aqui una vez que se registren movimientos o se importen productos."
+                        description="El inventario aparece aquí una vez que se registren movimientos o se importen productos."
                     >
                         <template #illustration>
                             <Package :size="40" class="text-on-surface-variant opacity-40" />

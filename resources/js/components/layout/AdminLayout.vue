@@ -58,7 +58,7 @@ const navItems: NavItem[] = [
     { id: 'reservations', label: 'Reservas', to: '/admin/reservations', icon: Calendar },
     { id: 'inventory', label: 'Inventario', to: '/admin/inventory', icon: Package },
     { id: 'products', label: 'Productos', to: '/admin/products', icon: ShoppingBag },
-    { id: 'categories', label: 'Categorias', to: '/admin/categories', icon: LayoutDashboard },
+    { id: 'categories', label: 'Categorías', to: '/admin/categories', icon: LayoutDashboard },
     { id: 'expenses', label: 'Gastos', to: '/admin/expenses', icon: Receipt },
     { id: 'quotations', label: 'Cotizaciones', to: '/admin/quotations', icon: FileText },
     { id: 'customers', label: 'Clientes', to: '/admin/customers', icon: Users },
@@ -269,7 +269,7 @@ watch(() => route.name, () => maybeStartTour())
 
                 <div class="flex flex-col">
                     <h1 class="serif m-0 text-2xl leading-none text-on-surface">
-                        Panel de administracion
+                        Panel de administración
                     </h1>
                 </div>
 
@@ -366,7 +366,7 @@ watch(() => route.name, () => maybeStartTour())
                             >
                                 <AppSpinner v-if="signingOut" size="sm" />
                                 <LogOut v-else class="w-4 h-4" aria-hidden="true" />
-                                Cerrar sesion
+                                Cerrar sesión
                             </button>
                         </div>
                     </Transition>
@@ -433,8 +433,8 @@ watch(() => route.name, () => maybeStartTour())
 .admin-topbar {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
+    gap: 10px;
+    padding: 16px 14px;
     background: var(--surface);
     position: sticky;
     top: 0;
@@ -518,6 +518,7 @@ watch(() => route.name, () => maybeStartTour())
     }
 
     .admin-topbar {
+        gap: 16px;
         padding: 20px 32px;
     }
 

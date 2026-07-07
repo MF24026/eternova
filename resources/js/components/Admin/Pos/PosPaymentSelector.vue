@@ -28,7 +28,7 @@ const options: PaymentOption[] = [
 
 <template>
     <div>
-        <p class="label-gilt mb-2">Metodo de pago</p>
+        <p class="label-gilt mb-2">Método de pago</p>
         <div class="grid grid-cols-3 gap-2">
             <button
                 v-for="opt in options"

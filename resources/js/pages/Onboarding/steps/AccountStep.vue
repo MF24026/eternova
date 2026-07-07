@@ -91,7 +91,7 @@ async function handleNext(): Promise<void> {
                 id="account-email"
                 v-model="email"
                 type="email"
-                label="Correo electronico"
+                label="Correo electrónico"
                 placeholder="tu@correo.com"
                 autocomplete="email"
                 required
@@ -106,8 +106,8 @@ async function handleNext(): Promise<void> {
                 id="account-password"
                 v-model="password"
                 type="password"
-                label="Contrasena"
-                placeholder="Minimo 8 caracteres"
+                label="Contraseña"
+                placeholder="Mínimo 8 caracteres"
                 autocomplete="new-password"
                 required
                 :error="fieldErrors.password ?? ''"

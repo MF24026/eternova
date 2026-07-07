@@ -7,6 +7,7 @@ import { useHead } from '@/composables/useHead'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import Petal from '@/components/base/Petal.vue'
 import Surrogate from '@/components/base/Surrogate.vue'
+import ProductImage from '@/components/base/ProductImage.vue'
 
 const store = useStorefrontStore()
 
@@ -24,7 +25,7 @@ watchEffect(() => {
         title: tenant?.business_name
             ? (tenant.tagline ? `${tenant.business_name} — ${tenant.tagline}` : tenant.business_name)
             : 'Tienda',
-        description: tenant?.description ?? (tenant?.business_name ? `Catalogo de ${tenant.business_name}` : undefined),
+        description: tenant?.description ?? (tenant?.business_name ? `Catálogo de ${tenant.business_name}` : undefined),
         image: tenant?.logo_url ?? undefined,
         url: window.location.href,
         type: 'website',
@@ -92,7 +93,7 @@ const activeCategoryTab = ref<string | null>(null)
                     class="leading-relaxed"
                     style="color: var(--on-surface-variant); font-size: 17px; max-width: 460px; margin-bottom: 32px"
                 >
-                    {{ store.tenant?.description ?? 'Articulos curados a mano para los momentos que merecen quedarse.' }}
+                    {{ store.tenant?.description ?? 'Artículos curados a mano para los momentos que merecen quedarse.' }}
                 </p>
                 <div class="flex gap-3 flex-wrap">
                     <RouterLink
@@ -107,7 +108,7 @@ const activeCategoryTab = ref<string | null>(null)
                         :to="{ name: 'storefront.products', query: { category_slug: store.categories[0]?.slug } }"
                         class="btn btn-secondary"
                     >
-                        Ver categorias
+                        Ver categorías
                     </RouterLink>
                 </div>
             </div>
@@ -181,7 +182,7 @@ const activeCategoryTab = ref<string | null>(null)
     >
         <div class="flex items-baseline justify-between gap-4 mb-8 flex-wrap">
             <div>
-                <div class="label-gilt" style="margin-bottom: 12px">Categorias</div>
+                <div class="label-gilt" style="margin-bottom: 12px">Categorías</div>
                 <h2 class="serif" style="font-size: clamp(28px, 4vw, 48px); margin: 0">
                     Cuatro maneras<br class="hidden sm:block" /> de hacer memoria.
                 </h2>
@@ -274,17 +275,11 @@ const activeCategoryTab = ref<string | null>(null)
                     class="relative overflow-hidden mb-3"
                     style="aspect-ratio: 1/1; border-radius: var(--r-xl)"
                 >
-                    <img
-                        v-if="product.default_image_url"
+                    <ProductImage
                         :src="product.default_image_url"
                         :alt="product.name"
-                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                    />
-                    <Surrogate
-                        v-else
-                        :tone="toneFromId(product.id)"
-                        :fill="true"
+                        :seed="product.id"
+                        img-class="transition-transform duration-500 group-hover:scale-105"
                     />
                 </div>
                 <div class="label-gilt" style="margin-bottom: 4px">
@@ -298,7 +293,7 @@ const activeCategoryTab = ref<string | null>(null)
         </div>
 
         <p v-else class="text-center py-12 text-sm" style="color: var(--on-surface-variant)">
-            Pronto encontraras productos aqui.
+            Pronto encontraras productos aquí.
         </p>
     </section>
 

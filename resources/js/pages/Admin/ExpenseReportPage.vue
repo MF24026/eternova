@@ -271,7 +271,7 @@ function barY(i: number): number {
             data-testid="report-empty"
         >
             <Receipt :size="40" class="text-on-surface-variant opacity-40" />
-            <p class="serif text-lg text-on-surface">Sin gastos en este periodo</p>
+            <p class="serif text-lg text-on-surface">Sin gastos en este período</p>
             <p class="text-sm text-on-surface-variant">
                 No se registraron gastos en {{ monthLabel }}.
             </p>

@@ -64,7 +64,7 @@ async function handleLogout() {
                     >
                         <AppSpinner v-if="signingOut" size="sm" />
                         <LogOut v-else class="w-4 h-4" aria-hidden="true" />
-                        Cerrar sesion
+                        Cerrar sesión
                     </button>
                 </div>
             </nav>
@@ -78,7 +78,7 @@ async function handleLogout() {
                     :to="{ name: 'login' }"
                     class="text-sm text-primary hover:underline"
                 >
-                    Iniciar sesion
+                    Iniciar sesión
                 </router-link>
                 <router-link
                     :to="{ name: 'signup' }"

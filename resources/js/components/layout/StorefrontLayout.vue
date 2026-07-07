@@ -32,18 +32,18 @@ function businessNameParts(name: string): [string, string] {
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col overflow-x-clip" style="background: var(--surface); color: var(--on-surface)">
+    <div class="min-h-screen flex flex-col overflow-x-clip relative" style="background: var(--surface); color: var(--on-surface)">
 
         <!-- Ambient floating petals (subtle, non-interactive) -->
         <div
-            class="petal petal-anim pointer-events-none fixed"
+            class="petal petal-anim pointer-events-none absolute"
             style="top: -60px; right: -80px; width: 360px; height: 360px; opacity: .12; z-index: 0"
             aria-hidden="true"
         >
             <Petal tone="lilac" :size="1" />
         </div>
         <div
-            class="petal petal-anim pointer-events-none fixed"
+            class="petal petal-anim pointer-events-none absolute"
             style="bottom: -100px; left: -80px; width: 280px; height: 280px; opacity: .08; z-index: 0; animation-delay: -7s"
             aria-hidden="true"
         >
@@ -116,7 +116,7 @@ function businessNameParts(name: string): [string, string] {
                         style="color: var(--on-surface-variant); letter-spacing: .02em"
                         active-class="!text-primary"
                     >
-                        Catalogo
+                        Catálogo
                     </RouterLink>
                     <template v-if="store.categories.length">
                         <RouterLink
@@ -204,7 +204,7 @@ function businessNameParts(name: string): [string, string] {
                         style="color: var(--on-surface-variant)"
                         @click="mobileMenuOpen = false"
                     >
-                        Catalogo
+                        Catálogo
                     </RouterLink>
                     <RouterLink
                         v-for="cat in store.categories.slice(0, 4)"
@@ -265,7 +265,7 @@ function businessNameParts(name: string): [string, string] {
                         class="leading-relaxed text-sm"
                         style="color: var(--on-surface-variant); max-width: 320px"
                     >
-                        Catalogo de productos disponibles. Contactanos por WhatsApp para realizar tu pedido.
+                        Catálogo de productos disponibles. Contactanos por WhatsApp para realizar tu pedido.
                     </p>
                     <div class="flex gap-2.5 mt-5">
                         <a
@@ -282,11 +282,11 @@ function businessNameParts(name: string): [string, string] {
                             v-if="store.tenant?.whatsapp_number"
                             :href="`tel:+${store.tenant.whatsapp_number}`"
                             class="btn-icon"
-                            aria-label="Telefono"
+                            aria-label="Teléfono"
                         >
                             <Phone :size="18" />
                         </a>
-                        <a href="#" class="btn-icon" aria-label="Ubicacion">
+                        <a href="#" class="btn-icon" aria-label="Ubicación">
                             <MapPin :size="18" />
                         </a>
                     </div>

@@ -37,7 +37,7 @@ function handleUpdateQty(variantId: number, delta: number): void {
 
 function handleCheckout(): void {
     if (!storefront.tenant) {
-        toast.error('Informacion del negocio no disponible')
+        toast.error('Información del negocio no disponible')
         return
     }
 
@@ -124,7 +124,7 @@ function subtotalCents(): number {
                     class="btn btn-primary text-sm"
                     @click="close"
                 >
-                    Ver catalogo
+                    Ver catálogo
                 </RouterLink>
             </div>
 

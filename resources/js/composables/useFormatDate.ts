@@ -57,7 +57,7 @@ export function useFormatDate() {
         if (minutes < 1) return 'ahora mismo'
         if (minutes < 60) return `hace ${minutes} min`
         if (hours < 24) return `hace ${hours} h`
-        if (days < 7) return `hace ${days} dia${days > 1 ? 's' : ''}`
+        if (days < 7) return `hace ${days} día${days > 1 ? 's' : ''}`
         return formatDate(date)
     }
 

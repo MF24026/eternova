@@ -167,7 +167,7 @@ onMounted(() => {
     <div data-testid="billing-page" class="stack" style="gap: 20px; max-width: 920px">
         <header>
             <h1 class="serif" style="font-size: 1.6rem; color: var(--on-surface)">Facturación</h1>
-            <p style="color: var(--on-surface-variant)">Gestioná tu suscripción, tu tarjeta y tus facturas.</p>
+            <p style="color: var(--on-surface-variant)">Gestióná tu suscripción, tu tarjeta y tus facturas.</p>
         </header>
 
         <div v-if="loading" class="card" style="padding: 40px; display: flex; justify-content: center">

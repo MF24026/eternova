@@ -25,12 +25,12 @@ import { RouterLink } from 'vue-router'
         <!-- Footer note -->
         <p class="mt-8 text-xs text-on-surface-variant text-center">
             Al continuar, aceptas los
-            <RouterLink to="/terminos" class="text-primary underline-offset-2 hover:underline">
-                Terminos de uso
+            <RouterLink to="/términos" class="text-primary underline-offset-2 hover:underline">
+                Términos de uso
             </RouterLink>
             y la
             <RouterLink to="/privacidad" class="text-primary underline-offset-2 hover:underline">
-                Politica de privacidad
+                Política de privacidad
             </RouterLink>
             de Eternova.
         </p>

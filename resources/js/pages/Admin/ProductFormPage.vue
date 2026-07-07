@@ -259,7 +259,7 @@ const TABS = [
     { key: 'basic',     label: 'Datos basicos' },
     { key: 'variants',  label: 'Opciones y variantes' },
     { key: 'images',    label: 'Imagenes' },
-    { key: 'relations', label: 'Categorias y tags' },
+    { key: 'relations', label: 'Categorías y tags' },
     { key: 'seo',       label: 'SEO' },
 ] as const
 </script>
@@ -324,11 +324,11 @@ const TABS = [
                 </div>
 
                 <div class="field">
-                    <label class="label-gilt mb-1 block">Descripcion</label>
+                    <label class="label-gilt mb-1 block">Descripción</label>
                     <textarea
                         v-model="form.description"
                         rows="4"
-                        placeholder="Descripcion del producto..."
+                        placeholder="Descripción del producto..."
                         class="w-full px-4 py-2.5 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                         style="background: var(--surface-low); color: var(--on-surface)"
                     />
@@ -361,7 +361,7 @@ const TABS = [
                 <div class="flex flex-col gap-3">
                     <div
                         v-for="field in [
-                            { key: 'is_active', label: 'Activo en catalogo' },
+                            { key: 'is_active', label: 'Activo en catálogo' },
                             { key: 'is_featured', label: 'Producto destacado' },
                         ]"
                         :key="field.key"
@@ -448,7 +448,7 @@ const TABS = [
                     </div>
                 </div>
 
-                <p v-else class="text-sm text-on-surface-variant">Sin variantes. Las variantes se generan al definir opciones durante la creacion.</p>
+                <p v-else class="text-sm text-on-surface-variant">Sin variantes. Las variantes se generan al definir opciones durante la creación.</p>
             </div>
 
             <!-- Tab: Imagenes -->
@@ -480,10 +480,10 @@ const TABS = [
                 />
             </div>
 
-            <!-- Tab: Categorias y tags -->
+            <!-- Tab: Categorías y tags -->
             <div v-show="activeTab === 'relations'" class="card p-6 flex flex-col gap-6">
                 <div class="field">
-                    <label class="label-gilt mb-2 block">Categorias</label>
+                    <label class="label-gilt mb-2 block">Categorías</label>
                     <CategoryMultiSelect
                         v-model="form.categories"
                         :available-categories="categoriesStore.items"
@@ -506,7 +506,7 @@ const TABS = [
                 <AppInput
                     v-model="form.slug"
                     label="Slug (URL)"
-                    placeholder="se genera automaticamente desde el nombre"
+                    placeholder="se genera automáticamente desde el nombre"
                     help-text="Solo letras minusculas, numeros y guiones"
                     :error="fieldError('slug')"
                 />

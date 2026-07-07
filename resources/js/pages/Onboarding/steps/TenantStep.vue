@@ -179,7 +179,7 @@ function handleBack(): void {
                 Configura tu negocio
             </h2>
             <p class="mt-1 text-sm text-on-surface-variant">
-                Puedes cambiar estos datos mas adelante en Configuracion.
+                Puedes cambiar estos datos mas adelante en Configuración.
             </p>
         </div>
 
@@ -305,7 +305,7 @@ function handleBack(): void {
             <div>
                 <label class="block text-sm font-medium text-on-surface mb-1.5">Tipo de negocio</label>
                 <p class="text-xs text-on-surface-variant mb-2.5">
-                    Empezaras con un catalogo de ejemplo segun tu rubro. Puedes editarlo o borrarlo despues.
+                    Empezaras con un catálogo de ejemplo segun tu rubro. Puedes editarlo o borrarlo después.
                 </p>
                 <div class="grid grid-cols-2 gap-2.5">
                     <button

@@ -60,7 +60,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
                 {{ cat.name }}
                 <button
                     type="button"
-                    :aria-label="`Quitar categoria ${cat.name}`"
+                    :aria-label="`Quitar categoría ${cat.name}`"
                     class="opacity-70 hover:opacity-100"
                     @click.stop="remove(cat.id)"
                 >
@@ -71,7 +71,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
                 v-if="selectedCategories.length === 0"
                 class="text-sm text-on-surface-variant self-center"
             >
-                {{ placeholder ?? 'Seleccionar categorias...' }}
+                {{ placeholder ?? 'Seleccionar categorías...' }}
             </span>
             <ChevronDown
                 :size="14"
@@ -109,7 +109,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
             </button>
 
             <div v-if="availableCategories.length === 0" class="px-4 py-3 text-sm text-on-surface-variant">
-                Sin categorias disponibles.
+                Sin categorías disponibles.
             </div>
         </div>
     </div>

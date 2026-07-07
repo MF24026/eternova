@@ -137,7 +137,7 @@ test.describe('Product image gallery', () => {
         await page.goto(`http://${tenant.slug}.eternova.app:8080/login`)
         await page.getByLabel(/correo|email/i).fill(user.email)
         await page.getByLabel(/contrasena|password/i).fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion|login/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión|login/i }).click()
 
         await page.goto(`http://${tenant.slug}.eternova.app:8080/admin/products/${product.id}/edit`)
 
@@ -160,7 +160,7 @@ test.describe('Product image gallery', () => {
         await page.goto(`http://${tenant.slug}.eternova.app:8080/login`)
         await page.getByLabel(/correo|email/i).fill(user.email)
         await page.getByLabel(/contrasena|password/i).fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion|login/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión|login/i }).click()
 
         await page.goto(`http://${tenant.slug}.eternova.app:8080/admin/products/${product.id}/edit`)
         await page.getByRole('button', { name: 'Imagenes' }).click()
@@ -178,7 +178,7 @@ test.describe('Product image gallery', () => {
         await page.goto(`http://${tenant.slug}.eternova.app:8080/login`)
         await page.getByLabel(/correo|email/i).fill(user.email)
         await page.getByLabel(/contrasena|password/i).fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion|login/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión|login/i }).click()
 
         await page.goto(`http://${tenant.slug}.eternova.app:8080/admin/products/${product.id}/edit`)
         await page.getByRole('button', { name: 'Imagenes' }).click()

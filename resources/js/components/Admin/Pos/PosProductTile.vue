@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ProductImage from '@/components/base/ProductImage.vue'
 import type { PosProduct } from '@/types/domain/POS'
 
 interface Props {
@@ -27,19 +28,12 @@ const isOutOfStock = !defaultVariant || defaultVariant.available_quantity <= 0
         :class="{ 'opacity-50 cursor-not-allowed': isOutOfStock }"
         @click="!isOutOfStock && emit('select', product)"
     >
-        <!-- Product image or gradient placeholder -->
+        <!-- Product image or shared botanical placeholder -->
         <div class="aspect-square overflow-hidden">
-            <img
-                v-if="product.default_image_url"
+            <ProductImage
                 :src="product.default_image_url"
                 :alt="product.name"
-                class="w-full h-full object-cover"
-            />
-            <div
-                v-else
-                class="w-full h-full"
-                style="background: var(--gradient-soft)"
-                aria-hidden="true"
+                :seed="product.id"
             />
         </div>
 

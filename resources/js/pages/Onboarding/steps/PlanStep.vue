@@ -59,7 +59,7 @@ const planIcons: Record<string, typeof CheckIcon> = {
                 Elige tu plan
             </h2>
             <p class="mt-1 text-sm text-on-surface-variant">
-                Todos los planes incluyen 14 dias de prueba gratuita.
+                Todos los planes incluyen 14 días de prueba gratuita.
             </p>
         </div>
 

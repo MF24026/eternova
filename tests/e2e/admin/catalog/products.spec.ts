@@ -116,7 +116,7 @@ test.describe('Products admin CRUD', () => {
 
         await page.getByLabel('Email').fill(user.email)
         await page.getByLabel('Password').fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión/i }).click()
 
         await page.waitForURL('**/admin/dashboard', { timeout: 10_000 })
 
@@ -183,7 +183,7 @@ test.describe('Products admin CRUD', () => {
 
         await page.getByLabel('Email').fill(user.email)
         await page.getByLabel('Password').fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión/i }).click()
         await page.waitForURL('**/admin/dashboard', { timeout: 10_000 })
 
         await page.goto(`${tenantBase}/admin/products/${product.id}/edit`)
@@ -220,7 +220,7 @@ test.describe('Products admin CRUD', () => {
 
         await page.getByLabel('Email').fill(user.email)
         await page.getByLabel('Password').fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión/i }).click()
         await page.waitForURL('**/admin/dashboard', { timeout: 10_000 })
 
         await page.goto(`${tenantBase}/admin/products`)
@@ -249,7 +249,7 @@ test.describe('Products admin CRUD', () => {
 
         await page.getByLabel('Email').fill(user.email)
         await page.getByLabel('Password').fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión/i }).click()
         await page.waitForURL('**/admin/dashboard', { timeout: 10_000 })
 
         await page.goto(`${tenantBase}/admin/products`)
@@ -282,7 +282,7 @@ test.describe('Products admin CRUD', () => {
 
         await page.getByLabel('Email').fill(user.email)
         await page.getByLabel('Password').fill(user.password)
-        await page.getByRole('button', { name: /iniciar sesion/i }).click()
+        await page.getByRole('button', { name: /iniciar sesión/i }).click()
         await page.waitForURL('**/admin/dashboard', { timeout: 10_000 })
 
         await page.goto(`${tenantBase}/admin/products/new`)

@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends Record<string, unknown>">
+import { computed } from 'vue'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
 
 export interface TableColumn<Row = Record<string, unknown>> {
@@ -7,6 +8,8 @@ export interface TableColumn<Row = Record<string, unknown>> {
     sortable?: boolean
     align?: 'left' | 'center' | 'right'
     width?: string
+    /** Hide this column in the mobile stacked-card layout (< md). */
+    hideOnMobile?: boolean
     render?: (row: Row) => string
 }
 
@@ -42,11 +45,16 @@ const alignClass: Record<string, string> = {
     center: 'text-center',
     right: 'text-right',
 }
+
+// Columns shown in the mobile stacked-card layout. Consumers can opt a noisy
+// column out with `hideOnMobile` so the card stays scannable.
+const mobileColumns = computed(() => props.columns.filter((col) => !col.hideOnMobile))
 </script>
 
 <template>
     <div class="w-full overflow-x-auto rounded-xl bg-surface-lowest dark:bg-surface-low shadow-[var(--shadow-ambient)]">
-        <table class="w-full text-sm">
+        <!-- Desktop / tablet: classic table (md and up) -->
+        <table class="hidden w-full text-sm md:table" data-testid="app-table-desktop">
             <thead>
                 <tr class="bg-surface-low dark:bg-surface-mid">
                     <th
@@ -133,5 +141,62 @@ const alignClass: Record<string, string> = {
                 </template>
             </tbody>
         </table>
+
+        <!-- Mobile: stacked cards (< md). Reuses the same cell slots so consumers
+             need no changes; each row becomes a label:value card. -->
+        <div class="flex flex-col gap-2 p-2 md:hidden" data-testid="app-table-mobile-cards">
+            <!-- Loading skeleton cards -->
+            <template v-if="loading">
+                <div
+                    v-for="n in 5"
+                    :key="`m-skeleton-${n}`"
+                    class="rounded-lg bg-surface-low/50 dark:bg-surface-mid/40 p-3"
+                >
+                    <div
+                        v-for="col in mobileColumns"
+                        :key="col.key"
+                        class="flex items-center justify-between gap-3 py-1"
+                    >
+                        <div class="h-3 w-16 rounded bg-surface-high dark:bg-surface-mid animate-pulse" />
+                        <div class="h-3 w-24 rounded bg-surface-high dark:bg-surface-mid animate-pulse" />
+                    </div>
+                </div>
+            </template>
+
+            <!-- Data cards -->
+            <template v-else>
+                <div
+                    v-for="row in rows"
+                    :key="`m-${String(row[rowKey])}`"
+                    class="rounded-lg bg-surface-low/50 dark:bg-surface-mid/40 hover:bg-surface-mid dark:hover:bg-surface-high transition-colors cursor-pointer p-3 flex flex-col gap-1.5"
+                    @click="emit('row-click', row)"
+                >
+                    <div
+                        v-for="col in mobileColumns"
+                        :key="col.key"
+                        class="flex items-start justify-between gap-3"
+                    >
+                        <span class="shrink-0 text-xs font-semibold uppercase tracking-[0.05em] text-on-surface-variant">
+                            {{ col.label }}
+                        </span>
+                        <span class="min-w-0 text-sm text-on-surface text-right">
+                            <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
+                                {{ col.render ? col.render(row) : String(row[col.key] ?? '') }}
+                            </slot>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
+                <div
+                    v-if="rows.length === 0"
+                    class="px-4 py-12 text-center text-sm text-on-surface-variant"
+                >
+                    <slot name="empty">
+                        Sin resultados
+                    </slot>
+                </div>
+            </template>
+        </div>
     </div>
 </template>

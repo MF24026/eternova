@@ -34,14 +34,14 @@ async function handleSubmit() {
     <AuthShell>
         <template v-if="!sent">
             <p class="label-gilt">Recuperar acceso</p>
-            <h1 class="serif auth-title">Olvidaste tu<br>contrasena?</h1>
+            <h1 class="serif auth-title">Olvidaste tu<br>contraseña?</h1>
             <p class="auth-subtitle">
                 Ingresa tu correo y te enviaremos un enlace para crear una nueva.
             </p>
 
             <form class="auth-form" novalidate @submit.prevent="handleSubmit">
                 <div class="auth-field-group">
-                    <label for="email" class="field-label">Correo electronico</label>
+                    <label for="email" class="field-label">Correo electrónico</label>
                     <input
                         id="email"
                         v-model="email"
@@ -70,14 +70,14 @@ async function handleSubmit() {
             <span class="auth-badge"><MailCheck :size="26" /></span>
             <h1 class="serif auth-title" data-testid="forgot-sent">Revisa tu<br>correo.</h1>
             <p class="auth-subtitle">
-                Si el correo esta registrado, te enviamos un enlace para restablecer la contrasena.
-                Revisa tambien la carpeta de spam.
+                Si el correo esta registrado, te enviamos un enlace para restablecer la contraseña.
+                Revisa también la carpeta de spam.
             </p>
         </template>
 
         <p class="auth-footer">
             <router-link :to="{ name: 'login' }" class="auth-link auth-back-link">
-                <ArrowLeft :size="14" /> Volver a iniciar sesion
+                <ArrowLeft :size="14" /> Volver a iniciar sesión
             </router-link>
         </p>
     </AuthShell>
