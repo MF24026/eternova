@@ -7,7 +7,7 @@ import AppBadge from '@/components/base/AppBadge.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppPagination from '@/components/base/AppPagination.vue'
 import AppEmptyState from '@/components/base/AppEmptyState.vue'
-import QuotationBuilderSlideover from '@/components/Admin/Quotations/QuotationBuilderSlideover.vue'
+import QuotationBuilderOverlay from '@/components/Admin/Quotations/QuotationBuilderOverlay.vue'
 import QuotationService from '@/services/QuotationService'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useFormatDate } from '@/composables/useFormatDate'
@@ -172,7 +172,7 @@ function onBuilderSaved(saved: Quotation): void {
     <div class="flex flex-col gap-4">
 
         <!-- Builder slideover -->
-        <QuotationBuilderSlideover
+        <QuotationBuilderOverlay
             v-model="builderOpen"
             :quotation="builderQuotation"
             @saved="onBuilderSaved"
