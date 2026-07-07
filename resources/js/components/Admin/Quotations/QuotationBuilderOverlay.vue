@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { Plus, Trash2, ArrowUp, ArrowDown, ChevronDown, X, User, Tag } from 'lucide-vue-next'
-import AppSlideover from '@/components/base/AppSlideover.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import PosCustomerSelector from '@/components/Admin/Pos/PosCustomerSelector.vue'
@@ -366,6 +365,19 @@ function close(): void {
     resetForm()
 }
 
+// ESC closes the overlay while it is open.
+function onOverlayKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape' && props.modelValue) close()
+}
+watch(
+    () => props.modelValue,
+    (open) => {
+        if (open) document.addEventListener('keydown', onOverlayKeydown)
+        else document.removeEventListener('keydown', onOverlayKeydown)
+    },
+)
+onBeforeUnmount(() => document.removeEventListener('keydown', onOverlayKeydown))
+
 // ── Submit ────────────────────────────────────────────────────────────────────
 
 async function submit(): Promise<void> {
@@ -452,27 +464,57 @@ function narrowInputClass(hasError = false): string {
 </script>
 
 <template>
-    <!-- The customer-selector opens as a nested slideover (same pattern as POS) -->
-    <PosCustomerSelector
-        :model-value="customerSelectorOpen"
-        :selected-id="selectedCustomerId"
-        @update:model-value="customerSelectorOpen = $event"
-        @select="onCustomerSelected"
-    />
-
-    <AppSlideover
-        :model-value="modelValue"
-        :title="slideoverTitle"
-        :subtitle="slideoverSubtitle"
-        width="600px"
-        test-id="quotation-builder-slideover"
-        @update:model-value="close"
-    >
-        <form
-            class="flex flex-col gap-6"
-            novalidate
-            @submit.prevent="submit"
+    <Teleport to="body">
+        <Transition
+            enter-active-class="transition-opacity duration-200"
+            enter-from-class="opacity-0"
+            leave-active-class="transition-opacity duration-150"
+            leave-to-class="opacity-0"
         >
+            <div
+                v-if="modelValue"
+                class="fixed inset-0 z-[90] grid place-items-center p-0 sm:p-5"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="qb-title"
+                data-testid="quotation-builder-overlay"
+            >
+                <div
+                    class="absolute inset-0"
+                    style="background: rgba(61,47,50,.42); backdrop-filter: blur(6px)"
+                    @click="close"
+                />
+
+                <div
+                    class="relative flex flex-col w-full max-w-[1120px] h-[100dvh] sm:h-[min(92dvh,820px)]
+                           overflow-hidden bg-surface sm:rounded-[var(--r-2xl)] shadow-[var(--shadow-lifted)]"
+                >
+                    <!-- Header -->
+                    <div class="flex items-start gap-4 px-6 sm:px-8 pt-6 pb-4">
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-bold tracking-[0.16em] uppercase text-primary mb-1.5">Cotizaciones</p>
+                            <h2 id="qb-title" class="serif text-2xl sm:text-3xl leading-tight text-on-surface">{{ slideoverTitle }}</h2>
+                            <p class="text-sm text-on-surface-variant mt-1">{{ slideoverSubtitle }}</p>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn-icon ml-auto shrink-0"
+                            aria-label="Cerrar"
+                            data-testid="btn-close-builder"
+                            @click="close"
+                        >
+                            <X :size="20" />
+                        </button>
+                    </div>
+
+                    <!-- Body: single scroll on mobile, two independent columns on desktop -->
+                    <form
+                        class="flex-1 min-h-0 flex flex-col overflow-y-auto md:grid md:grid-cols-[1.4fr_1fr] md:overflow-hidden"
+                        novalidate
+                        @submit.prevent="submit"
+                    >
+                        <!-- LEFT: customer + dates + line items -->
+                        <div class="md:overflow-y-auto md:min-h-0 px-6 sm:px-8 pt-2 pb-6 flex flex-col gap-6">
 
             <!-- ── Customer (optional) ──────────────────────────────────── -->
             <section aria-label="Cliente" data-testid="section-customer">
@@ -804,6 +846,10 @@ function narrowInputClass(hasError = false): string {
                     </div>
                 </div>
             </section>
+                        </div>
+
+                        <!-- RIGHT: discount/tax + live totals + notes -->
+                        <div class="md:overflow-y-auto md:min-h-0 px-6 sm:px-8 pt-2 pb-6 flex flex-col gap-5 bg-surface-low">
 
             <!-- ── Discount / Tax ─────────────────────────────────────── -->
             <section aria-label="Descuento e impuesto">
@@ -933,32 +979,41 @@ function narrowInputClass(hasError = false): string {
                 </div>
 
             </section>
+                        </div>
+                    </form>
 
-        </form>
-
-        <!-- Footer -->
-        <template #footer>
-            <div class="flex gap-3">
-                <AppButton
-                    variant="secondary"
-                    class="flex-1"
-                    :disabled="isSubmitting"
-                    @click="close"
-                >
-                    Cancelar
-                </AppButton>
-                <AppButton
-                    variant="primary"
-                    class="flex-1"
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting || lines.length === 0"
-                    data-testid="btn-submit-quotation"
-                    @click="submit"
-                >
-                    {{ isEditMode ? 'Guardar cambios' : 'Crear cotización' }}
-                </AppButton>
+                    <!-- Footer -->
+                    <div class="flex gap-3 px-6 sm:px-8 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                        <AppButton
+                            variant="secondary"
+                            class="flex-1"
+                            :disabled="isSubmitting"
+                            @click="close"
+                        >
+                            Cancelar
+                        </AppButton>
+                        <AppButton
+                            variant="primary"
+                            class="flex-1"
+                            :loading="isSubmitting"
+                            :disabled="isSubmitting || lines.length === 0"
+                            data-testid="btn-submit-quotation"
+                            @click="submit"
+                        >
+                            {{ isEditMode ? 'Guardar cambios' : 'Crear cotización' }}
+                        </AppButton>
+                    </div>
+                </div>
             </div>
-        </template>
+        </Transition>
+    </Teleport>
 
-    </AppSlideover>
+    <!-- Nested customer selector — rendered after the overlay so it teleports
+         later into <body> and paints above the z-90 overlay. -->
+    <PosCustomerSelector
+        :model-value="customerSelectorOpen"
+        :selected-id="selectedCustomerId"
+        @update:model-value="customerSelectorOpen = $event"
+        @select="onCustomerSelected"
+    />
 </template>

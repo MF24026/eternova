@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test'
 /**
  * Quotation Builder Slideover — S7-E7.
  *
- * Exercises the QuotationBuilderSlideover and its wiring into QuotationsPage.
+ * Exercises the QuotationBuilderOverlay and its wiring into QuotationsPage.
  *
  * Requires DemoTenantsSeeder:
  *   - Tenant slug: rosa-eterna
@@ -29,7 +29,7 @@ async function login(page: Page): Promise<void> {
     await page.waitForSelector('input[type="email"]', { timeout: 10_000 })
     await page.fill('input[type="email"]', OWNER.email)
     await page.fill('input[type="password"]', OWNER.password)
-    await page.click('button[type="submit"]')
+    await page.click('button.auth-submit')
     await page.waitForURL('**/admin/**', { timeout: 15_000 })
 }
 
@@ -51,7 +51,7 @@ async function waitForNoSkeleton(page: Page): Promise<void> {
 async function openBuilderSlideover(page: Page): Promise<void> {
     await page.click('[data-testid="btn-nueva-cotizacion"]')
     await expect(
-        page.locator('[data-testid="quotation-builder-slideover"]'),
+        page.locator('[data-testid="quotation-builder-overlay"]'),
         'Builder slideover should open',
     ).toBeVisible({ timeout: 5_000 })
 }
@@ -116,7 +116,7 @@ test.describe('Quotation builder — open / close (S7-E7)', () => {
 
         // Slideover title
         await expect(
-            page.locator('[data-testid="quotation-builder-slideover"] h2'),
+            page.locator('[data-testid="quotation-builder-overlay"] h2'),
         ).toContainText('cotización')
     })
 
@@ -125,10 +125,10 @@ test.describe('Quotation builder — open / close (S7-E7)', () => {
         await gotoQuotationsPage(page)
         await openBuilderSlideover(page)
 
-        await page.click('[data-testid="quotation-builder-slideover"] button[aria-label="Cerrar"]')
+        await page.click('[data-testid="quotation-builder-overlay"] button[aria-label="Cerrar"]')
 
         await expect(
-            page.locator('[data-testid="quotation-builder-slideover"]'),
+            page.locator('[data-testid="quotation-builder-overlay"]'),
         ).not.toBeVisible()
     })
 
@@ -141,7 +141,7 @@ test.describe('Quotation builder — open / close (S7-E7)', () => {
 
         // More resilient: wait for the slideover to disappear
         await expect(
-            page.locator('[data-testid="quotation-builder-slideover"]'),
+            page.locator('[data-testid="quotation-builder-overlay"]'),
         ).not.toBeVisible({ timeout: 5_000 })
     })
 })
@@ -169,7 +169,7 @@ test.describe('Quotation builder — validation (S7-E7)', () => {
 
         // Slideover stays open
         await expect(
-            page.locator('[data-testid="quotation-builder-slideover"]'),
+            page.locator('[data-testid="quotation-builder-overlay"]'),
         ).toBeVisible()
     })
 })
@@ -323,7 +323,7 @@ test.describe('Quotation builder — create and list refresh (S7-E7)', () => {
 
         // Slideover closes
         await expect(
-            page.locator('[data-testid="quotation-builder-slideover"]'),
+            page.locator('[data-testid="quotation-builder-overlay"]'),
         ).not.toBeVisible({ timeout: 5_000 })
     })
 
@@ -401,7 +401,7 @@ test.describe('Quotation builder — edit draft (S7-E7)', () => {
 
         // Builder opens in edit mode — subtitle should contain the quotation number or "borrador"
         await expect(
-            page.locator('[data-testid="quotation-builder-slideover"]'),
+            page.locator('[data-testid="quotation-builder-overlay"]'),
         ).toBeVisible({ timeout: 5_000 })
 
         // Submit button reads "Guardar cambios" in edit mode
@@ -420,7 +420,7 @@ test.describe('Quotation builder — mobile (S7-E7)', () => {
 
         await openBuilderSlideover(page)
 
-        const slideover = page.locator('[data-testid="quotation-builder-slideover"]')
+        const slideover = page.locator('[data-testid="quotation-builder-overlay"]')
         await expect(slideover).toBeVisible()
 
         // On mobile the panel slides up from the bottom: its bounding box starts in lower part

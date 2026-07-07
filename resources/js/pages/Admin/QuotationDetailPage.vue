@@ -10,7 +10,7 @@
  *   - PDF (preview/download) — opens GET /quotations/:id/pdf in a new tab
  *   - Status transitions (send / accept / reject) gated by allowed_transitions
  *   - Accept can optionally create an Order in the same call (convert_to_order)
- *   - Edit (drafts only) — reuses QuotationBuilderSlideover in edit mode
+ *   - Edit (drafts only) — reuses QuotationBuilderOverlay in edit mode
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -32,7 +32,7 @@ import AppBadge from '@/components/base/AppBadge.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppCard from '@/components/base/AppCard.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
-import QuotationBuilderSlideover from '@/components/Admin/Quotations/QuotationBuilderSlideover.vue'
+import QuotationBuilderOverlay from '@/components/Admin/Quotations/QuotationBuilderOverlay.vue'
 import QuotationService from '@/services/QuotationService'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useFormatDate } from '@/composables/useFormatDate'
@@ -734,7 +734,7 @@ function timelineIcon(status: QuotationStatus): typeof CheckCircle {
         </div>
 
         <!-- Edit builder (drafts) -->
-        <QuotationBuilderSlideover
+        <QuotationBuilderOverlay
             v-model="builderOpen"
             :quotation="quotation"
             @saved="onBuilderSaved"
