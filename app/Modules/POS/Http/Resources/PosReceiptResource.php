@@ -79,6 +79,11 @@ final class PosReceiptResource extends BaseResource
             'tax_cents' => $order->tax_cents,
             'discount_cents' => $order->discount_cents,
             'total_cents' => $order->total_cents,
+            // Cash tendered + change due. Change is derived here, not stored.
+            'amount_received_cents' => $order->amount_received_cents,
+            'change_cents' => $order->amount_received_cents !== null
+                ? max(0, $order->amount_received_cents - $order->total_cents)
+                : null,
         ];
     }
 }
