@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, Save } from 'lucide-vue-next'
+import { ArrowLeft, Save, Settings2 } from 'lucide-vue-next'
 import AppButton from '@/components/base/AppButton.vue'
 import AppInput from '@/components/base/AppInput.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import ProductVariantsEditor from '@/components/composite/ProductVariantsEditor.vue'
+import ProductVariantsOverlay from '@/components/Admin/Products/ProductVariantsOverlay.vue'
 import TagSelector from '@/components/composite/TagSelector.vue'
 import CategoryMultiSelect from '@/components/composite/CategoryMultiSelect.vue'
 import ImageUploader from '@/components/composite/ImageUploader.vue'
@@ -34,6 +35,7 @@ const productId = computed<number | null>(() => {
 })
 
 const isEdit = computed(() => productId.value !== null)
+const variantsOverlayOpen = ref(false)
 
 // ── Active tab ─────────────────────────────────────────────────────────────────
 const activeTab = ref<'basic' | 'variants' | 'images' | 'relations' | 'seo'>('basic')
@@ -396,8 +398,20 @@ const TABS = [
                     {{ isEdit ? 'Variantes del producto' : 'Configurar opciones y variantes' }}
                 </p>
 
-                <div v-if="isEdit" class="text-sm text-on-surface-variant mb-4">
-                    Las variantes se gestionan directamente en la tabla de abajo. Para agregar nuevas opciones usa el endpoint de variantes.
+                <div v-if="isEdit" class="flex items-center justify-between gap-3 mb-4">
+                    <p class="text-sm text-on-surface-variant">
+                        Editá el SKU y el precio de cada variante, agregá o eliminá combinaciones.
+                    </p>
+                    <AppButton
+                        variant="secondary"
+                        size="sm"
+                        :icon="Settings2"
+                        type="button"
+                        data-testid="btn-manage-variants"
+                        @click="variantsOverlayOpen = true"
+                    >
+                        Gestionar variantes
+                    </AppButton>
                 </div>
 
                 <ProductVariantsEditor
@@ -535,5 +549,11 @@ const TABS = [
                 </AppButton>
             </div>
         </template>
+
+        <!-- Edit-mode variant management overlay -->
+        <ProductVariantsOverlay
+            :show="variantsOverlayOpen"
+            @close="variantsOverlayOpen = false"
+        />
     </div>
 </template>
