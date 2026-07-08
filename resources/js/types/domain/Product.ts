@@ -34,6 +34,10 @@ export interface ProductVariant {
     image_url: string | null
     position: number
     is_active: boolean
+    min_stock_alert?: number | null
+    // Available (sellable) stock keyed by branch id. Present only on the product
+    // detail payload; the admin variants overlay filters it to the selected branch.
+    available_by_branch?: Record<string, number>
     deleted_at: string | null
     created_at: string | null
     updated_at: string | null

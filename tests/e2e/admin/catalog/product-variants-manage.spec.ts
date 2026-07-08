@@ -56,6 +56,11 @@ test('manage variants: add then remove in product edit mode', async ({ page }) =
     const before = await rows.count()
     expect(before).toBeGreaterThan(0)
 
+    // Per-branch stock: an existing variant shows a numeric availability cell.
+    // rosa-eterna is single-branch, so the branch selector stays hidden.
+    await expect(overlay.locator('[data-testid^="pv-stock-"]').first()).toHaveText(/\d/)
+    await expect(overlay.locator('[data-testid="pv-branch-select"]')).toHaveCount(0)
+
     // Add a variant with a unique option value so it never collides.
     const uniqueValue = `E2E-${Date.now()}`
     await overlay.locator(`[data-testid="pv-new-option-${target!.axisName}"]`).fill(uniqueValue)

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Catalog\Models;
 
+use App\Modules\Inventory\Models\BranchInventory;
 use Database\Factories\Catalog\ProductVariantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -65,5 +67,16 @@ final class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Per-branch stock rows for this variant. Tenant-scoped via BranchInventory's
+     * BelongsToTenant. Used by the admin variants overlay to show availability.
+     *
+     * @return HasMany<BranchInventory, $this>
+     */
+    public function branchInventory(): HasMany
+    {
+        return $this->hasMany(BranchInventory::class, 'product_variant_id');
     }
 }
