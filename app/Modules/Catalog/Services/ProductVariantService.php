@@ -106,6 +106,7 @@ final class ProductVariantService
             'options' => $data['options'] ?? [],
             'image_url' => $data['image_url'] ?? null,
             'position' => $data['position'] ?? 0,
+            'is_active' => $data['is_active'] ?? true,
         ]);
     }
 

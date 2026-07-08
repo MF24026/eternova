@@ -34,6 +34,7 @@ final class UpdateVariantRequest extends FormRequest
             'options' => ['sometimes', 'array'],
             'image_url' => ['sometimes', 'nullable', 'url', 'max:500'],
             'position' => ['sometimes', 'integer', 'min:0'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 }

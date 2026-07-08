@@ -84,7 +84,7 @@ final class StorefrontProductController extends Controller
             ->where('slug', $slug)
             ->where('is_active', true)
             ->with([
-                'variants' => static fn ($q) => $q->orderBy('position'),
+                'variants' => static fn ($q) => $q->where('is_active', true)->orderBy('position'),
                 'categories:id,name,slug',
                 'tags:id,name,slug',
             ])

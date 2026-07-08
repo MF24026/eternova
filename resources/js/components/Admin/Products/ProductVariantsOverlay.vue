@@ -83,6 +83,18 @@ async function savePrice(variant: ProductVariant, value: string): Promise<void> 
     }
 }
 
+// Availability toggle: inactive variants stay configured here but disappear from
+// the public storefront and the POS (matches the backend is_active filter).
+async function toggleActive(variant: ProductVariant): Promise<void> {
+    if (product.value === null) return
+    const next = !variant.is_active
+    try {
+        await store.updateVariant(product.value.id, variant.id, { is_active: next })
+    } catch {
+        toast.error('No se pudo cambiar la disponibilidad')
+    }
+}
+
 // Inline delete confirmation (a nested confirm dialog would render behind this
 // z-90 overlay). Arming a row shows an inline "¿Eliminar?" prompt on that row.
 const confirmingId = ref<number | null>(null)
@@ -196,16 +208,18 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                             <div
                                 v-for="v in variants"
                                 :key="v.id"
-                                class="grid grid-cols-1 sm:grid-cols-[1fr_140px_120px_auto] gap-2 sm:items-center p-3 rounded-[var(--r-lg)] bg-surface-low"
+                                class="grid grid-cols-1 sm:grid-cols-[1fr_140px_120px_auto_auto] gap-2 sm:items-center p-3 rounded-[var(--r-lg)] bg-surface-low"
                                 :data-testid="`pv-row-${v.id}`"
                             >
-                                <div class="min-w-0">
+                                <div class="min-w-0" :class="{ 'opacity-55': !v.is_active }">
                                     <p class="text-sm font-semibold text-on-surface truncate">{{ optionLabel(v) }}</p>
+                                    <p v-if="!v.is_active" class="text-[11px] font-medium text-on-surface-variant">No disponible</p>
                                 </div>
                                 <input
                                     :value="v.sku"
                                     type="text"
                                     class="field text-xs font-mono"
+                                    :class="{ 'opacity-55': !v.is_active }"
                                     aria-label="SKU"
                                     :data-testid="`pv-sku-${v.id}`"
                                     @change="saveSku(v, ($event.target as HTMLInputElement).value)"
@@ -216,10 +230,26 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                                     inputmode="decimal"
                                     placeholder="Heredado"
                                     class="field text-sm text-right"
+                                    :class="{ 'opacity-55': !v.is_active }"
                                     aria-label="Precio"
                                     :data-testid="`pv-price-${v.id}`"
                                     @change="savePrice(v, ($event.target as HTMLInputElement).value)"
                                 />
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    :aria-checked="v.is_active"
+                                    :aria-label="`Disponibilidad de ${optionLabel(v)}`"
+                                    :data-testid="`pv-active-${v.id}`"
+                                    class="relative h-6 w-11 shrink-0 justify-self-end rounded-full transition-colors duration-150"
+                                    :style="{ background: v.is_active ? 'var(--primary)' : 'var(--surface-high)' }"
+                                    @click="toggleActive(v)"
+                                >
+                                    <span
+                                        class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-[var(--shadow-ambient)] transition-transform duration-150"
+                                        :class="{ 'translate-x-5': v.is_active }"
+                                    />
+                                </button>
                                 <div class="justify-self-end flex items-center gap-1">
                                     <template v-if="confirmingId === v.id">
                                         <span class="text-xs text-on-surface-variant mr-1">¿Eliminar?</span>

@@ -80,7 +80,7 @@ final class PosController extends Controller
         $query = Product::query()
             ->where('is_active', true)
             ->with([
-                'variants' => static fn ($q) => $q->orderBy('position'),
+                'variants' => static fn ($q) => $q->where('is_active', true)->orderBy('position'),
                 'categories:id,name,slug',
             ]);
 

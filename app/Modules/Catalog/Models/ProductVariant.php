@@ -43,6 +43,7 @@ final class ProductVariant extends Model
         'options',
         'image_url',
         'position',
+        'is_active',
     ];
 
     /**
@@ -55,6 +56,7 @@ final class ProductVariant extends Model
         'min_stock_alert' => 'integer',
         'options' => 'array',
         'position' => 'integer',
+        'is_active' => 'boolean',
     ];
 
     /**
