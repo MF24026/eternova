@@ -34,6 +34,7 @@ final class StoreVariantRequest extends FormRequest
             'options' => ['nullable', 'array'],
             'image_url' => ['nullable', 'url', 'max:500'],
             'position' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 }

@@ -65,6 +65,17 @@ test('manage variants: add then remove in product edit mode', async ({ page }) =
     await expect(rows).toHaveCount(before + 1)
     await expect(overlay.getByText(`${target!.axisName}: ${uniqueValue}`)).toBeVisible()
 
+    // Availability toggle (Shopify-style): flip the new variant off then back on.
+    // A newly added variant starts available (aria-checked=true).
+    const newRow = overlay.locator('[data-testid^="pv-row-"]', { hasText: uniqueValue })
+    const toggle = newRow.locator('[data-testid^="pv-active-"]')
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await expect(newRow.getByText('No disponible')).toBeVisible()
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+
     // Remove the variant we just added — inline confirm (arm, then confirm) so it
     // leaves the demo data as it was.
     const targetRow = overlay.locator('[data-testid^="pv-row-"]', { hasText: uniqueValue })

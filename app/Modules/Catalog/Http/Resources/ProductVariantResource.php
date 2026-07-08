@@ -34,6 +34,7 @@ final class ProductVariantResource extends BaseResource
             'options' => $variant->options ?? [],
             'image_url' => $variant->image_url,
             'position' => $variant->position,
+            'is_active' => $variant->is_active,
             'deleted_at' => $variant->deleted_at?->toIso8601String(),
             'created_at' => $variant->created_at?->toIso8601String(),
             'updated_at' => $variant->updated_at?->toIso8601String(),
