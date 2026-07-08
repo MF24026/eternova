@@ -3,6 +3,7 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { X, Plus, Trash2, Check } from 'lucide-vue-next'
 import { useProductsStore } from '@/stores/products'
 import { useToast } from '@/composables/useToast'
+import { useBranches } from '@/composables/useBranches'
 import type { ProductVariant } from '@/types/domain/Product'
 
 const props = defineProps<{ show: boolean }>()
@@ -13,6 +14,31 @@ const toast = useToast()
 
 const product = computed(() => store.current)
 const variants = computed<ProductVariant[]>(() => product.value?.variants ?? [])
+
+// ── Stock, scoped by branch ─────────────────────────────────────────────────
+// Stock lives per branch (branch_inventory). This overlay is otherwise
+// branch-agnostic, so we show availability for an explicitly selected branch
+// (default: the main branch) to avoid implying a cross-branch total is on hand
+// at one location. The selector is hidden when the tenant has a single branch.
+const { branches, loadBranches } = useBranches()
+const selectedBranchId = ref<string>('')
+
+function defaultBranchId(): string {
+    const main = branches.value.find((b) => b.is_main) ?? branches.value[0]
+    return main ? String(main.id) : ''
+}
+
+const availableFor = (v: ProductVariant): number =>
+    v.available_by_branch?.[selectedBranchId.value] ?? 0
+
+type StockStatus = 'out' | 'low' | 'ok'
+function stockStatus(v: ProductVariant): StockStatus {
+    const available = availableFor(v)
+    if (available <= 0) return 'out'
+    const threshold = v.min_stock_alert ?? 0
+    if (threshold > 0 && available <= threshold) return 'low'
+    return 'ok'
+}
 
 // Option axes for the add form: { name, values: string[] } snapshotted when the
 // overlay opens (union of the product's declared options and the values seen on
@@ -146,6 +172,9 @@ watch(
         if (open) {
             snapshotAxes()
             initAddForm()
+            void loadBranches().then(() => {
+                if (selectedBranchId.value === '') selectedBranchId.value = defaultBranchId()
+            })
             document.addEventListener('keydown', onKeydown)
         } else {
             confirmingId.value = null
@@ -190,9 +219,23 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                                 Variantes · {{ product.name }}
                             </h2>
                         </div>
+                        <div v-if="branches.length > 1" class="ml-auto flex flex-col gap-1">
+                            <label for="pv-branch-select" class="text-[10px] uppercase tracking-[0.05em] text-on-surface-variant">
+                                Stock de
+                            </label>
+                            <select
+                                id="pv-branch-select"
+                                v-model="selectedBranchId"
+                                class="field text-sm"
+                                data-testid="pv-branch-select"
+                            >
+                                <option v-for="b in branches" :key="b.id" :value="String(b.id)">{{ b.name }}</option>
+                            </select>
+                        </div>
                         <button
                             type="button"
-                            class="btn-icon ml-auto shrink-0"
+                            class="btn-icon shrink-0"
+                            :class="branches.length > 1 ? 'ml-2' : 'ml-auto'"
                             aria-label="Cerrar"
                             data-testid="pv-close"
                             @click="emit('close')"
@@ -208,7 +251,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                             <div
                                 v-for="v in variants"
                                 :key="v.id"
-                                class="grid grid-cols-1 sm:grid-cols-[1fr_140px_120px_auto_auto] gap-2 sm:items-center p-3 rounded-[var(--r-lg)] bg-surface-low"
+                                class="grid grid-cols-1 sm:grid-cols-[1fr_100px_110px_90px_auto_auto] gap-2 sm:items-center p-3 rounded-[var(--r-lg)] bg-surface-low"
                                 :data-testid="`pv-row-${v.id}`"
                             >
                                 <div class="min-w-0" :class="{ 'opacity-55': !v.is_active }">
@@ -235,6 +278,25 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
                                     :data-testid="`pv-price-${v.id}`"
                                     @change="savePrice(v, ($event.target as HTMLInputElement).value)"
                                 />
+                                <div
+                                    class="flex items-center gap-1.5 sm:justify-end text-sm tabular-nums"
+                                    :data-testid="`pv-stock-${v.id}`"
+                                >
+                                    <span
+                                        class="font-semibold"
+                                        :style="{ color: stockStatus(v) === 'out' ? 'var(--error)' : 'var(--on-surface)' }"
+                                    >{{ availableFor(v) }}</span>
+                                    <span
+                                        v-if="stockStatus(v) === 'out'"
+                                        class="text-[10px] font-bold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded-[var(--r-full)]"
+                                        style="color: var(--error); background: color-mix(in srgb, var(--error) 14%, transparent)"
+                                    >Agotado</span>
+                                    <span
+                                        v-else-if="stockStatus(v) === 'low'"
+                                        class="text-[10px] font-bold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded-[var(--r-full)]"
+                                        style="color: #8a6d1f; background: color-mix(in srgb, #b8901f 16%, transparent)"
+                                    >Bajo</span>
+                                </div>
                                 <button
                                     type="button"
                                     role="switch"

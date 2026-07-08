@@ -72,6 +72,7 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             'variants' => static function ($q): void {
                 $q->orderBy('position');
             },
+            'variants.branchInventory',
             'options.values',
             'categories',
             'tags',
