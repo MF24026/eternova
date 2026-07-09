@@ -143,6 +143,12 @@ git commit -m "feat(settings): add admin_theme column, enum and default"
 - [ ] **Step 1: Write the failing tests (append to AdminThemeTest)**
 
 ```php
+    // API SHAPE (verified against routes/api/v1/settings.php):
+    //   GET  /api/v1/settings          -> all groups, show returns data.{group}.{key}
+    //   POST /api/v1/settings/{group}  -> update ONE group with a FLAT payload
+    //   (the {group} rules live in UpdateSettingsRequest::rules() match arm).
+    // There is NO PATCH route and NO nested "brand" wrapper. Use POST + flat body.
+
     public function test_settings_show_returns_admin_theme(): void
     {
         [$owner, $tenant] = $this->ownerForTenant();
@@ -158,11 +164,9 @@ git commit -m "feat(settings): add admin_theme column, enum and default"
         [$owner, $tenant] = $this->ownerForTenant();
 
         $this->actingAs($owner)
-            ->patchJson($this->tenantUrl($tenant, 'api/v1/settings'), [
-                'brand' => [
-                    'business_name' => $tenant->business_name,
-                    'admin_theme' => 'minimal',
-                ],
+            ->postJson($this->tenantUrl($tenant, 'api/v1/settings/brand'), [
+                'business_name' => $tenant->business_name,
+                'admin_theme' => 'minimal',
             ])
             ->assertOk();
 
@@ -174,14 +178,12 @@ git commit -m "feat(settings): add admin_theme column, enum and default"
         [$owner, $tenant] = $this->ownerForTenant();
 
         $this->actingAs($owner)
-            ->patchJson($this->tenantUrl($tenant, 'api/v1/settings'), [
-                'brand' => [
-                    'business_name' => $tenant->business_name,
-                    'admin_theme' => 'neon',
-                ],
+            ->postJson($this->tenantUrl($tenant, 'api/v1/settings/brand'), [
+                'business_name' => $tenant->business_name,
+                'admin_theme' => 'neon',
             ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors('brand.admin_theme');
+            ->assertJsonValidationErrors('admin_theme');
     }
 
     public function test_theme_change_is_isolated_per_tenant(): void
@@ -190,8 +192,9 @@ git commit -m "feat(settings): add admin_theme column, enum and default"
         [, $tenantB] = $this->ownerForTenant();
 
         $this->actingAs($ownerA)
-            ->patchJson($this->tenantUrl($tenantA, 'api/v1/settings'), [
-                'brand' => ['business_name' => $tenantA->business_name, 'admin_theme' => 'minimal'],
+            ->postJson($this->tenantUrl($tenantA, 'api/v1/settings/brand'), [
+                'business_name' => $tenantA->business_name,
+                'admin_theme' => 'minimal',
             ])
             ->assertOk();
 
