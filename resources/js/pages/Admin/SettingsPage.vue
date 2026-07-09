@@ -23,6 +23,7 @@ import SettingsService from '@/services/SettingsService'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { usePlanGate } from '@/composables/usePlanGate'
+import { useTheme } from '@/composables/useTheme'
 import type {
     TenantSettings, SettingsCatalog, SettingsGroup,
 } from '@/types/domain/Settings'
@@ -30,6 +31,13 @@ import type {
 const toast = useToast()
 const planGate = usePlanGate()
 const { confirm } = useConfirm()
+const { setPalette } = useTheme()
+
+// Live-preview the admin palette as it is picked; persisted on Save via the brand payload.
+function selectAdminTheme(next: 'ethereal' | 'minimal'): void {
+    settings.value!.brand.admin_theme = next
+    setPalette(next)
+}
 
 function onUpgrade(): void {
     toast.info('La gestión de plan estará disponible pronto.')
@@ -197,6 +205,7 @@ function buildPayload(group: SettingsGroup): Record<string, unknown> | FormData 
         form.append('business_name', s.brand.business_name ?? '')
         if (s.brand.primary_color) form.append('primary_color', s.brand.primary_color)
         if (s.brand.secondary_color) form.append('secondary_color', s.brand.secondary_color)
+        form.append('admin_theme', s.brand.admin_theme)
         if (logoFile.value) form.append('logo', logoFile.value)
         if (faviconFile.value) form.append('favicon', faviconFile.value)
         return form
@@ -338,6 +347,38 @@ onBeforeRouteLeave(async () => {
                                 <input v-model="settings.brand.primary_color" type="color" class="w-8 h-8 rounded-full cursor-pointer bg-transparent" aria-label="Color personalizado" />
                             </div>
                             <p v-if="errors.brand?.primary_color" class="text-xs text-error mt-1">{{ errors.brand.primary_color }}</p>
+                        </div>
+                        <div>
+                            <label class="field-label mb-1 block">Apariencia del panel</label>
+                            <p class="text-xs text-on-surface-variant mb-3">
+                                Tema del panel de administración para todo tu equipo. La vitrina pública usa tus colores de marca aparte.
+                            </p>
+                            <div class="grid grid-cols-2 gap-3 max-w-md">
+                                <button
+                                    type="button"
+                                    class="p-4 rounded-[var(--r-lg)] text-left transition-shadow"
+                                    :style="settings.brand.admin_theme !== 'minimal'
+                                        ? 'background: var(--surface-low); box-shadow: 0 0 0 2px var(--primary)'
+                                        : 'background: var(--surface-low)'"
+                                    data-testid="theme-option-ethereal"
+                                    @click="selectAdminTheme('ethereal')"
+                                >
+                                    <span class="block w-full h-8 rounded-[var(--r-md)] mb-2" style="background: linear-gradient(135deg, #7c545d, #f8c4cf)" />
+                                    <span class="text-sm font-semibold text-on-surface">Ethereal</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="p-4 rounded-[var(--r-lg)] text-left transition-shadow"
+                                    :style="settings.brand.admin_theme === 'minimal'
+                                        ? 'background: var(--surface-low); box-shadow: 0 0 0 2px var(--primary)'
+                                        : 'background: var(--surface-low)'"
+                                    data-testid="theme-option-minimal"
+                                    @click="selectAdminTheme('minimal')"
+                                >
+                                    <span class="block w-full h-8 rounded-[var(--r-md)] mb-2" style="background: linear-gradient(135deg, #059669, #34d399)" />
+                                    <span class="text-sm font-semibold text-on-surface">Minimalista</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -15,6 +15,7 @@ export interface BrandSettings {
     business_name: string
     primary_color: string | null
     secondary_color: string | null
+    admin_theme: 'ethereal' | 'minimal'
     logo_url: string | null
     favicon_url: string | null
 }
