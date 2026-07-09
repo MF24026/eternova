@@ -9,6 +9,7 @@ import {
 } from 'lucide-vue-next'
 import KpiCard from '@/components/composite/KpiCard.vue'
 import SalesLineChart from '@/components/composite/SalesLineChart.vue'
+import LowStockCard from '@/components/composite/LowStockCard.vue'
 import AppBadge from '@/components/base/AppBadge.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import AppButton from '@/components/base/AppButton.vue'
@@ -146,6 +147,8 @@ const orderStatusLabel = (s: string): string =>
             </div>
         </div>
 
+        <!-- Recent activity + restock needs -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Recent orders -->
         <div class="card" style="padding: 24px" data-testid="recent-orders">
             <p class="label-gilt mb-4">Actividad reciente</p>
@@ -170,6 +173,9 @@ const orderStatusLabel = (s: string): string =>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <LowStockCard :items="summary.low_stock_items" />
         </div>
     </div>
 </template>

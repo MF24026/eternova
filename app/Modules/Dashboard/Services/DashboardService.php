@@ -6,6 +6,7 @@ namespace App\Modules\Dashboard\Services;
 
 use App\Modules\Expenses\Models\Expense;
 use App\Modules\Orders\Models\Order;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -55,6 +56,7 @@ final class DashboardService
             ],
             'sales_series' => $this->salesSeries($tenantId, $seriesFrom, $rangeDays),
             'top_products' => $this->topProducts($tenantId, $monthStart),
+            'low_stock_items' => $this->lowStockItems($tenantId),
             'recent_orders' => $this->recentOrders(),
             'range_days' => $rangeDays,
         ];
@@ -66,12 +68,89 @@ final class DashboardService
      */
     private function lowStockCount(string $tenantId): int
     {
+        return $this->lowStockQuery($tenantId)->count();
+    }
+
+    /**
+     * The (branch, variant) rows most in need of restocking: out of stock first,
+     * then by how far below their threshold they are. Each row is labelled with its
+     * branch so a multi-branch owner never mistakes it for a cross-branch total.
+     *
+     * @return list<array{
+     *     product_id: int, variant_id: int, product_name: string,
+     *     variant_label: string, branch_name: string,
+     *     available: int, min_stock_alert: int
+     * }>
+     */
+    private function lowStockItems(string $tenantId): array
+    {
+        return $this->lowStockQuery($tenantId)
+            ->orderByRaw('bi.available <= 0 DESC')
+            // available is BIGINT UNSIGNED (generated); cast so the deficit can go
+            // negative for out-of-stock rows instead of underflowing.
+            ->orderByRaw('(CAST(bi.available AS SIGNED) - CAST(pv.min_stock_alert AS SIGNED)) ASC')
+            ->orderBy('p.name')
+            ->limit(8)
+            ->get([
+                'p.id as product_id',
+                'pv.id as variant_id',
+                'p.name as product_name',
+                'pv.options as options',
+                'b.name as branch_name',
+                'bi.available as available',
+                'pv.min_stock_alert as min_stock_alert',
+            ])
+            ->map(fn (object $row): array => [
+                'product_id' => (int) $row->product_id,
+                'variant_id' => (int) $row->variant_id,
+                'product_name' => (string) $row->product_name,
+                'variant_label' => $this->variantLabel($row->options),
+                'branch_name' => (string) $row->branch_name,
+                'available' => (int) $row->available,
+                'min_stock_alert' => (int) $row->min_stock_alert,
+            ])
+            ->all();
+    }
+
+    /**
+     * Shared base query for low-stock reporting: (branch, variant) inventory rows at
+     * or below their variant's low-stock alert threshold, excluding soft-deleted
+     * variants and products. Variants with min_stock_alert = 0 opt out.
+     */
+    private function lowStockQuery(string $tenantId): Builder
+    {
         return DB::table('branch_inventory as bi')
             ->join('product_variants as pv', 'pv.id', '=', 'bi.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->join('branches as b', 'b.id', '=', 'bi.branch_id')
             ->where('bi.tenant_id', $tenantId)
             ->where('pv.min_stock_alert', '>', 0)
-            ->whereColumn('bi.available', '<=', 'pv.min_stock_alert')
-            ->count();
+            ->whereNull('pv.deleted_at')
+            ->whereNull('p.deleted_at')
+            ->whereColumn('bi.available', '<=', 'pv.min_stock_alert');
+    }
+
+    /**
+     * Human label for a variant's options JSON, e.g. "Talla: L · Color: Rojo".
+     * Empty string for variants without options.
+     */
+    private function variantLabel(?string $optionsJson): string
+    {
+        if ($optionsJson === null || $optionsJson === '') {
+            return '';
+        }
+
+        /** @var array<string, string>|null $options */
+        $options = json_decode($optionsJson, true);
+        if (! is_array($options) || $options === []) {
+            return '';
+        }
+
+        return implode(' · ', array_map(
+            static fn (string $key, string $value): string => "{$key}: {$value}",
+            array_keys($options),
+            array_values($options),
+        ));
     }
 
     /**

@@ -26,10 +26,21 @@ export interface RecentOrder {
     created_at: string | null
 }
 
+export interface LowStockItem {
+    product_id: number
+    variant_id: number
+    product_name: string
+    variant_label: string
+    branch_name: string
+    available: number
+    min_stock_alert: number
+}
+
 export interface DashboardSummary {
     kpis: DashboardKpis
     sales_series: SalesPoint[]
     top_products: TopProduct[]
+    low_stock_items: LowStockItem[]
     recent_orders: RecentOrder[]
     range_days: number
 }
