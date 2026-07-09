@@ -48,6 +48,7 @@ class Tenant extends Model
         'logo_url',
         'primary_color',
         'secondary_color',
+        'admin_theme',
         'favicon_url',
 
         // Brand — extensible JSON (tagline, social_links, dark_logo_url, etc.)
@@ -86,6 +87,17 @@ class Tenant extends Model
         'quotation_valid_days' => 'integer',
         'trial_ends_at' => 'datetime',
         'status' => 'string',
+    ];
+
+    /**
+     * PHP-level mirror of the `admin_theme` DB column default. Eloquent does not
+     * re-fetch a row after INSERT, so without this a freshly created model would
+     * report null in memory even though MySQL applied 'ethereal' at the DB level.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'admin_theme' => 'ethereal',
     ];
 
     /**
