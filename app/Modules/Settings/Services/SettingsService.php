@@ -32,7 +32,7 @@ final class SettingsService
      * @var array<string, list<string>>
      */
     private const TENANT_COLUMN_MAP = [
-        'brand' => ['business_name', 'primary_color', 'secondary_color'],
+        'brand' => ['business_name', 'primary_color', 'secondary_color', 'admin_theme'],
         'locale' => ['currency', 'country_code', 'language', 'timezone'],
         'quotations' => ['quotation_tax_rate_bps', 'quotation_valid_days', 'quotation_terms'],
         'reservations' => ['reservation_deposit_pct', 'reservation_occasions'],
@@ -65,6 +65,7 @@ final class SettingsService
                 'business_name' => $tenant->business_name,
                 'primary_color' => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
+                'admin_theme' => $tenant->admin_theme,
                 'logo_url' => $tenant->logo_url,
                 'favicon_url' => $tenant->favicon_url,
             ],
