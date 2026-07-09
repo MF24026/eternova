@@ -65,6 +65,8 @@
     --shadow-rest: 0 4px 16px rgba(61, 47, 50, 0.04);
     --shadow-lifted: 0 18px 48px rgba(61, 47, 50, 0.10);
 
+    --scrim: rgba(61, 47, 50, 0.28);
+
     --r-sm: 0.5rem;
     --r-md: 0.75rem;
     --r-lg: 1rem;
@@ -162,6 +164,100 @@
     --shadow-ambient: 0 12px 32px rgba(0, 0, 0, 0.32);
     --shadow-rest: 0 4px 16px rgba(0, 0, 0, 0.24);
     --shadow-lifted: 0 18px 48px rgba(0, 0, 0, 0.4);
+
+    --scrim: rgba(0, 0, 0, 0.5);
+}
+
+/* =============================================
+   Minimalista theme — neutral emerald/slate.
+   Overrides the SAME runtime tokens the rosa :root/.dark define; the @theme
+   mapping and every component pick these up unchanged. Both blocks list the
+   COMPLETE token set — any token omitted falls back to the rosa value and
+   leaks pink into the neutral theme. Placed AFTER :root and .dark so the
+   equal-specificity light rules win by source order.
+   ============================================= */
+.theme-minimal {
+    --surface: #f8fafc;
+    --surface-lowest: #ffffff;
+    --surface-low: #f1f5f9;
+    --surface-mid: #e9eef4;
+    --surface-high: #e2e8f0;
+    --surface-highest: #dbe2ea;
+
+    --primary: #059669;
+    --primary-dim: #047857;
+    --primary-container: #d1fae5;
+    --on-primary: #ffffff;
+
+    --secondary: #475569;
+    --secondary-container: #e2e8f0;
+    --on-secondary-container: #334155;
+
+    --on-surface: #1e293b;
+    --on-surface-variant: #475569;
+    --outline-variant: rgba(100, 116, 139, 0.14);
+    --outline-soft: rgba(100, 116, 139, 0.30);
+
+    --success: #059669;
+    --success-container: #d1fae5;
+    --warning: #b45309;
+    --warning-container: #fef3c7;
+    --error: #dc2626;
+    --error-container: #fee2e2;
+    --info: #0284c7;
+    --info-container: #e0f2fe;
+
+    --gradient: linear-gradient(135deg, #059669, #34d399);
+    --gradient-soft: linear-gradient(135deg, #34d399, #a7f3d0);
+    --gradient-bloom: linear-gradient(160deg, #f1f5f9 0%, #e2e8f0 40%, #d1fae5 100%);
+
+    --shadow-ambient: 0 12px 32px rgba(15, 23, 42, 0.06);
+    --shadow-rest: 0 4px 16px rgba(15, 23, 42, 0.04);
+    --shadow-lifted: 0 18px 48px rgba(15, 23, 42, 0.10);
+
+    --scrim: rgba(15, 23, 42, 0.28);
+}
+
+.theme-minimal.dark {
+    --surface: #0f172a;
+    --surface-lowest: #0b1220;
+    --surface-low: #1e293b;
+    --surface-mid: #263449;
+    --surface-high: #334155;
+    --surface-highest: #3f4d63;
+
+    --primary: #34d399;
+    --primary-dim: #10b981;
+    --primary-container: #065f46;
+    --on-primary: #052e22;
+
+    --secondary: #94a3b8;
+    --secondary-container: #334155;
+    --on-secondary-container: #e2e8f0;
+
+    --on-surface: #e2e8f0;
+    --on-surface-variant: #94a3b8;
+    --outline-variant: rgba(148, 163, 184, 0.12);
+    --outline-soft: rgba(148, 163, 184, 0.22);
+
+    --success: #34d399;
+    --success-container: #064e3b;
+    --warning: #fbbf24;
+    --warning-container: #3a2f12;
+    --error: #f87171;
+    --error-container: #3a1f1f;
+    --info: #38bdf8;
+    --info-container: #0c2a3a;
+
+    --gradient: linear-gradient(135deg, #34d399, #059669);
+    --gradient-soft: linear-gradient(135deg, #334155, #065f46);
+    --gradient-bloom: linear-gradient(160deg, #1e293b 0%, #263449 50%, #065f46 100%);
+
+    --shadow-ambient: 0 12px 32px rgba(0, 0, 0, 0.32);
+    --shadow-rest: 0 4px 16px rgba(0, 0, 0, 0.24);
+    --shadow-lifted: 0 18px 48px rgba(0, 0, 0, 0.4);
+
+    --scrim: rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -604,7 +700,7 @@ select {
 .slideover-scrim {
     position: fixed;
     inset: 0;
-    background: rgba(61, 47, 50, 0.28);
+    background: var(--scrim);
     backdrop-filter: blur(2px);
     opacity: 0;
     pointer-events: none;
