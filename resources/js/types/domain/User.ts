@@ -2,6 +2,7 @@ export interface UserTenantMembership {
     id: string
     slug: string
     business_name: string
+    admin_theme: 'ethereal' | 'minimal'
     role: 'owner' | 'admin' | 'staff' | 'customer'
     joined_at: string
     is_current: boolean

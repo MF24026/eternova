@@ -28,8 +28,14 @@ const props = defineProps<{
 }>()
 
 function brandColor(): string {
-    const v = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
-    return v || '#7c545d'
+    return tokenColor('--primary', '#7c545d')
+}
+
+// Read a design token so the chart follows the active theme (Ethereal / Minimalista)
+// and dark mode, instead of freezing the rosa palette into the axis and grid.
+function tokenColor(name: string, fallback: string): string {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    return v || fallback
 }
 
 function dayLabel(date: string): string {
@@ -68,30 +74,35 @@ const chartData = computed<ChartData<'line'>>(() => {
     }
 })
 
-const chartOptions = computed<ChartOptions<'line'>>(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-        legend: { display: false },
-        tooltip: {
-            callbacks: {
-                label: (ctx: TooltipItem<'line'>) => props.format(Math.round((ctx.parsed.y ?? 0) * 100)),
+const chartOptions = computed<ChartOptions<'line'>>(() => {
+    const tickColor = tokenColor('--on-surface-variant', 'rgba(125,84,93,0.55)')
+    const gridColor = tokenColor('--outline-variant', 'rgba(125,84,93,0.10)')
+
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: (ctx: TooltipItem<'line'>) => props.format(Math.round((ctx.parsed.y ?? 0) * 100)),
+                },
             },
         },
-    },
-    scales: {
-        x: {
-            grid: { display: false },
-            ticks: { maxTicksLimit: 7, color: 'rgba(125,84,93,0.55)', font: { size: 10 } },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: { maxTicksLimit: 7, color: tickColor, font: { size: 10 } },
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: gridColor },
+                ticks: { display: false },
+                border: { display: false },
+            },
         },
-        y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(125,84,93,0.10)' },
-            ticks: { display: false },
-            border: { display: false },
-        },
-    },
-}))
+    }
+})
 </script>
 
 <template>

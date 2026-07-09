@@ -47,6 +47,7 @@ final class UserResource extends BaseResource
                     'id' => $tenant->id,
                     'slug' => $tenant->slug,
                     'business_name' => $tenant->business_name,
+                    'admin_theme' => $tenant->admin_theme,
                     'role' => $tenant->pivot->role,
                     'joined_at' => $tenant->pivot->joined_at?->toIso8601String(),
                     'is_current' => $currentTenant !== null && $tenant->id === $currentTenant->id,

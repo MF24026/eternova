@@ -16,11 +16,35 @@ export const useUiStore = defineStore('ui', () => {
     const toasts = ref<Toast[]>([])
     const sidebarOpen = ref(false)
     const darkMode = ref(false)
+    const theme = ref<'ethereal' | 'minimal'>('ethereal')
 
     function initDarkMode(): void {
         const stored = localStorage.getItem('eternova-dark-mode')
         darkMode.value = stored === 'true'
         applyDarkMode()
+    }
+
+    // Per-tenant admin palette. Cached in localStorage for instant paint on the
+    // next load (no flash of rosa); the tenant's value from /me is authoritative
+    // and reconciled after bootstrap.
+    function initTheme(): void {
+        const stored = localStorage.getItem('eternova-admin-theme')
+        theme.value = stored === 'minimal' ? 'minimal' : 'ethereal'
+        applyTheme()
+    }
+
+    function setTheme(next: 'ethereal' | 'minimal'): void {
+        theme.value = next
+        localStorage.setItem('eternova-admin-theme', next)
+        applyTheme()
+    }
+
+    function applyTheme(): void {
+        if (theme.value === 'minimal') {
+            document.documentElement.classList.add('theme-minimal')
+        } else {
+            document.documentElement.classList.remove('theme-minimal')
+        }
     }
 
     function toggleDarkMode(): void {
@@ -56,8 +80,11 @@ export const useUiStore = defineStore('ui', () => {
         toasts,
         sidebarOpen,
         darkMode,
+        theme,
         initDarkMode,
         toggleDarkMode,
+        initTheme,
+        setTheme,
         addToast,
         removeToast,
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Settings\Http\Requests;
 
+use App\Modules\Settings\Enums\AdminTheme;
 use App\Support\TaxId\Rules\ValidTaxId;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -42,6 +43,7 @@ final class UpdateSettingsRequest extends FormRequest
                 'business_name' => ['required', 'string', 'max:120'],
                 'primary_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
                 'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+                'admin_theme' => ['sometimes', Rule::enum(AdminTheme::class)],
                 // SVG is intentionally NOT accepted: an SVG can carry a <script>
                 // that executes when the asset is opened directly (logos are served
                 // from the public disk, often by nginx/CDN that bypass our CSP), so
@@ -131,6 +133,7 @@ final class UpdateSettingsRequest extends FormRequest
         return [
             'primary_color.regex' => 'El color debe ser un valor hexadecimal como #7c545d.',
             'secondary_color.regex' => 'El color debe ser un valor hexadecimal como #5a4b71.',
+            'admin_theme.enum' => 'El tema debe ser Ethereal o Minimalista.',
             'currency.in' => 'La moneda seleccionada no está soportada.',
             'country_code.in' => 'El país seleccionado no está soportado.',
             'timezone.timezone' => 'La zona horaria no es válida.',
