@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Search, Plus, ArrowLeftRight, ChevronRight, Package } from 'lucide-vue-next'
 import AppButton from '@/components/base/AppButton.vue'
 import AppInput from '@/components/base/AppInput.vue'
@@ -27,9 +28,12 @@ const { forAvailable } = useStockBadge()
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 
+const route = useRoute()
+
 const searchQuery = ref('')
 const selectedBranchId = ref('')
-const filterLowStock = ref(false)
+// Pre-armed when arriving from the dashboard "Reposición necesaria" widget.
+const filterLowStock = ref(route.query.low_stock === '1' || route.query.low_stock === 'true')
 const filterNoStock = ref(false)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
@@ -164,6 +168,7 @@ const paginationMeta = computed<PaginatedMeta | null>(() => {
                             : 'text-on-surface-variant hover:text-on-surface',
                     ]"
                     :style="!filterLowStock ? 'background: var(--surface-low)' : ''"
+                    data-testid="filter-low-stock"
                     @click="filterLowStock = !filterLowStock; filterNoStock = false"
                 >
                     Stock bajo

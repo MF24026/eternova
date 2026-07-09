@@ -98,6 +98,52 @@ final class DashboardSummaryTest extends TestCase
         $this->assertSame(1, $summary['kpis']['low_stock_count']);
     }
 
+    public function test_low_stock_items_lists_variants_needing_restock_by_severity(): void
+    {
+        ['tenant' => $tenant, 'branch' => $branch] = $this->setupTenant();
+
+        $product = Product::factory()->forTenant($tenant)->create(['name' => 'Pulsera Plata']);
+
+        $low = ProductVariant::factory()->forProduct($product)
+            ->create(['min_stock_alert' => 5, 'options' => ['Talla' => 'S']]);
+        $out = ProductVariant::factory()->forProduct($product)
+            ->create(['min_stock_alert' => 5, 'options' => ['Talla' => 'M']]);
+        $ok = ProductVariant::factory()->forProduct($product)->create(['min_stock_alert' => 5]);
+        $off = ProductVariant::factory()->forProduct($product)->create(['min_stock_alert' => 0]);
+
+        BranchInventory::factory()->forBranch($branch)->forVariant($low)->withStock(3)->create();  // low
+        BranchInventory::factory()->forBranch($branch)->forVariant($out)->withStock(0)->create();  // out
+        BranchInventory::factory()->forBranch($branch)->forVariant($ok)->withStock(40)->create();  // excluded
+        BranchInventory::factory()->forBranch($branch)->forVariant($off)->withStock(0)->create();  // opted out
+
+        $items = $this->service->summary(14)['low_stock_items'];
+
+        $this->assertCount(2, $items);
+        // Out of stock comes first, then the low one.
+        $this->assertSame($out->id, $items[0]['variant_id']);
+        $this->assertSame(0, $items[0]['available']);
+        $this->assertSame('Talla: M', $items[0]['variant_label']);
+        $this->assertSame($branch->name, $items[0]['branch_name']);
+        $this->assertSame(5, $items[0]['min_stock_alert']);
+        $this->assertSame($low->id, $items[1]['variant_id']);
+    }
+
+    public function test_low_stock_items_are_isolated_per_tenant(): void
+    {
+        ['tenant' => $tenantA, 'branch' => $branchA] = $this->setupTenant();
+
+        $tenantB = Tenant::factory()->create();
+        $branchB = Branch::factory()->forTenant($tenantB)->create(['is_main' => true]);
+        $productB = Product::factory()->forTenant($tenantB)->create();
+        $variantB = ProductVariant::factory()->forProduct($productB)->create(['min_stock_alert' => 5]);
+        BranchInventory::factory()->forBranch($branchB)->forVariant($variantB)->withStock(0)->create();
+
+        app()->instance('currentTenant', $tenantA);
+        $items = $this->service->summary(14)['low_stock_items'];
+
+        $this->assertSame([], $items);
+    }
+
     public function test_month_expenses_sums_current_month_only(): void
     {
         ['tenant' => $tenant] = $this->setupTenant();

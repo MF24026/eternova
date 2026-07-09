@@ -40,6 +40,26 @@ test.describe('Dashboard page (S9-E2)', () => {
         await expect(page.locator('[data-testid="recent-orders"]')).toBeVisible()
     })
 
+    test('shows the restock-needs card; its CTA opens inventory filtered to low stock', async ({ page }) => {
+        await login(page)
+        await gotoDashboard(page)
+
+        const card = page.locator('[data-testid="low-stock-card"]')
+        await expect(card).toBeVisible()
+        await expect(card).toContainText('Reposición necesaria')
+
+        const seeAll = card.locator('[data-testid="low-stock-see-all"]')
+        if (await seeAll.count() > 0) {
+            // There are low-stock items: the CTA arms the inventory low-stock filter.
+            await seeAll.click()
+            await expect(page).toHaveURL(/\/admin\/inventory\?low_stock=1/)
+            await expect(page.locator('[data-testid="filter-low-stock"]')).toHaveClass(/bg-warning-container/)
+        } else {
+            // No low-stock items: the empty state is shown instead of the CTA.
+            await expect(card).toContainText('Todo con stock suficiente')
+        }
+    })
+
     test('switching the chart range reloads and updates the active tab', async ({ page }) => {
         await login(page)
         await gotoDashboard(page)
