@@ -17,6 +17,14 @@ export function useTheme() {
         ui.toggleDarkMode()
     }
 
+    // Per-tenant admin palette (Ethereal rosa / Minimalista), orthogonal to
+    // light/dark. Distinct from `setTheme` below, which is the light/dark toggle.
+    const palette = computed(() => ui.theme)
+
+    function setPalette(next: 'ethereal' | 'minimal'): void {
+        ui.setTheme(next)
+    }
+
     function setTheme(preference: ThemePreference): void {
         if (preference === 'system') {
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -34,5 +42,7 @@ export function useTheme() {
         isDark,
         toggle,
         setTheme,
+        palette,
+        setPalette,
     }
 }

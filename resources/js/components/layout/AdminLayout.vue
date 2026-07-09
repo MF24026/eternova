@@ -25,6 +25,7 @@ import {
 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { useTheme } from '@/composables/useTheme'
+import { useUiStore } from '@/stores/ui'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import OnboardingTour from '@/components/composite/OnboardingTour.vue'
 import ConfirmDialog from '@/components/composite/ConfirmDialog.vue'
@@ -44,6 +45,7 @@ const route = useRoute()
 const router = useRouter()
 const { currentUser, logout } = useAuth()
 const { isDark, toggle: toggleDark } = useTheme()
+const ui = useUiStore()
 const notifications = useNotificationsStore()
 
 const sidebarOpen = ref(false)
@@ -117,7 +119,18 @@ function handleClickOutsideUserMenu(e: MouseEvent) {
 onMounted(() => {
     document.addEventListener('click', handleClickOutsideUserMenu)
     notifications.startPolling()
+    ui.initTheme() // instant paint from localStorage; reconciled below once /me loads
 })
+
+// Reconcile the admin palette to the tenant's default once the membership is
+// known (backend is the source of truth). immediate covers the already-loaded case.
+watch(
+    () => currentUser.value?.tenants.find((t) => t.is_current)?.admin_theme,
+    (adminTheme) => {
+        if (adminTheme) ui.setTheme(adminTheme)
+    },
+    { immediate: true },
+)
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutsideUserMenu)
     notifications.stopPolling()
