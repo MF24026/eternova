@@ -58,6 +58,7 @@ final class Order extends Model
         'total_cents',
         'amount_received_cents',
         'payment_method',
+        'cash_register_session_id',
         'payment_status',
         'notes',
         'user_id',

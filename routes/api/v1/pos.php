@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\POS\Http\Controllers\Api\V1\CashRegisterController;
 use App\Modules\POS\Http\Controllers\Api\V1\PosController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,4 +25,12 @@ Route::middleware(['auth:sanctum', 'tenant'])
 
         // Receipt data for a completed order
         Route::get('orders/{order}/receipt', [PosController::class, 'receipt']);
+
+        // Cash register (arqueo) — gated by the tenant's giro (module:cash_register).
+        Route::middleware('module:cash_register')->prefix('cash-register')->group(static function (): void {
+            Route::get('current', [CashRegisterController::class, 'current']);
+            Route::post('open', [CashRegisterController::class, 'open']);
+            Route::post('{session}/close', [CashRegisterController::class, 'close']);
+            Route::post('{session}/movements', [CashRegisterController::class, 'movement']);
+        });
     });

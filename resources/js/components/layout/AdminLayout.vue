@@ -59,6 +59,7 @@ const signingOut = ref(false)
 const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Panel', to: '/admin/dashboard', icon: LayoutDashboard },
     { id: 'pos', label: 'Punto de venta', to: '/admin/pos', icon: CreditCard },
+    { id: 'caja', label: 'Caja', to: '/admin/caja', icon: Wallet, module: 'cash_register' },
     { id: 'orders', label: 'Pedidos', to: '/admin/orders', icon: ClipboardList },
     { id: 'reservations', label: 'Reservas', to: '/admin/reservations', icon: Calendar, module: 'reservations' },
     { id: 'inventory', label: 'Inventario', to: '/admin/inventory', icon: Package },

@@ -34,10 +34,10 @@ final class ModuleVisibilityTest extends TestCase
         $this->assertEqualsCanonicalizing(['reservations', 'quotations'], $this->service->enabledModules($tenant));
     }
 
-    public function test_ropa_enables_no_optional_modules(): void
+    public function test_ropa_enables_only_the_cash_register_module(): void
     {
         $tenant = Tenant::factory()->create(['business_type' => 'ropa_boutique']);
-        $this->assertSame([], $this->service->enabledModules($tenant));
+        $this->assertSame(['cash_register'], $this->service->enabledModules($tenant));
     }
 
     public function test_override_flips_a_module_regardless_of_giro(): void
@@ -45,8 +45,9 @@ final class ModuleVisibilityTest extends TestCase
         $floreria = Tenant::factory()->create(['business_type' => 'floreria_regalos', 'module_overrides' => ['quotations' => false]]);
         $this->assertSame(['reservations'], $this->service->enabledModules($floreria));
 
+        // ropa enables cash_register by default; the override adds reservations on top.
         $ropa = Tenant::factory()->create(['business_type' => 'ropa_boutique', 'module_overrides' => ['reservations' => true]]);
-        $this->assertSame(['reservations'], $this->service->enabledModules($ropa));
+        $this->assertSame(['reservations', 'cash_register'], $this->service->enabledModules($ropa));
     }
 
     public function test_core_module_is_always_enabled(): void

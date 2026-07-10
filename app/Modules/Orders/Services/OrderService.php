@@ -13,6 +13,7 @@ use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderStatusHistory;
 use App\Modules\Orders\Repositories\OrderRepositoryInterface;
 use App\Modules\Orders\Support\TaxCalculator;
+use App\Modules\POS\Services\CashRegisterService;
 use App\Modules\Settings\Models\BranchSetting;
 use App\Modules\Tenancy\Models\Branch;
 use App\Modules\Tenancy\Models\Tenant;
@@ -121,9 +122,17 @@ final readonly class OrderService
                 throw new DomainException('El efectivo recibido no cubre el total.');
             }
 
+            // Link the sale to the cashier's open cash-register session, if any, so the
+            // session's arqueo can aggregate it. A no-op when the cashier has no open
+            // session (Slice 1 links, it does not gate — selling without a register works).
+            $cashSession = $user !== null
+                ? app(CashRegisterService::class)->currentFor($branch, $user)
+                : null;
+
             $order = $this->orders->create([
                 'tenant_id' => $tenant->id,
                 'branch_id' => $branch->id,
+                'cash_register_session_id' => $cashSession?->id,
                 'customer_id' => $customer?->id,
                 'order_number' => $orderNumber,
                 'tracking_token' => $this->generateTrackingToken(),
