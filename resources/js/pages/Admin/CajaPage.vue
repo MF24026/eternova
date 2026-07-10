@@ -9,6 +9,7 @@ import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useCashRegister } from '@/composables/useCashRegister'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
+import type { CashRegisterSession } from '@/types/domain/POS'
 
 const store = usePosStore()
 const { branches, loadBranches } = useBranches()
@@ -43,11 +44,14 @@ const paymentMethods = computed(() => {
 const crOverlayOpen = ref(false)
 const crMode = ref<'open' | 'close'>('open')
 const crSubmitting = ref(false)
+// The closed session drives the overlay's arqueo celebration; kept until the
+// cashier dismisses it, so the session banner below has already flipped to closed.
+const crResult = ref<CashRegisterSession | null>(null)
 const mvOverlayOpen = ref(false)
 const mvSubmitting = ref(false)
 
-function openRegister(): void { crMode.value = 'open'; crOverlayOpen.value = true }
-function closeRegister(): void { crMode.value = 'close'; crOverlayOpen.value = true }
+function openRegister(): void { crMode.value = 'open'; crResult.value = null; crOverlayOpen.value = true }
+function closeRegister(): void { crMode.value = 'close'; crResult.value = null; crOverlayOpen.value = true }
 
 async function handleRegisterConfirm(payload: { amountCents: number; notes: string }): Promise<void> {
     crSubmitting.value = true
@@ -55,17 +59,22 @@ async function handleRegisterConfirm(payload: { amountCents: number; notes: stri
         if (crMode.value === 'open') {
             await cashRegister.open(store.branchId, payload.amountCents, payload.notes)
             toast.success('Caja abierta')
+            crOverlayOpen.value = false
         } else {
             const closed = await cashRegister.close(payload.amountCents, payload.notes)
-            const diff = closed?.difference_cents ?? 0
-            toast.success(diff === 0 ? 'Caja cerrada: cuadrada' : `Caja cerrada: ${diff > 0 ? 'sobrante' : 'faltante'} ${formatCents(Math.abs(diff))}`)
+            // Hold the overlay open on its celebration screen until "Listo".
+            crResult.value = closed
         }
-        crOverlayOpen.value = false
     } catch {
         toast.error('No se pudo completar la operación de caja.')
     } finally {
         crSubmitting.value = false
     }
+}
+
+function handleRegisterDone(): void {
+    crOverlayOpen.value = false
+    crResult.value = null
 }
 
 async function handleMovementConfirm(payload: { type: 'in' | 'out'; amountCents: number; reason: string }): Promise<void> {
@@ -203,7 +212,7 @@ onMounted(async () => {
             </div>
         </template>
 
-        <CashRegisterOverlay :show="crOverlayOpen" :mode="crMode" :session="session" :submitting="crSubmitting" @close="crOverlayOpen = false" @confirm="handleRegisterConfirm" />
+        <CashRegisterOverlay :show="crOverlayOpen" :mode="crMode" :session="session" :result="crResult" :submitting="crSubmitting" @close="crOverlayOpen = false" @confirm="handleRegisterConfirm" @done="handleRegisterDone" />
         <CashMovementOverlay :show="mvOverlayOpen" :submitting="mvSubmitting" @close="mvOverlayOpen = false" @confirm="handleMovementConfirm" />
     </div>
 </template>
