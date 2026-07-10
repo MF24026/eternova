@@ -31,5 +31,6 @@ Route::middleware(['auth:sanctum', 'tenant'])
             Route::get('current', [CashRegisterController::class, 'current']);
             Route::post('open', [CashRegisterController::class, 'open']);
             Route::post('{session}/close', [CashRegisterController::class, 'close']);
+            Route::post('{session}/movements', [CashRegisterController::class, 'movement']);
         });
     });

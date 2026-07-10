@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\POS\Http\Requests\CloseCashRegisterRequest;
 use App\Modules\POS\Http\Requests\OpenCashRegisterRequest;
+use App\Modules\POS\Http\Requests\RegisterCashMovementRequest;
 use App\Modules\POS\Http\Resources\CashRegisterSessionResource;
 use App\Modules\POS\Models\CashRegisterSession;
 use App\Modules\POS\Services\CashRegisterService;
@@ -77,6 +78,27 @@ final class CashRegisterController extends Controller
         }
 
         return (new CashRegisterSessionResource($closed))->response();
+    }
+
+    public function movement(RegisterCashMovementRequest $request, CashRegisterSession $session): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        try {
+            $this->service->addMovement(
+                $session,
+                $actor,
+                (string) $request->validated('type'),
+                (int) $request->validated('amount_cents'),
+                (string) $request->validated('reason'),
+            );
+        } catch (DomainException $e) {
+            abort(422, $e->getMessage());
+        }
+
+        // Return the refreshed session so the arqueo ladder updates.
+        return (new CashRegisterSessionResource($session->fresh()))->response()->setStatusCode(201);
     }
 
     private function resolveBranch(string $branchId): Branch

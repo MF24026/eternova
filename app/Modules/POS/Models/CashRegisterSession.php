@@ -99,6 +99,33 @@ final class CashRegisterSession extends Model
         return $this->hasMany(Order::class, 'cash_register_session_id');
     }
 
+    /**
+     * @return HasMany<CashMovement, $this>
+     */
+    public function movements(): HasMany
+    {
+        return $this->hasMany(CashMovement::class, 'cash_register_session_id');
+    }
+
+    public function getCashInCentsAttribute(): int
+    {
+        return (int) $this->movements()->where('type', 'in')->sum('amount_cents');
+    }
+
+    public function getCashOutCentsAttribute(): int
+    {
+        return (int) $this->movements()->where('type', 'out')->sum('amount_cents');
+    }
+
+    /**
+     * The arqueo ladder result: what should physically be in the drawer.
+     * opening + cash sales + manual cash-in − manual cash-out.
+     */
+    public function getExpectedCashCentsAttribute(): int
+    {
+        return $this->opening_amount_cents + $this->cash_sales_cents + $this->cash_in_cents - $this->cash_out_cents;
+    }
+
     /** Sum of linked orders' totals for a given payment method. */
     private function salesCentsFor(string $paymentMethod): int
     {

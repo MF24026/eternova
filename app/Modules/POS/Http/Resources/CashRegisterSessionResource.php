@@ -39,6 +39,17 @@ final class CashRegisterSessionResource extends BaseResource
             'transfer_sales_cents' => $session->transfer_sales_cents,
             'total_sales_cents' => $session->total_sales_cents,
             'order_count' => $session->order_count,
+            // Arqueo ladder: manual movements + the expected drawer cash.
+            'cash_in_cents' => $session->cash_in_cents,
+            'cash_out_cents' => $session->cash_out_cents,
+            'expected_cash_cents' => $session->expected_cash_cents,
+            'movements' => $session->movements()->latest('id')->get()->map(static fn ($m): array => [
+                'id' => $m->id,
+                'type' => $m->type,
+                'amount_cents' => $m->amount_cents,
+                'reason' => $m->reason,
+                'created_at' => $m->created_at?->toIso8601String(),
+            ])->all(),
             'opened_at' => $session->opened_at?->toIso8601String(),
             'closed_at' => $session->closed_at?->toIso8601String(),
             'opening_notes' => $session->opening_notes,

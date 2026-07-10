@@ -143,6 +143,53 @@ final class CashRegisterTest extends TestCase
             ->assertJsonPath('data.difference_cents', 0);
     }
 
+    public function test_movements_feed_the_expected_cash_ladder(): void
+    {
+        ['branch' => $branch, 'owner' => $owner] = $this->context();
+        $service = app(CashRegisterService::class);
+        $session = $service->open($branch, $owner, 10000); // fondo 100.00
+
+        $this->cashSale($branch, $owner, 5000, 'cash');       // + ventas efectivo 50.00
+        $service->addMovement($session, $owner, 'in', 2000, 'Fondo adicional');   // + 20.00
+        $service->addMovement($session, $owner, 'out', 1500, 'Pago proveedor');   // - 15.00
+
+        // esperado = 10000 + 5000 + 2000 - 1500 = 15500
+        $this->assertSame(15500, $session->fresh()->expected_cash_cents);
+
+        // Close counting exactly the expected -> difference 0.
+        $closed = $service->close($session->fresh(), 15500, null, $owner);
+        $this->assertSame(0, $closed->difference_cents);
+        // expected_amount_cents stores the non-opening flows: 5000 + 2000 - 1500 = 5500.
+        $this->assertSame(5500, $closed->expected_amount_cents);
+    }
+
+    public function test_movement_on_a_closed_session_is_rejected(): void
+    {
+        ['branch' => $branch, 'owner' => $owner] = $this->context();
+        $service = app(CashRegisterService::class);
+        $session = $service->open($branch, $owner, 10000);
+        $service->close($session, 10000, null, $owner);
+
+        $this->expectException(\DomainException::class);
+        $service->addMovement($session->fresh(), $owner, 'out', 500, 'Tarde');
+    }
+
+    public function test_owner_can_register_a_movement_via_the_api(): void
+    {
+        ['tenant' => $tenant, 'branch' => $branch, 'owner' => $owner] = $this->context();
+        $session = app(CashRegisterService::class)->open($branch, $owner, 10000);
+
+        $this->actingAs($owner)
+            ->postJson($this->tenantUrl($tenant, "api/v1/pos/cash-register/{$session->id}/movements"), [
+                'type' => 'out',
+                'amount_cents' => 2500,
+                'reason' => 'Retiro a boveda',
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.cash_out_cents', 2500)
+            ->assertJsonPath('data.expected_cash_cents', 7500);
+    }
+
     private function cashSale(Branch $branch, User $cashier, int $totalCents, string $method): Order
     {
         $product = Product::factory()->forTenant(current_tenant())->create(['base_price_cents' => $totalCents]);
