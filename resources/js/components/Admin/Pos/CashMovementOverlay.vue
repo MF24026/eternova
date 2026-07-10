@@ -99,12 +99,11 @@ function onSubmit(): void {
 
                             <!-- Amount -->
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-2">Monto</p>
-                                <div class="flex items-center gap-2 px-5 rounded-[var(--r-lg)]" style="height: 76px; background: var(--surface-low)"
-                                     :style="{ boxShadow: `0 0 0 2px ${tone.color}` }">
-                                    <span class="serif text-on-surface-variant" style="font-size: 30px">$</span>
-                                    <input v-model="amountText" type="text" inputmode="decimal" placeholder="0.00" data-testid="mv-amount"
-                                           class="grow bg-transparent border-0 outline-none serif text-on-surface tabular-nums text-right" style="font-size: 40px" />
+                                <label class="field-label">Monto</label>
+                                <div class="mv-money flex items-center gap-1.5" :style="{ boxShadow: `0 0 0 2px ${tone.color}` }">
+                                    <span class="mv-money-sign serif text-on-surface-variant shrink-0">$</span>
+                                    <input v-model="amountText" type="text" inputmode="decimal" placeholder="0.00" data-testid="mv-amount" size="1"
+                                           class="mv-money-input min-w-0 grow bg-transparent border-0 outline-none serif text-on-surface tabular-nums text-right" />
                                 </div>
                                 <div class="flex gap-2 mt-3 flex-wrap">
                                     <button v-for="n in quickAmounts" :key="n" type="button" class="mv-chip tabular-nums" @click="addQuick(n)">+{{ n }}</button>
@@ -114,7 +113,7 @@ function onSubmit(): void {
 
                             <!-- Reason -->
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-2">Motivo</p>
+                                <label class="field-label">Motivo</label>
                                 <input v-model="reason" type="text" placeholder="Ej: pago a proveedor" class="field text-sm" data-testid="mv-reason" />
                                 <div class="flex gap-2 mt-3 flex-wrap">
                                     <button v-for="m in reasons" :key="m" type="button" class="mv-chip" @click="reason = m">{{ m }}</button>
@@ -139,6 +138,23 @@ function onSubmit(): void {
 </template>
 
 <style scoped>
+/* Immersive money field — fluid so the serif digits never overflow on mobile. */
+.mv-money {
+    height: 70px;
+    padding: 0 clamp(14px, 4vw, 20px);
+    border-radius: var(--r-lg);
+    background: var(--surface-low);
+    overflow: hidden;
+}
+@media (min-width: 640px) { .mv-money { height: 76px; } }
+.mv-money-sign { font-size: clamp(22px, 5.5vw, 30px); }
+.mv-money-input {
+    font-size: clamp(28px, 7.5vw, 40px);
+    line-height: 1;
+    width: 100%;
+}
+/* The wrapper already carries the focus/state ring — avoid a doubled outline. */
+.mv-money-input:focus-visible { outline: none; }
 .mv-sheet { animation: mv-rise .32s cubic-bezier(.2, .9, .3, 1); }
 @keyframes mv-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .mv-type {

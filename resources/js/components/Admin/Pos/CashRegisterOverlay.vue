@@ -149,15 +149,13 @@ function confettiStyle(i: number): Record<string, string> {
                         <main class="flex-1 min-h-0 overflow-y-auto px-4 sm:px-7 py-6">
                             <div class="mx-auto max-w-[560px] flex flex-col gap-6">
                                 <div>
-                                    <p class="text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-2">
-                                        {{ mode === 'open' ? 'Fondo inicial' : '¿Cuánto efectivo contaste en el cajón?' }}
-                                    </p>
+                                    <label class="field-label">{{ mode === 'open' ? 'Fondo inicial' : '¿Cuánto efectivo contaste en el cajón?' }}</label>
                                     <!-- Big money input -->
-                                    <div class="flex items-center gap-2 px-5 rounded-[var(--r-lg)]" style="height: 80px; background: var(--surface-low)"
+                                    <div class="cr-money flex items-center gap-1.5"
                                          :style="{ boxShadow: `0 0 0 2px ${counted && mode === 'close' ? diffMeta.color : 'var(--primary)'}` }">
-                                        <span class="serif text-on-surface-variant" style="font-size: 34px">$</span>
-                                        <input v-model="amountText" type="text" inputmode="decimal" placeholder="0.00" data-testid="cr-amount"
-                                               class="grow bg-transparent border-0 outline-none serif text-on-surface tabular-nums text-right" style="font-size: 44px" />
+                                        <span class="cr-money-sign serif text-on-surface-variant shrink-0">$</span>
+                                        <input v-model="amountText" type="text" inputmode="decimal" placeholder="0.00" data-testid="cr-amount" size="1"
+                                               class="cr-money-input min-w-0 grow bg-transparent border-0 outline-none serif text-on-surface tabular-nums text-right" />
                                     </div>
                                     <!-- Quick pad -->
                                     <div class="flex gap-2 mt-3 flex-wrap">
@@ -171,10 +169,10 @@ function confettiStyle(i: number): Record<string, string> {
                                 <div v-if="mode === 'close'" class="rounded-[var(--r-lg)] px-5 py-4 flex items-center justify-between gap-3"
                                      :style="{ background: diffMeta.bg, boxShadow: diffState === 'idle' ? 'none' : `0 0 0 1.5px ${diffMeta.color}` }">
                                     <div class="min-w-0">
-                                        <p class="text-xs font-bold uppercase tracking-[0.04em]" :style="{ color: diffMeta.color }">{{ diffMeta.label }}</p>
-                                        <p class="text-sm text-on-surface-variant mt-1 max-w-[280px]">{{ diffMeta.hint }}</p>
+                                        <p class="field-label" style="margin-bottom: 4px" :style="{ color: diffMeta.color }">{{ diffMeta.label }}</p>
+                                        <p class="text-sm text-on-surface-variant max-w-[280px]">{{ diffMeta.hint }}</p>
                                     </div>
-                                    <span class="serif tabular-nums shrink-0" style="font-size: 34px" :style="{ color: diffMeta.color }" data-testid="cr-difference">
+                                    <span class="serif tabular-nums shrink-0" style="font-size: clamp(24px, 6vw, 34px)" :style="{ color: diffMeta.color }" data-testid="cr-difference">
                                         {{ counted ? (differenceCents > 0 ? '+' : '') + formatCents(differenceCents) : '—' }}
                                     </span>
                                 </div>
@@ -224,6 +222,23 @@ function confettiStyle(i: number): Record<string, string> {
 </template>
 
 <style scoped>
+/* Immersive money field — fluid so the serif digits never overflow on mobile. */
+.cr-money {
+    height: 72px;
+    padding: 0 clamp(14px, 4vw, 20px);
+    border-radius: var(--r-lg);
+    background: var(--surface-low);
+    overflow: hidden;
+}
+@media (min-width: 640px) { .cr-money { height: 80px; } }
+.cr-money-sign { font-size: clamp(24px, 6vw, 34px); }
+.cr-money-input {
+    font-size: clamp(30px, 8vw, 44px);
+    line-height: 1;
+    width: 100%;
+}
+/* The wrapper already carries the focus/state ring — avoid a doubled outline. */
+.cr-money-input:focus-visible { outline: none; }
 .cr-chip {
     min-height: 40px;
     padding: 0 14px;
