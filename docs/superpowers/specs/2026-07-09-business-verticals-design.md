@@ -18,13 +18,28 @@ POSLatam's domain) and a services-without-stock mode are **out of scope**.
 
 ## Verticals (initial catalog)
 
-| key | Label | Reservas | Cotizaciones |
-|---|---|---|---|
-| `floreria_regalos` | Florería / Regalos | on | on |
-| `ropa_boutique` | Ropa / Boutique | off | off |
-| `accesorios` | Accesorios / Maquillaje | off | off |
-| `minimarket` | Minimarket / Abarrotes | off | off |
-| `otro` | Otro (general) | on | on |
+| key | Label | Reservas | Cotizaciones | starter_template |
+|---|---|---|---|---|
+| `floreria_regalos` | Florería / Regalos | on | on | `floreria` |
+| `ropa_boutique` | Ropa / Boutique | off | off | null |
+| `accesorios` | Accesorios / Maquillaje | off | off | `accesorios` |
+| `peluches` | Peluches / Juguetería | off | off | `peluches` |
+| `minimarket` | Minimarket / Abarrotes | off | off | null |
+| `otro` | Otro (general) | on | on | null |
+
+## Unification with the existing `starter_template` (senior decision)
+
+The onboarding already captured a transient `starter_template`
+(`StarterCatalogService::TEMPLATES = floreria, accesorios, peluches, reposteria`) used
+**once** to seed a demo catalog — it is not persisted. Rather than add a second
+"what kind of business?" question (a DRY/UX violation), `business_type` is the **single
+source of truth**: the vertical catalog owns the `starter_template` per giro, the
+onboarding asks **once**, and `TenantProvisioner` **derives** the seed template from the
+catalog. `starter_template` is removed as a separate user input. A giro with
+`starter_template => null` (ropa, minimarket, otro) seeds **nothing** — provisioning must
+skip seeding on null (do not fall back to the old default template). The legacy
+`reposteria` template is archived (repostería is gastronomía, out of scope); `peluches`
+becomes a giro so its existing demo catalog is reachable.
 
 **Core modules (always on, giro-agnostic):** Panel, Productos, POS, Inventario,
 Pedidos, Gastos, Clientes, Catálogo/Vitrina, Ajustes, Facturación.

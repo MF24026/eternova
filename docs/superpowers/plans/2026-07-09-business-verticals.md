@@ -201,14 +201,17 @@ declare(strict_types=1);
  */
 return [
     'catalog' => [
-        'floreria_regalos' => ['label' => 'Florería / Regalos', 'icon' => 'flower', 'modules' => ['reservations', 'quotations']],
-        'ropa_boutique' => ['label' => 'Ropa / Boutique', 'icon' => 'shirt', 'modules' => []],
-        'accesorios' => ['label' => 'Accesorios / Maquillaje', 'icon' => 'gem', 'modules' => []],
-        'minimarket' => ['label' => 'Minimarket / Abarrotes', 'icon' => 'shopping-basket', 'modules' => []],
-        'otro' => ['label' => 'Otro', 'icon' => 'store', 'modules' => ['reservations', 'quotations']],
+        'floreria_regalos' => ['label' => 'Florería / Regalos', 'icon' => 'flower', 'modules' => ['reservations', 'quotations'], 'starter_template' => 'floreria'],
+        'ropa_boutique' => ['label' => 'Ropa / Boutique', 'icon' => 'shirt', 'modules' => [], 'starter_template' => null],
+        'accesorios' => ['label' => 'Accesorios / Maquillaje', 'icon' => 'gem', 'modules' => [], 'starter_template' => 'accesorios'],
+        'peluches' => ['label' => 'Peluches / Juguetería', 'icon' => 'gift', 'modules' => [], 'starter_template' => 'peluches'],
+        'minimarket' => ['label' => 'Minimarket / Abarrotes', 'icon' => 'shopping-basket', 'modules' => [], 'starter_template' => null],
+        'otro' => ['label' => 'Otro', 'icon' => 'store', 'modules' => ['reservations', 'quotations'], 'starter_template' => null],
     ],
 ];
 ```
+
+(`business_type` enum must include the `Peluches = 'peluches'` case — Task 1.)
 
 - [ ] **Step 4: Migration for `module_overrides`**
 
@@ -302,53 +305,85 @@ git commit -m "feat(tenancy): vertical catalog + module_overrides + ModuleVisibi
 
 ---
 
-### Task 3: Capture `business_type` at signup
+### Task 3: Capture `business_type` at tenant creation; derive starter catalog from it
 
 **Files:**
 - Modify: `app/Modules/Auth/Http/Requests/CreateTenantRequest.php`
 - Modify: `app/Modules/Auth/Services/TenantProvisioner.php`
-- Test: `tests/Feature/Tenancy/BusinessTypeTest.php` (extend)
+- Test: `tests/Feature/Tenancy/BusinessTypeTest.php` (extend) — use `ActingAsTenantMember` + the
+  existing provisioner/onboarding test to build a valid payload.
+
+**Reality (verified):** `POST /api/v1/auth/register` only creates the USER. The TENANT is
+created via `TenantProvisioner` (called from the tenant-creation flow validated by
+`CreateTenantRequest`), which already accepts a transient `starter_template` and seeds a
+demo catalog via `StarterCatalogService::seed()`. Per the spec's unification: `business_type`
+becomes the single input; `starter_template` is **derived** from `config/verticals.php`; a
+giro with `starter_template => null` seeds nothing (do NOT fall through to the old
+`DEFAULT_TEMPLATE`).
 
 **Interfaces:**
-- Consumes: `BusinessType` (Task 1).
-- Produces: `POST /api/v1/auth/register` accepts `business_type`; the created tenant persists it (defaults to `otro` when absent).
+- Consumes: `BusinessType` (Task 1), `config('verticals.catalog')` (Task 2).
+- Produces: the created tenant persists `business_type`; the seeded catalog matches the
+  giro's `starter_template` (or is empty when null).
 
-- [ ] **Step 1: Write the failing test (append to BusinessTypeTest)**
-
-Study `RegisterController` + `TenantProvisioner` for the register payload shape first, then:
+- [ ] **Step 1: Write the failing tests (append to BusinessTypeTest)** — drive the provisioner
+  directly (find how an existing test constructs it / its input via
+  `grep -rl "TenantProvisioner\|starter_template" tests`):
 
 ```php
-    public function test_register_persists_business_type(): void
+    public function test_provisioner_persists_business_type_and_seeds_matching_catalog(): void
     {
-        $payload = [
-            // Copy the minimal valid register payload from an existing auth/onboarding
-            // test (account + tenant fields), then set business_type.
-            'business_type' => 'ropa_boutique',
-        ] + $this->validRegisterPayload();
+        // Arrange an owner user + the validated tenant data array the provisioner consumes,
+        // exactly as the existing provisioner test does, then set business_type.
+        $tenantData = $this->validTenantData(['business_type' => 'floreria_regalos']);
 
-        $this->postJson('/api/v1/auth/register', $payload)->assertCreated();
+        $tenant = app(\App\Modules\Auth\Services\TenantProvisioner::class)->provision($owner, $tenantData);
 
-        $this->assertSame('ropa_boutique', \App\Modules\Tenancy\Models\Tenant::latest('id')->first()->business_type);
+        $this->assertSame('floreria_regalos', $tenant->fresh()->business_type);
+        // floreria maps to the 'floreria' starter template -> catalog seeded.
+        $this->assertGreaterThan(0, \App\Modules\Catalog\Models\Product::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count());
+    }
+
+    public function test_giro_without_starter_template_seeds_no_catalog(): void
+    {
+        $tenantData = $this->validTenantData(['business_type' => 'ropa_boutique']); // starter_template null
+
+        $tenant = app(\App\Modules\Auth\Services\TenantProvisioner::class)->provision($owner, $tenantData);
+
+        $this->assertSame('ropa_boutique', $tenant->fresh()->business_type);
+        $this->assertSame(0, \App\Modules\Catalog\Models\Product::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count());
     }
 ```
 
-Add a `validRegisterPayload(): array` helper mirroring the existing passing register test in `tests/Feature/` (find it with `grep -rl "auth/register" tests/Feature`). Reuse its exact field set so the request validates.
+Add a `validTenantData(array $overrides): array` helper mirroring the existing provisioner
+test's input (name/slug/business_name/country/currency/language/timezone), merging `$overrides`.
+Match the provisioner's actual `provision(...)` signature — read it first.
 
-- [ ] **Step 2: Run to verify it fails** — FAIL (business_type not persisted).
+- [ ] **Step 2: Run to verify it fails** — FAIL (no business_type; ropa seeds the default catalog).
 
-- [ ] **Step 3: Validate** — in `CreateTenantRequest::rules()`, add:
-
-```php
-'business_type' => ['sometimes', \Illuminate\Validation\Rule::enum(\App\Modules\Tenancy\Enums\BusinessType::class)],
-```
-
-- [ ] **Step 4: Persist** — in `TenantProvisioner` where `Tenant::create([...])` is called (around line 58), add to the array:
+- [ ] **Step 3: Validate** — in `CreateTenantRequest::rules()`, **replace** the existing
+  `starter_template` rule with:
 
 ```php
-'business_type' => $tenantData['business_type'] ?? 'otro',
+'business_type' => ['sometimes', Rule::enum(\App\Modules\Tenancy\Enums\BusinessType::class)],
 ```
 
-Confirm `$tenantData` is the validated tenant sub-array; if the provisioner receives the whole request differently, pass `business_type` through the same channel `business_name` travels.
+(`Rule` is already imported.)
+
+- [ ] **Step 4: Persist + derive seed** — in `TenantProvisioner`:
+  - In the `Tenant::create([...])` array add:
+    ```php
+    'business_type' => $tenantData['business_type'] ?? 'otro',
+    ```
+  - Replace the existing seed call `$this->starterCatalog->seed($tenant, $tenantData['starter_template'] ?? null);`
+    with a derive-and-guard:
+    ```php
+    $starterTemplate = config("verticals.catalog.{$tenant->business_type}.starter_template");
+    if ($starterTemplate !== null) {
+        $this->starterCatalog->seed($tenant, $starterTemplate);
+    }
+    ```
+  - Update the accompanying log line's `'template'` value to `$starterTemplate` (was `$tenantData['starter_template']`).
 
 - [ ] **Step 5: Run** → PASS.
 
@@ -356,7 +391,7 @@ Confirm `$tenantData` is the validated tenant sub-array; if the provisioner rece
 
 ```bash
 git add app/Modules/Auth/Http/Requests/CreateTenantRequest.php app/Modules/Auth/Services/TenantProvisioner.php tests/Feature/Tenancy/BusinessTypeTest.php
-git commit -m "feat(auth): capture business_type at tenant signup"
+git commit -m "feat(auth): business_type drives tenant provisioning and starter catalog"
 ```
 
 ---
@@ -653,7 +688,7 @@ git commit -m "feat(settings): modules group reads effective flags and writes ov
 - [ ] **Step 1: Types** — in `resources/js/types/domain/User.ts`, on `UserTenantMembership` add:
 
 ```ts
-    business_type: 'floreria_regalos' | 'ropa_boutique' | 'accesorios' | 'minimarket' | 'otro'
+    business_type: 'floreria_regalos' | 'ropa_boutique' | 'accesorios' | 'peluches' | 'minimarket' | 'otro'
     enabled_modules: string[]
 ```
 
@@ -697,14 +732,15 @@ git commit -m "feat(ui): hide giro-disabled modules in nav and guard their route
 - [ ] **Step 1: Frontend catalog mirror** — `resources/js/constants/verticals.ts` (labels + Lucide icon components for the picker; the backend `config/verticals.php` remains the source of truth for module resolution — this is only the 5 static picker entries):
 
 ```ts
-import { Flower, Shirt, Gem, ShoppingBasket, Store, type LucideIcon } from 'lucide-vue-next'
+import { Flower, Shirt, Gem, Gift, ShoppingBasket, Store, type LucideIcon } from 'lucide-vue-next'
 
-export type BusinessType = 'floreria_regalos' | 'ropa_boutique' | 'accesorios' | 'minimarket' | 'otro'
+export type BusinessType = 'floreria_regalos' | 'ropa_boutique' | 'accesorios' | 'peluches' | 'minimarket' | 'otro'
 
 export const VERTICALS: Array<{ key: BusinessType; label: string; icon: LucideIcon }> = [
     { key: 'floreria_regalos', label: 'Florería / Regalos', icon: Flower },
     { key: 'ropa_boutique', label: 'Ropa / Boutique', icon: Shirt },
     { key: 'accesorios', label: 'Accesorios / Maquillaje', icon: Gem },
+    { key: 'peluches', label: 'Peluches / Juguetería', icon: Gift },
     { key: 'minimarket', label: 'Minimarket / Abarrotes', icon: ShoppingBasket },
     { key: 'otro', label: 'Otro', icon: Store },
 ]
