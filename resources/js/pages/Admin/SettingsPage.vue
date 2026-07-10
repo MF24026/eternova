@@ -16,6 +16,7 @@ import {
     Camera, Image, Save, Loader2, Boxes,
 } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
+import AppToggle from '@/components/base/AppToggle.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
 import UpgradeLock from '@/components/composite/UpgradeLock.vue'
@@ -462,14 +463,7 @@ onBeforeRouteLeave(async () => {
                                 <p class="text-sm font-semibold text-on-surface">Aplicar IVA</p>
                                 <p class="text-xs text-on-surface-variant">Agregar impuesto a las ventas</p>
                             </div>
-                            <button
-                                type="button" role="switch" :aria-checked="settings.tax.enabled" data-testid="toggle-tax"
-                                class="w-12 h-6 rounded-full transition-colors duration-200 relative shrink-0"
-                                :style="{ background: settings.tax.enabled ? 'var(--primary)' : 'var(--surface-high)' }"
-                                @click="settings.tax.enabled = !settings.tax.enabled"
-                            >
-                                <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.tax.enabled ? 'translate-x-7' : 'translate-x-1'" />
-                            </button>
+                            <AppToggle v-model="settings.tax.enabled" data-testid="toggle-tax" aria-label="Aplicar IVA" />
                         </div>
                         <AppInput v-model="taxRatePercent" label="Tasa de IVA (%)" type="number" help-text="Porcentaje sobre el subtotal" :error="errors.tax?.rate_bps" data-testid="input-tax-rate" />
                         <div class="flex items-center justify-between p-4 rounded-xl" style="background: var(--surface-low)">
@@ -477,14 +471,7 @@ onBeforeRouteLeave(async () => {
                                 <p class="text-sm font-semibold text-on-surface">Los precios incluyen IVA</p>
                                 <p class="text-xs text-on-surface-variant">El impuesto ya está incorporado en los precios del catálogo</p>
                             </div>
-                            <button
-                                type="button" role="switch" :aria-checked="settings.tax.prices_include_tax" data-testid="tax-prices-include"
-                                class="w-12 h-6 rounded-full transition-colors duration-200 relative shrink-0"
-                                :style="{ background: settings.tax.prices_include_tax ? 'var(--primary)' : 'var(--surface-high)' }"
-                                @click="settings.tax.prices_include_tax = !settings.tax.prices_include_tax"
-                            >
-                                <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.tax.prices_include_tax ? 'translate-x-7' : 'translate-x-1'" />
-                            </button>
+                            <AppToggle v-model="settings.tax.prices_include_tax" data-testid="tax-prices-include" aria-label="Los precios incluyen IVA" />
                         </div>
                         <AppInput v-model="settings.tax.id_label" label="Etiqueta de identificación fiscal" help-text="Ej. NIT, RFC, RUC" :error="errors.tax?.id_label" />
                         <AppInput v-model="settings.tax.id_number" label="Número de identificación fiscal" :error="errors.tax?.id_number" data-testid="input-tax-id" />
@@ -502,14 +489,7 @@ onBeforeRouteLeave(async () => {
                                 <p class="text-sm font-semibold text-on-surface">Confirmar pedidos automáticamente</p>
                                 <p class="text-xs text-on-surface-variant">Saltar el paso de confirmación manual</p>
                             </div>
-                            <button
-                                type="button" role="switch" :aria-checked="settings.orders.auto_confirm" data-testid="toggle-auto-confirm"
-                                class="w-12 h-6 rounded-full transition-colors duration-200 relative shrink-0"
-                                :style="{ background: settings.orders.auto_confirm ? 'var(--primary)' : 'var(--surface-high)' }"
-                                @click="settings.orders.auto_confirm = !settings.orders.auto_confirm"
-                            >
-                                <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.orders.auto_confirm ? 'translate-x-7' : 'translate-x-1'" />
-                            </button>
+                            <AppToggle v-model="settings.orders.auto_confirm" data-testid="toggle-auto-confirm" aria-label="Confirmar pedidos automáticamente" />
                         </div>
                         <AppInput v-model.number="settings.orders.default_prep_minutes" label="Tiempo de preparación predeterminado (min)" type="number" :error="errors.orders?.default_prep_minutes" data-testid="input-prep" />
                         <AppInput v-model.number="settings.orders.pending_alert_hours" label="Alertar pedidos pendientes tras (horas)" type="number" :error="errors.orders?.pending_alert_hours" />
@@ -559,14 +539,7 @@ onBeforeRouteLeave(async () => {
                             style="background: var(--surface-low)"
                         >
                             <p class="text-sm text-on-surface">{{ item.label }}</p>
-                            <button
-                                type="button" role="switch" :aria-checked="settings.notifications[item.key]" :data-testid="`toggle-${item.key}`"
-                                class="w-11 h-6 rounded-full transition-colors duration-200 relative shrink-0"
-                                :style="{ background: settings.notifications[item.key] ? 'var(--primary)' : 'var(--surface-high)' }"
-                                @click="settings.notifications[item.key] = !settings.notifications[item.key]"
-                            >
-                                <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.notifications[item.key] ? 'translate-x-6' : 'translate-x-1'" />
-                            </button>
+                            <AppToggle v-model="settings.notifications[item.key]" :data-testid="`toggle-${item.key}`" :aria-label="item.label" />
                         </div>
                     </div>
                 </div>
@@ -590,14 +563,7 @@ onBeforeRouteLeave(async () => {
                                 <p class="text-sm text-on-surface">{{ mod.label }}</p>
                                 <p class="text-xs text-on-surface-variant">{{ mod.hint }}</p>
                             </div>
-                            <button
-                                type="button" role="switch" :aria-checked="settings.modules[mod.key]" :data-testid="`toggle-module-${mod.key}`"
-                                class="w-11 h-6 rounded-full transition-colors duration-200 relative shrink-0"
-                                :style="{ background: settings.modules[mod.key] ? 'var(--primary)' : 'var(--surface-high)' }"
-                                @click="settings.modules[mod.key] = !settings.modules[mod.key]"
-                            >
-                                <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.modules[mod.key] ? 'translate-x-6' : 'translate-x-1'" />
-                            </button>
+                            <AppToggle v-model="settings.modules[mod.key]" :data-testid="`toggle-module-${mod.key}`" :aria-label="mod.label" />
                         </div>
                     </div>
                 </div>
