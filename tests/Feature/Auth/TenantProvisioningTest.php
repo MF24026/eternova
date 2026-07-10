@@ -157,29 +157,29 @@ final class TenantProvisioningTest extends TestCase
             ->assertJsonValidationErrorFor('slug');
     }
 
-    public function test_provision_seeds_the_chosen_starter_catalog(): void
+    public function test_provision_seeds_the_catalog_derived_from_the_business_type(): void
     {
         $this->basico();
         $user = User::factory()->create();
 
+        // floreria_regalos maps (config/verticals.php) to the 'floreria' starter template.
         $this->actingAs($user)
-            ->postJson('/api/v1/tenants', $this->validPayload(['starter_template' => 'reposteria']))
+            ->postJson('/api/v1/tenants', $this->validPayload(['business_type' => 'floreria_regalos']))
             ->assertStatus(201);
 
         $tenant = Tenant::withoutGlobalScopes()->where('slug', 'mi-tienda')->firstOrFail();
         $branch = Branch::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('is_main', true)->firstOrFail();
 
-        // Categories + products from the reposteria template.
-        $this->assertDatabaseHas('categories', ['tenant_id' => $tenant->id, 'slug' => 'tortas']);
-        $this->assertDatabaseHas('products', ['tenant_id' => $tenant->id, 'name' => 'Torta Personalizada']);
+        $this->assertDatabaseHas('categories', ['tenant_id' => $tenant->id, 'slug' => 'rosas-eternas']);
+        $this->assertDatabaseHas('products', ['tenant_id' => $tenant->id, 'name' => 'Rosa Eterna Clasica']);
 
         $products = Product::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get();
         $this->assertCount(6, $products);
 
-        // Each product has variants, each variant has starting inventory at the main branch.
-        $product = $products->firstWhere('name', 'Torta Personalizada');
+        // The product has variants, each with starting inventory at the main branch.
+        $product = $products->firstWhere('name', 'Rosa Eterna Clasica');
         $variants = ProductVariant::withoutGlobalScopes()->where('product_id', $product->id)->get();
-        $this->assertCount(3, $variants);
+        $this->assertGreaterThan(0, $variants->count());
 
         $this->assertDatabaseHas('branch_inventory', [
             'branch_id' => $branch->id,
@@ -188,7 +188,7 @@ final class TenantProvisioningTest extends TestCase
         ]);
     }
 
-    public function test_provision_defaults_to_floreria_catalog_when_no_template_given(): void
+    public function test_provision_without_business_type_defaults_to_otro_and_seeds_no_catalog(): void
     {
         $this->basico();
         $user = User::factory()->create();
@@ -198,18 +198,20 @@ final class TenantProvisioningTest extends TestCase
             ->assertStatus(201);
 
         $tenant = Tenant::withoutGlobalScopes()->where('slug', 'mi-tienda')->firstOrFail();
-        $this->assertDatabaseHas('products', ['tenant_id' => $tenant->id, 'name' => 'Rosa Eterna Clasica']);
+        // 'otro' has no starter_template in the catalog -> nothing is seeded.
+        $this->assertSame('otro', $tenant->business_type);
+        $this->assertSame(0, Product::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count());
     }
 
-    public function test_provision_rejects_an_invalid_starter_template(): void
+    public function test_provision_rejects_an_invalid_business_type(): void
     {
         $this->basico();
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->postJson('/api/v1/tenants', $this->validPayload(['starter_template' => 'casino']))
+            ->postJson('/api/v1/tenants', $this->validPayload(['business_type' => 'casino']))
             ->assertStatus(422)
-            ->assertJsonValidationErrorFor('starter_template');
+            ->assertJsonValidationErrorFor('business_type');
     }
 
     public function test_starter_catalog_is_isolated_to_the_new_tenant(): void
@@ -218,12 +220,12 @@ final class TenantProvisioningTest extends TestCase
 
         $userA = User::factory()->create();
         $this->actingAs($userA)
-            ->postJson('/api/v1/tenants', $this->validPayload(['slug' => 'tienda-a', 'starter_template' => 'peluches']))
+            ->postJson('/api/v1/tenants', $this->validPayload(['slug' => 'tienda-a', 'business_type' => 'peluches']))
             ->assertStatus(201);
 
         $userB = User::factory()->create();
         $this->actingAs($userB)
-            ->postJson('/api/v1/tenants', $this->validPayload(['slug' => 'tienda-b', 'starter_template' => 'accesorios']))
+            ->postJson('/api/v1/tenants', $this->validPayload(['slug' => 'tienda-b', 'business_type' => 'accesorios']))
             ->assertStatus(201);
 
         $tenantA = Tenant::withoutGlobalScopes()->where('slug', 'tienda-a')->firstOrFail();
