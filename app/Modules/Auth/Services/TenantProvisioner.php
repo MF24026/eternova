@@ -61,6 +61,7 @@ final readonly class TenantProvisioner
                 'email' => $owner->email,
                 'status' => 'active',
                 'business_name' => $tenantData['business_name'],
+                'business_type' => $tenantData['business_type'] ?? 'otro',
                 'country_code' => $tenantData['country_code'],
                 'currency' => $tenantData['currency'],
                 'language' => $tenantData['language'],
@@ -99,14 +100,21 @@ final readonly class TenantProvisioner
         // Seed a starter catalog so the owner sees real data on first login.
         // Done after the provisioning transaction commits and isolated in its own
         // try/catch: a catalog-seeding hiccup must never fail tenant registration.
-        try {
-            $this->starterCatalog->seed($tenant, $tenantData['starter_template'] ?? null);
-        } catch (\Throwable $e) {
-            Log::warning('Starter catalog seeding failed', [
-                'tenant_id' => $tenant->id,
-                'template' => $tenantData['starter_template'] ?? null,
-                'error' => $e->getMessage(),
-            ]);
+        // The starter template is derived from the tenant's giro (single source of
+        // truth: config/verticals.php). A giro with a null template seeds nothing —
+        // do NOT fall back to a default catalog for an unrelated business.
+        $starterTemplate = config("verticals.catalog.{$tenant->business_type}.starter_template");
+
+        if ($starterTemplate !== null) {
+            try {
+                $this->starterCatalog->seed($tenant, $starterTemplate);
+            } catch (\Throwable $e) {
+                Log::warning('Starter catalog seeding failed', [
+                    'tenant_id' => $tenant->id,
+                    'template' => $starterTemplate,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $tenant;
