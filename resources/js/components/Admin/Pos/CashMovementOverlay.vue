@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { X, ArrowUp, ArrowDown } from 'lucide-vue-next'
+import { ref, computed, watch, onUnmounted } from 'vue'
+import { X, ArrowUpFromLine, ArrowDownToLine } from 'lucide-vue-next'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 
 const props = defineProps<{ show: boolean; submitting?: boolean }>()
@@ -20,6 +20,11 @@ const reasonsOut = ['Pago a proveedor', 'Retiro a bóveda', 'Vale de empleado', 
 const reasonsIn = ['Fondo adicional', 'Devolución de vale', 'Depósito de cambio']
 const reasons = computed(() => (type.value === 'out' ? reasonsOut : reasonsIn))
 
+// Tone: retiro is danger-hued, ingreso is success-hued. Drives header icon + accents.
+const tone = computed(() => (type.value === 'out'
+    ? { color: 'var(--error)', soft: 'color-mix(in srgb, var(--error) 12%, transparent)', label: 'Registrar salida' }
+    : { color: 'var(--success)', soft: 'color-mix(in srgb, var(--success) 14%, transparent)', label: 'Registrar ingreso' }))
+
 function toCents(input: string): number {
     const n = parseFloat(input.trim())
     return Number.isFinite(n) ? Math.round(n * 100) : 0
@@ -30,10 +35,26 @@ const valid = computed(() => amountCents.value > 0 && reason.value.trim().length
 function addQuick(n: number): void {
     amountText.value = ((toCents(amountText.value) + n * 100) / 100).toFixed(2)
 }
+function clearAmount(): void {
+    amountText.value = ''
+}
+
+// ESC closes the overlay while it is open.
+function onKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape') emit('close')
+}
 
 watch(() => props.show, (open) => {
-    if (open) { type.value = 'out'; amountText.value = ''; reason.value = '' }
+    if (open) {
+        type.value = 'out'
+        amountText.value = ''
+        reason.value = ''
+        document.addEventListener('keydown', onKeydown)
+    } else {
+        document.removeEventListener('keydown', onKeydown)
+    }
 })
+onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 function onSubmit(): void {
     if (!valid.value) return
@@ -47,61 +68,123 @@ function onSubmit(): void {
             enter-active-class="transition-opacity duration-200" enter-from-class="opacity-0"
             leave-active-class="transition-opacity duration-150" leave-to-class="opacity-0"
         >
-            <div v-if="show" class="fixed inset-0 z-[90] grid place-items-center p-0 sm:p-5" role="dialog" aria-modal="true" data-testid="cash-movement-overlay">
-                <div class="absolute inset-0" style="background: var(--scrim); backdrop-filter: blur(6px)" @click="emit('close')" />
-                <div class="relative flex flex-col w-full max-w-[520px] h-[100dvh] sm:h-auto sm:max-h-[92dvh] overflow-hidden bg-surface sm:rounded-[var(--r-2xl)] shadow-[var(--shadow-lifted)]">
-                    <div class="flex items-center gap-3 px-6 pt-6 pb-4">
+            <div v-if="show" class="fixed inset-0 z-[90]" role="dialog" aria-modal="true" data-testid="cash-movement-overlay">
+                <div class="mv-sheet absolute inset-0 flex flex-col bg-surface">
+                    <!-- Header -->
+                    <header class="flex items-center gap-3.5 px-4 sm:px-6 py-3 shrink-0" style="border-bottom: 1px solid var(--outline-variant)">
+                        <button type="button" class="btn-icon shrink-0" aria-label="Cerrar" @click="emit('close')"><X :size="21" /></button>
+                        <span class="w-11 h-11 rounded-[var(--r-md)] grid place-items-center shrink-0 transition-colors" :style="{ background: tone.soft, color: tone.color }">
+                            <component :is="type === 'out' ? ArrowUpFromLine : ArrowDownToLine" :size="22" />
+                        </span>
                         <div class="min-w-0">
-                            <h2 class="serif text-2xl leading-tight text-on-surface">Registrar movimiento</h2>
-                            <p class="text-sm text-on-surface-variant mt-0.5">Entrada o salida de efectivo de la caja</p>
+                            <div class="serif text-xl leading-tight text-on-surface truncate">Registrar movimiento</div>
+                            <div class="text-xs text-on-surface-variant font-medium mt-0.5">Entrada o salida de efectivo de la caja</div>
                         </div>
-                        <button type="button" class="btn-icon ml-auto shrink-0" aria-label="Cerrar" @click="emit('close')"><X :size="20" /></button>
-                    </div>
+                    </header>
 
-                    <div class="overflow-y-auto px-6 pb-6 flex-1 flex flex-col gap-5">
-                        <!-- type -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <button
-                                type="button" data-testid="mv-type-out"
-                                class="flex flex-col items-center gap-2 p-4 rounded-[var(--r-lg)] transition-colors"
-                                :style="type === 'out' ? 'background: color-mix(in srgb, var(--error) 12%, transparent); box-shadow: 0 0 0 2px var(--error); color: var(--error)' : 'background: var(--surface-low); color: var(--on-surface-variant)'"
-                                @click="type = 'out'"
-                            ><ArrowUp :size="24" /><span class="text-sm font-semibold">Salida / Retiro</span></button>
-                            <button
-                                type="button" data-testid="mv-type-in"
-                                class="flex flex-col items-center gap-2 p-4 rounded-[var(--r-lg)] transition-colors"
-                                :style="type === 'in' ? 'background: color-mix(in srgb, var(--success) 14%, transparent); box-shadow: 0 0 0 2px var(--success); color: var(--success)' : 'background: var(--surface-low); color: var(--on-surface-variant)'"
-                                @click="type = 'in'"
-                            ><ArrowDown :size="24" /><span class="text-sm font-semibold">Entrada / Ingreso</span></button>
-                        </div>
+                    <!-- Body -->
+                    <main class="flex-1 min-h-0 overflow-y-auto px-4 sm:px-7 py-6">
+                        <div class="mx-auto max-w-[520px] flex flex-col gap-6">
+                            <!-- Type -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" data-testid="mv-type-out" class="mv-type"
+                                        :style="type === 'out' ? { background: tone.soft, boxShadow: '0 0 0 2px var(--error)', color: 'var(--error)' } : ''" @click="type = 'out'">
+                                    <ArrowUpFromLine :size="24" /><span>Salida / Retiro</span>
+                                </button>
+                                <button type="button" data-testid="mv-type-in" class="mv-type"
+                                        :style="type === 'in' ? { background: 'color-mix(in srgb, var(--success) 14%, transparent)', boxShadow: '0 0 0 2px var(--success)', color: 'var(--success)' } : ''" @click="type = 'in'">
+                                    <ArrowDownToLine :size="24" /><span>Entrada / Ingreso</span>
+                                </button>
+                            </div>
 
-                        <!-- amount -->
-                        <div>
-                            <label class="field-label mb-2">Monto</label>
-                            <input v-model="amountText" type="text" inputmode="decimal" placeholder="0.00" class="field text-lg text-right tabular-nums" data-testid="mv-amount" />
-                            <div class="flex gap-2 mt-2.5 flex-wrap">
-                                <button v-for="n in quickAmounts" :key="n" type="button" class="btn btn-tertiary text-xs" @click="addQuick(n)">+{{ n }}</button>
+                            <!-- Amount -->
+                            <div>
+                                <label class="field-label">Monto</label>
+                                <div class="mv-money flex items-center gap-1.5" :style="{ boxShadow: `0 0 0 2px ${tone.color}` }">
+                                    <span class="mv-money-sign serif text-on-surface-variant shrink-0">$</span>
+                                    <input v-model="amountText" type="text" inputmode="decimal" placeholder="0.00" data-testid="mv-amount" size="1"
+                                           class="mv-money-input min-w-0 grow bg-transparent border-0 outline-none serif text-on-surface tabular-nums text-right" />
+                                </div>
+                                <div class="flex gap-2 mt-3 flex-wrap">
+                                    <button v-for="n in quickAmounts" :key="n" type="button" class="mv-chip tabular-nums" @click="addQuick(n)">+{{ n }}</button>
+                                    <button v-if="amountText.trim()" type="button" class="mv-chip" @click="clearAmount">Borrar</button>
+                                </div>
+                            </div>
+
+                            <!-- Reason -->
+                            <div>
+                                <label class="field-label">Motivo</label>
+                                <input v-model="reason" type="text" placeholder="Ej: pago a proveedor" class="field text-sm" data-testid="mv-reason" />
+                                <div class="flex gap-2 mt-3 flex-wrap">
+                                    <button v-for="m in reasons" :key="m" type="button" class="mv-chip" @click="reason = m">{{ m }}</button>
+                                </div>
                             </div>
                         </div>
+                    </main>
 
-                        <!-- reason -->
-                        <div>
-                            <label class="field-label mb-2">Motivo</label>
-                            <input v-model="reason" type="text" placeholder="Ej: pago a proveedor" class="field text-sm" data-testid="mv-reason" />
-                            <div class="flex gap-2 mt-2.5 flex-wrap">
-                                <button v-for="m in reasons" :key="m" type="button" class="btn btn-tertiary text-xs" @click="reason = m">{{ m }}</button>
-                            </div>
+                    <!-- Footer -->
+                    <footer class="flex gap-3 px-4 sm:px-7 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shrink-0" style="border-top: 1px solid var(--outline-variant); background: var(--surface-low)">
+                        <div class="mx-auto w-full max-w-[520px] flex gap-3">
+                            <button type="button" class="btn btn-secondary flex-1" @click="emit('close')">Cancelar</button>
+                            <button type="button" class="btn-primary flex-[1.4]" :style="{ background: tone.color }" :disabled="!valid || submitting" data-testid="mv-submit" @click="onSubmit">
+                                {{ tone.label }} · {{ formatCents(amountCents) }}
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="flex gap-3 px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]" style="background: var(--surface-low)">
-                        <button type="button" class="btn btn-secondary flex-1" @click="emit('close')">Cancelar</button>
-                        <button type="button" class="btn-primary flex-1" :disabled="!valid || submitting" data-testid="mv-submit" @click="onSubmit">
-                            {{ type === 'out' ? 'Registrar salida' : 'Registrar ingreso' }} · {{ formatCents(amountCents) }}
-                        </button>
-                    </div>
+                    </footer>
                 </div>
             </div>
         </Transition>
     </Teleport>
 </template>
+
+<style scoped>
+/* Immersive money field — fluid so the serif digits never overflow on mobile. */
+.mv-money {
+    height: 70px;
+    padding: 0 clamp(14px, 4vw, 20px);
+    border-radius: var(--r-lg);
+    background: var(--surface-low);
+    overflow: hidden;
+}
+@media (min-width: 640px) { .mv-money { height: 76px; } }
+.mv-money-sign { font-size: clamp(22px, 5.5vw, 30px); }
+.mv-money-input {
+    font-size: clamp(28px, 7.5vw, 40px);
+    line-height: 1;
+    width: 100%;
+}
+/* The wrapper already carries the focus/state ring — avoid a doubled outline. */
+.mv-money-input:focus-visible { outline: none; }
+.mv-sheet { animation: mv-rise .32s cubic-bezier(.2, .9, .3, 1); }
+@keyframes mv-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.mv-type {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px;
+    border-radius: var(--r-lg);
+    background: var(--surface-low);
+    color: var(--on-surface-variant);
+    font-size: 13.5px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: background .15s, color .15s, box-shadow .15s;
+}
+.mv-chip {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--surface-low);
+    color: var(--on-surface-variant);
+    font-weight: 650;
+    font-size: 13.5px;
+    box-shadow: inset 0 0 0 1.5px var(--outline-soft);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.mv-chip:hover { color: var(--on-surface); background: var(--surface-mid); }
+@media (prefers-reduced-motion: reduce) {
+    .mv-sheet { animation: none; }
+}
+</style>
