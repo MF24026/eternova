@@ -93,6 +93,10 @@ final class UpdateSettingsRequest extends FormRequest
                 'quotation_accepted' => ['required', 'boolean'],
                 'payment_received' => ['required', 'boolean'],
             ],
+            'modules' => [
+                'reservations' => ['sometimes', 'boolean'],
+                'quotations' => ['sometimes', 'boolean'],
+            ],
             default => [],
         };
     }

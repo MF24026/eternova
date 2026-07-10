@@ -1,24 +1,19 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { CheckIcon, XIcon, BuildingIcon, GlobeIcon, Flower2, ShoppingBag, Gift, Cake } from 'lucide-vue-next'
+import { CheckIcon, XIcon, BuildingIcon, GlobeIcon } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppSpinner from '@/components/base/AppSpinner.vue'
-import { useOnboardingStore, type StarterTemplate } from '@/stores/onboarding'
+import { useOnboardingStore } from '@/stores/onboarding'
+import { VERTICALS, type BusinessType } from '@/constants/verticals'
 import TenantsService from '@/services/TenantsService'
 import { extractFieldErrors, extractErrorMessage } from '@/utils/errors'
 
 const store = useOnboardingStore()
 
-// Business type → seeds a matching starter catalog so the owner sees real data
-// on first login. Editable/removable afterwards.
-const templates: { value: StarterTemplate; label: string; hint: string; icon: typeof Flower2 }[] = [
-    { value: 'floreria',   label: 'Floreria',            hint: 'Flores, bouquets, arreglos', icon: Flower2 },
-    { value: 'accesorios', label: 'Accesorios y regalos', hint: 'Bisuteria, bolsos, sets',    icon: ShoppingBag },
-    { value: 'peluches',   label: 'Peluches y detalles',  hint: 'Peluches, globos, sorpresas', icon: Gift },
-    { value: 'reposteria', label: 'Reposteria',           hint: 'Tortas, cupcakes, dulces',   icon: Cake },
-]
-const starterTemplate = ref<StarterTemplate>(store.tenantData.starter_template)
+// Business vertical (giro): single source of truth. Adapts the panel (which modules
+// show) AND seeds a matching starter catalog. Editable later in Settings.
+const businessType = ref<BusinessType>(store.tenantData.business_type)
 
 interface CountryOption {
     code: string
@@ -141,7 +136,7 @@ async function handleSubmit(): Promise<void> {
                 timezone: country?.timezone ?? 'America/El_Salvador',
                 plan_slug: store.planChoice.plan_slug,
                 billing_cycle: store.planChoice.billing,
-                starter_template: starterTemplate.value,
+                business_type: businessType.value,
             },
             { headers: { Authorization: `Bearer ${token}` } },
         )
@@ -154,7 +149,7 @@ async function handleSubmit(): Promise<void> {
             currency: country?.currency ?? 'USD',
             language: 'es',
             timezone: country?.timezone ?? 'America/El_Salvador',
-            starter_template: starterTemplate.value,
+            business_type: businessType.value,
         }
 
         store.createdTenantSlug = response.data.data.slug
@@ -301,36 +296,33 @@ function handleBack(): void {
                 </div>
             </div>
 
-            <!-- Business type → starter catalog -->
+            <!-- Business vertical (giro) → adapts the panel + seeds a matching catalog -->
             <div>
                 <label class="block text-sm font-medium text-on-surface mb-1.5">Tipo de negocio</label>
                 <p class="text-xs text-on-surface-variant mb-2.5">
-                    Empezaras con un catálogo de ejemplo segun tu rubro. Puedes editarlo o borrarlo después.
+                    Adaptamos tu panel a tu rubro y empezás con un catálogo de ejemplo. Podés cambiarlo después en Ajustes.
                 </p>
                 <div class="grid grid-cols-2 gap-2.5">
                     <button
-                        v-for="t in templates"
-                        :key="t.value"
+                        v-for="giro in VERTICALS"
+                        :key="giro.key"
                         type="button"
-                        :data-testid="`template-${t.value}`"
-                        :aria-pressed="starterTemplate === t.value"
-                        class="flex items-start gap-2.5 p-3 rounded-xl text-left transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        :class="starterTemplate === t.value
+                        :data-testid="`giro-${giro.key}`"
+                        :aria-pressed="businessType === giro.key"
+                        class="flex items-center gap-2.5 p-3 rounded-xl text-left transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        :class="businessType === giro.key
                             ? 'bg-primary/10 ring-2 ring-primary'
                             : 'bg-surface-low dark:bg-surface-mid hover:bg-surface-mid'"
-                        @click="starterTemplate = t.value"
+                        @click="businessType = giro.key"
                     >
                         <span
                             class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-                            :class="starterTemplate === t.value ? 'text-primary' : 'text-on-surface-variant'"
-                            :style="starterTemplate === t.value ? 'background: color-mix(in srgb, var(--primary) 16%, transparent)' : 'background: var(--surface-high)'"
+                            :class="businessType === giro.key ? 'text-primary' : 'text-on-surface-variant'"
+                            :style="businessType === giro.key ? 'background: color-mix(in srgb, var(--primary) 16%, transparent)' : 'background: var(--surface-high)'"
                         >
-                            <component :is="t.icon" :size="16" />
+                            <component :is="giro.icon" :size="16" />
                         </span>
-                        <span class="min-w-0">
-                            <span class="block text-sm font-medium text-on-surface">{{ t.label }}</span>
-                            <span class="block text-xs text-on-surface-variant truncate">{{ t.hint }}</span>
-                        </span>
+                        <span class="block text-sm font-medium text-on-surface min-w-0 truncate">{{ giro.label }}</span>
                     </button>
                 </div>
             </div>

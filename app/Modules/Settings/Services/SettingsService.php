@@ -6,6 +6,7 @@ namespace App\Modules\Settings\Services;
 
 use App\Modules\Settings\Models\BranchSetting;
 use App\Modules\Tenancy\Models\Tenant;
+use App\Modules\Tenancy\Services\ModuleVisibilityService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
@@ -45,7 +46,7 @@ final class SettingsService
      */
     public static function groups(): array
     {
-        return ['brand', 'locale', 'contact', 'tax', 'orders', 'quotations', 'reservations', 'notifications'];
+        return ['brand', 'locale', 'contact', 'tax', 'orders', 'quotations', 'reservations', 'notifications', 'modules'];
     }
 
     public static function isKnownGroup(string $group): bool
@@ -88,7 +89,24 @@ final class SettingsService
             'tax' => BranchSetting::resolvedGroup('tax'),
             'orders' => BranchSetting::resolvedGroup('orders'),
             'notifications' => BranchSetting::resolvedGroup('notifications'),
+            // Effective (giro default composed with overrides) visibility per gateable module.
+            'modules' => $this->resolveModules($tenant),
         ];
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function resolveModules(Tenant $tenant): array
+    {
+        $service = app(ModuleVisibilityService::class);
+
+        $flags = [];
+        foreach (ModuleVisibilityService::GATEABLE as $module) {
+            $flags[$module] = $service->isEnabled($tenant, $module);
+        }
+
+        return $flags;
     }
 
     /**
@@ -106,6 +124,20 @@ final class SettingsService
 
         if (in_array($group, self::BRANCH_GROUPS, true)) {
             BranchSetting::writeDefault($group, $data);
+
+            return;
+        }
+
+        // Modules group is not a column-mapped group: it writes per-module overrides
+        // into the tenant's module_overrides JSON, merging with what is already there.
+        if ($group === 'modules') {
+            $overrides = (array) ($tenant->module_overrides ?? []);
+            foreach (ModuleVisibilityService::GATEABLE as $module) {
+                if (array_key_exists($module, $data)) {
+                    $overrides[$module] = (bool) $data[$module];
+                }
+            }
+            $tenant->forceFill(['module_overrides' => $overrides])->save();
 
             return;
         }

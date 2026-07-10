@@ -3,6 +3,8 @@ export interface UserTenantMembership {
     slug: string
     business_name: string
     admin_theme: 'ethereal' | 'minimal'
+    business_type: 'floreria_regalos' | 'ropa_boutique' | 'accesorios' | 'peluches' | 'minimarket' | 'otro'
+    enabled_modules: string[]
     role: 'owner' | 'admin' | 'staff' | 'customer'
     joined_at: string
     is_current: boolean

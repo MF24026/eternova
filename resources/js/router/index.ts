@@ -129,7 +129,7 @@ const router = createRouter({
             path: '/admin/reservations',
             name: 'admin.reservations',
             component: () => import('@/pages/Admin/ReservationsPage.vue'),
-            meta: { requiresAuth: true, layout: 'admin' },
+            meta: { requiresAuth: true, layout: 'admin', module: 'reservations' },
         },
         {
             path: '/admin/reservations/:id',
@@ -137,7 +137,7 @@ const router = createRouter({
             // Stub in place so row/card clicks navigate without 404.
             // Full detail page is built in S5-E7.
             component: () => import('@/pages/Admin/ReservationDetailPage.vue'),
-            meta: { requiresAuth: true, layout: 'admin' },
+            meta: { requiresAuth: true, layout: 'admin', module: 'reservations' },
         },
         {
             path: '/admin/expenses',
@@ -155,7 +155,7 @@ const router = createRouter({
             path: '/admin/quotations',
             name: 'admin.quotations',
             component: () => import('@/pages/Admin/QuotationsPage.vue'),
-            meta: { requiresAuth: true, layout: 'admin' },
+            meta: { requiresAuth: true, layout: 'admin', module: 'quotations' },
         },
         {
             path: '/admin/quotations/:id',
@@ -163,7 +163,7 @@ const router = createRouter({
             // Stub in place so row/card clicks navigate without 404.
             // Full detail page is built in S7-E8.
             component: () => import('@/pages/Admin/QuotationDetailPage.vue'),
-            meta: { requiresAuth: true, layout: 'admin' },
+            meta: { requiresAuth: true, layout: 'admin', module: 'quotations' },
         },
         {
             path: '/admin/customers',

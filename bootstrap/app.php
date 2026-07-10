@@ -6,6 +6,7 @@ use App\Exceptions\PlanGateException;
 use App\Http\Middleware\InjectRequestId;
 use App\Http\Middleware\SecurityHeaders;
 use App\Modules\SuperAdmin\Http\Middleware\EnsureSuperAdmin;
+use App\Modules\Tenancy\Http\Middleware\EnsureModuleEnabled;
 use App\Modules\Tenancy\Http\Middleware\EnsureTenant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -64,6 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant' => EnsureTenant::class,
             'super_admin' => EnsureSuperAdmin::class,
+            'module' => EnsureModuleEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -13,7 +13,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import {
     Flower, Phone, MapPin, Receipt, ClipboardList, FileText, Calendar, Bell,
-    Camera, Image, Save, Loader2,
+    Camera, Image, Save, Loader2, Boxes,
 } from 'lucide-vue-next'
 import AppInput from '@/components/base/AppInput.vue'
 import AppButton from '@/components/base/AppButton.vue'
@@ -50,7 +50,7 @@ onMounted(() => {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-type TabId = 'marca' | 'contacto' | 'local' | 'impuestos' | 'pedidos' | 'cotizaciones' | 'reservas' | 'notif'
+type TabId = 'marca' | 'contacto' | 'local' | 'impuestos' | 'pedidos' | 'cotizaciones' | 'reservas' | 'notif' | 'modulos'
 
 const tabs: { id: TabId; label: string; icon: typeof Flower; group: SettingsGroup }[] = [
     { id: 'marca', label: 'Marca', icon: Flower, group: 'brand' },
@@ -61,6 +61,7 @@ const tabs: { id: TabId; label: string; icon: typeof Flower; group: SettingsGrou
     { id: 'cotizaciones', label: 'Cotizaciones', icon: FileText, group: 'quotations' },
     { id: 'reservas', label: 'Reservas', icon: Calendar, group: 'reservations' },
     { id: 'notif', label: 'Notificaciones', icon: Bell, group: 'notifications' },
+    { id: 'modulos', label: 'Módulos', icon: Boxes, group: 'modules' },
 ]
 
 const activeTab = ref<TabId>('marca')
@@ -221,6 +222,13 @@ function buildPayload(group: SettingsGroup): Record<string, unknown> | FormData 
         }
     }
 
+    if (group === 'modules') {
+        return {
+            reservations: s.modules.reservations,
+            quotations: s.modules.quotations,
+        }
+    }
+
     // The rest send their group object verbatim.
     return { ...s[group] } as Record<string, unknown>
 }
@@ -234,6 +242,11 @@ const notificationLabels: { key: keyof TenantSettings['notifications']; label: s
     { key: 'reservation_confirmed', label: 'Reserva confirmada' },
     { key: 'quotation_accepted', label: 'Cotización aceptada' },
     { key: 'payment_received', label: 'Pago recibido' },
+]
+
+const moduleLabels: { key: keyof TenantSettings['modules']; label: string; hint: string }[] = [
+    { key: 'reservations', label: 'Reservas', hint: 'Encargos y adelantos de clientes' },
+    { key: 'quotations', label: 'Cotizaciones', hint: 'Presupuestos en PDF para eventos o pedidos grandes' },
 ]
 
 // ── Unsaved-changes guard ─────────────────────────────────────────────────────────
@@ -553,6 +566,37 @@ onBeforeRouteLeave(async () => {
                                 @click="settings.notifications[item.key] = !settings.notifications[item.key]"
                             >
                                 <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.notifications[item.key] ? 'translate-x-6' : 'translate-x-1'" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ── Módulos ── -->
+            <template v-else-if="activeTab === 'modulos'">
+                <div class="card" style="padding: 24px" data-testid="panel-modulos">
+                    <p class="font-semibold text-on-surface mb-1">Módulos del panel</p>
+                    <p class="text-sm text-on-surface-variant mb-4">
+                        Tu tipo de negocio define qué módulos ves por defecto. Podés ajustarlos acá.
+                    </p>
+                    <div class="flex flex-col gap-2">
+                        <div
+                            v-for="mod in moduleLabels"
+                            :key="mod.key"
+                            class="flex items-center justify-between p-3.5 rounded-xl"
+                            style="background: var(--surface-low)"
+                        >
+                            <div>
+                                <p class="text-sm text-on-surface">{{ mod.label }}</p>
+                                <p class="text-xs text-on-surface-variant">{{ mod.hint }}</p>
+                            </div>
+                            <button
+                                type="button" role="switch" :aria-checked="settings.modules[mod.key]" :data-testid="`toggle-module-${mod.key}`"
+                                class="w-11 h-6 rounded-full transition-colors duration-200 relative shrink-0"
+                                :style="{ background: settings.modules[mod.key] ? 'var(--primary)' : 'var(--surface-high)' }"
+                                @click="settings.modules[mod.key] = !settings.modules[mod.key]"
+                            >
+                                <span class="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" :class="settings.modules[mod.key] ? 'translate-x-6' : 'translate-x-1'" />
                             </button>
                         </div>
                     </div>

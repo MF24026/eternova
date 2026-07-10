@@ -43,6 +43,10 @@ class Tenant extends Model
         'email',
         'status',
 
+        // Vertical (giro) — business type + per-module visibility overrides
+        'business_type',
+        'module_overrides',
+
         // Brand — explicit columns
         'business_name',
         'logo_url',
@@ -87,6 +91,7 @@ class Tenant extends Model
         'quotation_valid_days' => 'integer',
         'trial_ends_at' => 'datetime',
         'status' => 'string',
+        'module_overrides' => 'array',
     ];
 
     /**
@@ -98,6 +103,7 @@ class Tenant extends Model
      */
     protected $attributes = [
         'admin_theme' => 'ethereal',
+        'business_type' => 'otro',
     ];
 
     /**
