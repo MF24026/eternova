@@ -291,7 +291,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
 
     <!-- ── Main shell ─────────────────────────────────────────────────────────── -->
     <div
-        class="pos-shell"
+        class="pos-page"
         :style="{ paddingBottom: store.lineCount > 0 ? '88px' : '0' }"
     >
         <!-- Cash register control (only when the giro enables the module) -->
@@ -311,6 +311,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
             </template>
         </div>
 
+        <div class="pos-shell">
         <!-- Left: products panel (full-width on mobile/tablet, flex-2 on desktop) -->
         <PosProductGrid
             :products="products"
@@ -348,6 +349,7 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
                 @checkout="openCheckout"
                 @open-customer-selector="customerSelectorOpen = true"
             />
+        </div>
         </div>
     </div>
 
@@ -458,12 +460,19 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
     font-weight: 600;
     color: var(--on-surface);
 }
+.pos-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* Full-height minus AdminLayout header (~64px) + page padding (~56px). */
+    height: calc(100vh - 120px);
+}
 .pos-shell {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    /* Full-height minus AdminLayout header (~64px) + page padding (~56px). */
-    height: calc(100vh - 120px);
+    flex: 1;
+    min-height: 0;
     /* Prevent horizontal overflow at all widths. */
     overflow-x: hidden;
 }
