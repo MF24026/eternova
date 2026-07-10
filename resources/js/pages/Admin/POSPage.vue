@@ -7,27 +7,71 @@ import PosCustomerSelector from '@/components/Admin/Pos/PosCustomerSelector.vue'
 import PosReceiptSlideover from '@/components/Admin/Pos/PosReceiptSlideover.vue'
 import PosVariantPickerOverlay from '@/components/Admin/Pos/PosVariantPickerOverlay.vue'
 import PosCheckoutOverlay from '@/components/Admin/Pos/PosCheckoutOverlay.vue'
+import CashRegisterOverlay from '@/components/Admin/Pos/CashRegisterOverlay.vue'
 import AppSlideover from '@/components/base/AppSlideover.vue'
+import { LockOpen, Lock } from 'lucide-vue-next'
 import { usePosStore } from '@/stores/pos'
 import { useBranches } from '@/composables/useBranches'
 import { useFormatCurrency } from '@/composables/useFormatCurrency'
 import { useToast } from '@/composables/useToast'
+import { useCashRegister } from '@/composables/useCashRegister'
+import { useAuth } from '@/composables/useAuth'
 import PosService from '@/services/PosService'
 import type { PosProduct, PosProductVariant, PosProductCategory, PosPaymentMethod, PosReceipt } from '@/types/domain/POS'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '@/types/api'
+import { computed } from 'vue'
 
 onMounted(async () => {
     document.title = 'Punto de venta — Eternova'
     await loadBranches()
     resolveDefaultBranch()
     void loadProducts()
+    if (cashRegisterEnabled.value) void cashRegister.refresh(store.branchId)
 })
 
 const store = usePosStore()
 const { branches, isLoading: branchesLoading, loadBranches } = useBranches()
 const { formatCents } = useFormatCurrency()
 const toast = useToast()
+
+// ── Cash register (arqueo) — only when the tenant's giro enables the module ─────
+const { currentUser } = useAuth()
+const cashRegisterEnabled = computed(() =>
+    (currentUser.value?.tenants.find((t) => t.is_current)?.enabled_modules ?? []).includes('cash_register'),
+)
+const cashRegister = useCashRegister()
+const crOverlayOpen = ref(false)
+const crMode = ref<'open' | 'close'>('open')
+const crSubmitting = ref(false)
+
+function openCashRegisterFlow(): void {
+    crMode.value = cashRegister.session.value ? 'close' : 'open'
+    crOverlayOpen.value = true
+}
+
+async function handleCashRegisterConfirm(payload: { amountCents: number; notes: string }): Promise<void> {
+    crSubmitting.value = true
+    try {
+        if (crMode.value === 'open') {
+            await cashRegister.open(store.branchId, payload.amountCents, payload.notes)
+            toast.success('Caja abierta')
+        } else {
+            const closed = await cashRegister.close(payload.amountCents, payload.notes)
+            const diff = closed?.difference_cents ?? 0
+            toast.success(diff === 0 ? 'Caja cerrada: cuadrada' : `Caja cerrada: ${diff > 0 ? 'sobrante' : 'faltante'} ${formatCents(Math.abs(diff))}`)
+        }
+        crOverlayOpen.value = false
+    } catch {
+        toast.error('No se pudo completar la operación de caja.')
+    } finally {
+        crSubmitting.value = false
+    }
+}
+
+watch(() => store.branchId, (id) => {
+    if (cashRegisterEnabled.value && id) void cashRegister.refresh(id)
+})
 
 // ── Branch resolution ──────────────────────────────────────────────────────────
 
@@ -250,6 +294,23 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
         class="pos-shell"
         :style="{ paddingBottom: store.lineCount > 0 ? '88px' : '0' }"
     >
+        <!-- Cash register control (only when the giro enables the module) -->
+        <div v-if="cashRegisterEnabled" class="pos-caja-bar" data-testid="pos-caja-bar">
+            <template v-if="cashRegister.session.value">
+                <span class="pos-caja-chip">
+                    <Lock :size="14" />
+                    Caja #{{ cashRegister.session.value.session_number }} · efectivo {{ formatCents(cashRegister.session.value.opening_amount_cents + cashRegister.session.value.cash_sales_cents) }}
+                </span>
+                <button type="button" class="btn btn-tertiary" data-testid="btn-cerrar-caja" @click="openCashRegisterFlow">Cerrar caja</button>
+            </template>
+            <template v-else>
+                <span class="text-sm text-on-surface-variant">Caja cerrada</span>
+                <button type="button" class="btn-primary gap-2" data-testid="btn-abrir-caja" @click="openCashRegisterFlow">
+                    <LockOpen :size="16" /> Abrir caja
+                </button>
+            </template>
+        </div>
+
         <!-- Left: products panel (full-width on mobile/tablet, flex-2 on desktop) -->
         <PosProductGrid
             :products="products"
@@ -368,9 +429,35 @@ function handleSelectCustomer(id: number | null, name: string | null): void {
         @close="checkoutOverlayOpen = false"
         @confirm="submitCheckout($event.amountReceivedCents)"
     />
+
+    <CashRegisterOverlay
+        :show="crOverlayOpen"
+        :mode="crMode"
+        :session="cashRegister.session.value"
+        :submitting="crSubmitting"
+        @close="crOverlayOpen = false"
+        @confirm="handleCashRegisterConfirm"
+    />
 </template>
 
 <style scoped>
+.pos-caja-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--r-lg);
+    background: var(--surface-low);
+}
+.pos-caja-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface);
+}
 .pos-shell {
     display: flex;
     flex-direction: column;
