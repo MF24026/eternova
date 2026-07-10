@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 | "send" as a quotation id. This mirrors the Reservations and Orders modules.
 */
 
-Route::middleware(['auth:sanctum', 'tenant'])->prefix('quotations')->group(static function (): void {
+Route::middleware(['auth:sanctum', 'tenant', 'module:quotations'])->prefix('quotations')->group(static function (): void {
     // ── Collection + create ──────────────────────────────────────────────────
     Route::get('/', [QuotationController::class, 'index'])
         ->name('api.v1.quotations.index');

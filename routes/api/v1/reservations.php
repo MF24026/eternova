@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 | a reservation id. This is the same rule applied in the Orders module.
 */
 
-Route::middleware(['auth:sanctum', 'tenant'])->prefix('reservations')->group(static function (): void {
+Route::middleware(['auth:sanctum', 'tenant', 'module:reservations'])->prefix('reservations')->group(static function (): void {
     // ── Static paths — must be declared BEFORE the {reservation} wildcard ───
     Route::get('/settings', [ReservationSettingsController::class, 'show'])
         ->name('api.v1.reservations.settings.show');

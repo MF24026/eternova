@@ -6,6 +6,7 @@ namespace App\Modules\Auth\Http\Resources;
 
 use App\Http\Resources\Api\V1\BaseResource;
 use App\Models\User;
+use App\Modules\Tenancy\Services\ModuleVisibilityService;
 use Illuminate\Http\Request;
 
 /**
@@ -48,6 +49,8 @@ final class UserResource extends BaseResource
                     'slug' => $tenant->slug,
                     'business_name' => $tenant->business_name,
                     'admin_theme' => $tenant->admin_theme,
+                    'business_type' => $tenant->business_type,
+                    'enabled_modules' => app(ModuleVisibilityService::class)->enabledModules($tenant),
                     'role' => $tenant->pivot->role,
                     'joined_at' => $tenant->pivot->joined_at?->toIso8601String(),
                     'is_current' => $currentTenant !== null && $tenant->id === $currentTenant->id,
