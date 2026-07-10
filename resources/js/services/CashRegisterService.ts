@@ -22,4 +22,12 @@ export default {
         const { data } = await api.post<{ data: CashRegisterSession }>(`/pos/cash-register/${sessionId}/close`, payload)
         return data.data
     },
+
+    async movement(
+        sessionId: number,
+        payload: { type: 'in' | 'out'; amount_cents: number; reason: string },
+    ): Promise<CashRegisterSession> {
+        const { data } = await api.post<{ data: CashRegisterSession }>(`/pos/cash-register/${sessionId}/movements`, payload)
+        return data.data
+    },
 }

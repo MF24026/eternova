@@ -112,6 +112,12 @@ const router = createRouter({
             meta: { requiresAuth: true, layout: 'admin' },
         },
         {
+            path: '/admin/caja',
+            name: 'admin.caja',
+            component: () => import('@/pages/Admin/CajaPage.vue'),
+            meta: { requiresAuth: true, layout: 'admin', module: 'cash_register' },
+        },
+        {
             path: '/admin/orders',
             name: 'admin.orders',
             component: () => import('@/pages/Admin/OrdersPage.vue'),

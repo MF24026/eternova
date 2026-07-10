@@ -29,11 +29,14 @@ function toCents(input: string): number {
 
 const countedCents = computed(() => toCents(amountText.value))
 
-// Arqueo (close mode): expected = opening + cash sales; difference = counted - expected.
-const expectedCents = computed(() =>
-    props.session ? props.session.opening_amount_cents + props.session.cash_sales_cents : 0,
-)
+// Arqueo (close mode): expected = opening + cash sales + cash-in − cash-out (the ladder,
+// computed server-side as expected_cash_cents). Difference = counted − expected.
+const expectedCents = computed(() => props.session?.expected_cash_cents ?? 0)
 const differenceCents = computed(() => countedCents.value - expectedCents.value)
+
+function useExpected(): void {
+    amountText.value = (expectedCents.value / 100).toFixed(2)
+}
 
 watch(
     () => props.show,
@@ -94,15 +97,16 @@ function onSubmit(): void {
                     </div>
 
                     <div class="overflow-y-auto px-6 pb-6 flex-1 flex flex-col gap-4">
-                        <!-- Close mode: arqueo breakdown -->
+                        <!-- Close mode: arqueo ladder -->
                         <div v-if="mode === 'close' && session" class="rounded-[var(--r-lg)] p-4 flex flex-col gap-2" style="background: var(--surface-low)">
-                            <div class="flex justify-between text-sm"><span class="text-on-surface-variant">Fondo inicial</span><span class="tabular-nums text-on-surface">{{ formatCents(session.opening_amount_cents) }}</span></div>
-                            <div class="flex justify-between text-sm"><span class="text-on-surface-variant">Ventas en efectivo</span><span class="tabular-nums text-on-surface">{{ formatCents(session.cash_sales_cents) }}</span></div>
-                            <div class="flex justify-between text-sm"><span class="text-on-surface-variant">Ventas tarjeta / transf.</span><span class="tabular-nums text-on-surface-variant">{{ formatCents(session.card_sales_cents + session.transfer_sales_cents) }}</span></div>
-                            <div class="flex justify-between text-sm font-semibold pt-1"><span class="text-on-surface">Efectivo esperado</span><span class="tabular-nums text-on-surface" data-testid="cr-expected">{{ formatCents(expectedCents) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-on-surface-variant">Fondo de apertura</span><span class="tabular-nums text-on-surface">+ {{ formatCents(session.opening_amount_cents) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-on-surface-variant">Ventas en efectivo</span><span class="tabular-nums" style="color: var(--success)">+ {{ formatCents(session.cash_sales_cents) }}</span></div>
+                            <div v-if="session.cash_in_cents > 0" class="flex justify-between text-sm"><span class="text-on-surface-variant">Ingresos manuales</span><span class="tabular-nums" style="color: var(--success)">+ {{ formatCents(session.cash_in_cents) }}</span></div>
+                            <div v-if="session.cash_out_cents > 0" class="flex justify-between text-sm"><span class="text-on-surface-variant">Salidas / retiros</span><span class="tabular-nums" style="color: var(--error)">− {{ formatCents(session.cash_out_cents) }}</span></div>
+                            <div class="flex justify-between text-sm font-semibold pt-2 mt-1" style="border-top: 1px solid var(--outline-variant)"><span class="text-on-surface">Efectivo esperado</span><span class="tabular-nums text-on-surface" data-testid="cr-expected">{{ formatCents(expectedCents) }}</span></div>
                         </div>
 
-                        <label class="field-label">{{ mode === 'open' ? 'Fondo inicial' : 'Efectivo contado' }}</label>
+                        <label class="field-label">{{ mode === 'open' ? 'Fondo inicial' : '¿Cuánto contaste en el cajón?' }}</label>
                         <input
                             v-model="amountText"
                             type="text"
@@ -111,6 +115,7 @@ function onSubmit(): void {
                             class="field text-lg text-right tabular-nums"
                             data-testid="cr-amount"
                         />
+                        <button v-if="mode === 'close'" type="button" class="btn btn-tertiary text-xs self-start" data-testid="cr-use-expected" @click="useExpected">Usar esperado</button>
 
                         <!-- Live difference (close mode) -->
                         <div v-if="mode === 'close'" class="flex justify-between items-center px-1">

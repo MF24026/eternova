@@ -5,6 +5,14 @@ export type { TaxConfig }
 
 export type PosPaymentMethod = 'cash' | 'card' | 'transfer' | 'other'
 
+export interface CashMovement {
+    id: number
+    type: 'in' | 'out'
+    amount_cents: number
+    reason: string
+    created_at: string | null
+}
+
 export interface CashRegisterSession {
     id: number
     branch_id: string
@@ -20,6 +28,10 @@ export interface CashRegisterSession {
     transfer_sales_cents: number
     total_sales_cents: number
     order_count: number
+    cash_in_cents: number
+    cash_out_cents: number
+    expected_cash_cents: number
+    movements: CashMovement[]
     opened_at: string | null
     closed_at: string | null
     opening_notes: string | null

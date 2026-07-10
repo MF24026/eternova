@@ -41,5 +41,14 @@ export function useCashRegister() {
         return closed
     }
 
-    return { session, loading, refresh, open, close }
+    async function addMovement(type: 'in' | 'out', amountCents: number, reason: string): Promise<void> {
+        if (session.value === null) return
+        session.value = await CashRegisterService.movement(session.value.id, {
+            type,
+            amount_cents: amountCents,
+            reason,
+        })
+    }
+
+    return { session, loading, refresh, open, close, addMovement }
 }
