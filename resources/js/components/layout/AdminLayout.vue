@@ -39,6 +39,9 @@ interface NavItem {
     to: string
     icon: unknown
     ownerOnly?: boolean
+    // Optional module gated by the tenant's business vertical. Shown only when the
+    // module is in the tenant's enabled_modules (from /me). Core items omit this.
+    module?: string
 }
 
 const route = useRoute()
@@ -57,12 +60,12 @@ const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Panel', to: '/admin/dashboard', icon: LayoutDashboard },
     { id: 'pos', label: 'Punto de venta', to: '/admin/pos', icon: CreditCard },
     { id: 'orders', label: 'Pedidos', to: '/admin/orders', icon: ClipboardList },
-    { id: 'reservations', label: 'Reservas', to: '/admin/reservations', icon: Calendar },
+    { id: 'reservations', label: 'Reservas', to: '/admin/reservations', icon: Calendar, module: 'reservations' },
     { id: 'inventory', label: 'Inventario', to: '/admin/inventory', icon: Package },
     { id: 'products', label: 'Productos', to: '/admin/products', icon: ShoppingBag },
     { id: 'categories', label: 'Categorías', to: '/admin/categories', icon: LayoutDashboard },
     { id: 'expenses', label: 'Gastos', to: '/admin/expenses', icon: Receipt },
-    { id: 'quotations', label: 'Cotizaciones', to: '/admin/quotations', icon: FileText },
+    { id: 'quotations', label: 'Cotizaciones', to: '/admin/quotations', icon: FileText, module: 'quotations' },
     { id: 'customers', label: 'Clientes', to: '/admin/customers', icon: Users },
     { id: 'settings', label: 'Ajustes', to: '/admin/settings', icon: Settings },
     { id: 'billing', label: 'Facturación', to: '/admin/billing', icon: Wallet, ownerOnly: true },
@@ -73,8 +76,17 @@ const navItems: NavItem[] = [
 const isOwner = computed(
     () => currentUser.value?.tenants.find((t) => t.is_current)?.role === 'owner',
 )
+// Modules enabled for the current tenant's business vertical (from /me). A gated item
+// (module set) shows only when its module is enabled; core items are always shown.
+const enabledModules = computed(
+    () => currentUser.value?.tenants.find((t) => t.is_current)?.enabled_modules ?? [],
+)
 const visibleNavItems = computed(() =>
-    navItems.filter((item) => !item.ownerOnly || isOwner.value),
+    navItems.filter(
+        (item) =>
+            (!item.ownerOnly || isOwner.value) &&
+            (item.module === undefined || enabledModules.value.includes(item.module)),
+    ),
 )
 
 const userInitial = computed(() => {

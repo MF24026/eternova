@@ -10,6 +10,12 @@ export type SettingsGroup =
     | 'quotations'
     | 'reservations'
     | 'notifications'
+    | 'modules'
+
+export interface ModuleSettings {
+    reservations: boolean
+    quotations: boolean
+}
 
 export interface BrandSettings {
     business_name: string
@@ -77,6 +83,7 @@ export interface TenantSettings {
     quotations: QuotationSettings
     reservations: ReservationSettings
     notifications: NotificationSettings
+    modules: ModuleSettings
 }
 
 // ── Catalog (option lists for the UI, country → currency/dial defaults) ─────────

@@ -24,6 +24,17 @@ export async function authGuard(
         return { name: 'admin.dashboard' }
     }
 
+    // Vertical-gated modules: a route may declare `meta.module`; if that module is not
+    // enabled for the current tenant's giro, it does not apply to this business — bounce
+    // to the dashboard (the API also 403s it, this just avoids a dead route).
+    const requiredModule = to.meta.module
+    if (typeof requiredModule === 'string') {
+        const enabled = auth.currentUser?.tenants.find((t) => t.is_current)?.enabled_modules ?? []
+        if (!enabled.includes(requiredModule)) {
+            return { name: 'admin.dashboard' }
+        }
+    }
+
     if (to.meta.guestOnly === true && auth.isAuthenticated) {
         return { name: 'admin.dashboard' }
     }

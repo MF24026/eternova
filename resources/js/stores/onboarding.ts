@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { BusinessType } from '@/constants/verticals'
 
 export interface AccountData {
     name: string
@@ -12,8 +13,6 @@ export interface PlanChoice {
     billing: 'monthly' | 'yearly'
 }
 
-export type StarterTemplate = 'floreria' | 'accesorios' | 'peluches' | 'reposteria'
-
 export interface TenantData {
     slug: string
     name: string
@@ -22,7 +21,7 @@ export interface TenantData {
     currency: string
     language: string
     timezone: string
-    starter_template: StarterTemplate
+    business_type: BusinessType
 }
 
 export type OnboardingStep = 'account' | 'plan' | 'tenant' | 'done'
@@ -42,7 +41,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
         currency: 'USD',
         language: 'es',
         timezone: 'America/El_Salvador',
-        starter_template: 'floreria',
+        business_type: 'otro',
     })
 
     const createdTenantSlug = ref<string | null>(null)
@@ -68,7 +67,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
             currency: 'USD',
             language: 'es',
             timezone: 'America/El_Salvador',
-            starter_template: 'floreria',
+            business_type: 'otro',
         }
         createdTenantSlug.value = null
         tempBearerToken.value = null
