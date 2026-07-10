@@ -55,5 +55,18 @@ final class PosServiceProvider extends ServiceProvider
 
             return $role !== null && in_array($role, $staffRoles, strict: true);
         });
+
+        // Open and close a cash-register session (arqueo). Any POS staff can operate;
+        // closing another cashier's session additionally requires owner/admin, which
+        // the service enforces.
+        Gate::define('pos.cash_register', static function (User $user) use ($staffRoles): bool {
+            if ($user->is_super_admin) {
+                return true;
+            }
+
+            $role = $user->currentRole();
+
+            return $role !== null && in_array($role, $staffRoles, strict: true);
+        });
     }
 }

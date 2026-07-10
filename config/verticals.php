@@ -13,10 +13,10 @@ declare(strict_types=1);
 return [
     'catalog' => [
         'floreria_regalos' => ['label' => 'Florería / Regalos', 'icon' => 'flower', 'modules' => ['reservations', 'quotations'], 'starter_template' => 'floreria'],
-        'ropa_boutique' => ['label' => 'Ropa / Boutique', 'icon' => 'shirt', 'modules' => [], 'starter_template' => null],
-        'accesorios' => ['label' => 'Accesorios / Maquillaje', 'icon' => 'gem', 'modules' => [], 'starter_template' => 'accesorios'],
-        'peluches' => ['label' => 'Peluches / Juguetería', 'icon' => 'gift', 'modules' => [], 'starter_template' => 'peluches'],
-        'minimarket' => ['label' => 'Minimarket / Abarrotes', 'icon' => 'shopping-basket', 'modules' => [], 'starter_template' => null],
+        'ropa_boutique' => ['label' => 'Ropa / Boutique', 'icon' => 'shirt', 'modules' => ['cash_register'], 'starter_template' => null],
+        'accesorios' => ['label' => 'Accesorios / Maquillaje', 'icon' => 'gem', 'modules' => ['cash_register'], 'starter_template' => 'accesorios'],
+        'peluches' => ['label' => 'Peluches / Juguetería', 'icon' => 'gift', 'modules' => ['cash_register'], 'starter_template' => 'peluches'],
+        'minimarket' => ['label' => 'Minimarket / Abarrotes', 'icon' => 'shopping-basket', 'modules' => ['cash_register'], 'starter_template' => null],
         'otro' => ['label' => 'Otro', 'icon' => 'store', 'modules' => ['reservations', 'quotations'], 'starter_template' => null],
     ],
 ];

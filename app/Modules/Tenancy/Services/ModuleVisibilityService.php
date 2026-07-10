@@ -15,7 +15,7 @@ use App\Modules\Tenancy\Models\Tenant;
 final class ModuleVisibilityService
 {
     /** @var list<string> */
-    public const GATEABLE = ['reservations', 'quotations'];
+    public const GATEABLE = ['reservations', 'quotations', 'cash_register'];
 
     /**
      * @return list<string> enabled gateable modules for the tenant
